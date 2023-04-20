@@ -1,0 +1,5 @@
+The OTU table columns shows the sites, the code assigned to the sequence, then the percent and the taxa ID. The percent ID is how well the sequence from the sample matches the sequence in genbank. Generally I have seen people use thresholds between 97%-100% for species level identification, and then they will often go down by 1-2% for genus and family identifications. We already know that the primers we used are biased against trichoptera, but they are the best ones for general freshwater macros that have been developed, so we still used them. 
+
+Scott, I clustered and trimmed the sequences differently from the last results Paul sent you, so discard the original sheet. 
+
+We are working on processing the 2022 samples and I will sequence them in April when I'm back in the states to sequence my Ecuador samples. So stay tuned for those, but in the meantime, please let me know if you have any questions or need anything else from me. 

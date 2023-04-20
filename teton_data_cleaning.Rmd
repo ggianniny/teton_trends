@@ -1,0 +1,803 @@
+---
+title: "Teton Data Cleaning"
+author: "Gordon Gianniny"
+date: "2023-03-08"
+output: html_document
+---
+
+```{r, echo=FALSE}
+#Loading Packages
+library(tidyverse) #For data wrangling
+library(lubridate) #For working with dates
+library(ggplot2) #Plotting
+library(RColorBrewer)
+library(patchwork)
+```
+
+## Overview
+
+This script contains code to clean up stream temperature data from the Teton range. The primary goal is to clean up raw data files and combine into a use-able "master" dataframe that can be used to test for temperature trends.
+
+**File format notes**
+
+***NOTE*** This script is written to handle files with the following format: 
+
+  * .csv file with name "Site_NameYYYY.csv" (e.g. windcave2015.csv, s_teton2016.csv) - the year should always correspond to *deployment year*. 
+  * A header row with the logger # (should be default format with import from HOBOWare)
+  * A date/time column in the format "MM/DD/YY HH:MM AM/PM" (You can get this format by opening the .csv file in excel, selecting the date/time column, and pasting "mm/dd/yy hh:mm AM/PM" into the dialogue box under "custom" cell format)
+  * All files should be stored in ONE folder (on my computer, I have these files "Temperature/raw_temp_data/all_years" in the project directory, but you will need to adjust the filepath (in the first chunk of code) depending on where you have data stored. 
+
+
+**Data Cleaning Steps**
+
+Ways of assessing temperature trends would be: 
+
+1. Comparing mean, max, min temps between years
+2. Comparing # degree days - would need to establish cutoff, maybe max temp of 1st year on record? Ecol. meaningful temp cutoffs? 
+3. Some type of regression to test for trends over time- Mann-Kendall test or similar?
+
+For any of these analyses, the desired format would be: 
+  
+* A column for date, rounded to either nearest hour or nearest day to account for slightly different logging times. Range would be date of 1st measurement in 2015 thru last measurement in 2022. 
+* Columns for temperature and site (long format) OR columns for temperature for each site (wide format). The former would be better for plotting, while the latter might work better for modeling.   
+
+To generate this data frame, data files (raw or cleaned) will need to be processed as follows for each site: 
+
+1. Read in and clean all data files using a for-loop to: 
+  - Rename columns
+  - re-format columns (e.g. date) to desired R format
+  - Remove unncessary columns
+  - Store cleaned files in a list
+2. Remove pre- and post-deployment measurements by reading in deployment date data and filtering out pre-/post-deployment observations
+3. Deal with outliers by: 
+  - Setting observations <0C equal to 0 C 
+  - Visually removing obvious exposure periods from sites with issues OR
+  - Identifying and removing exposure periods by comparing stream temperature and snotel air temperature data;        removing periods with significant overlap.
+4. Fill in missing dates for better plotting, produce cleaned data visualizations, and export both long and wide data frames for future analysis. 
+
+
+## 1. Site-by-site data cleaning using a for-loop - Data import and organization:
+
+1. Make a list of all filepaths
+
+```{r}
+file.list <- list.files("Temperature/raw_temp_data/all_years", full.names = TRUE) 
+```
+
+2. Set up a blank list for data frame storage; create a function for extracting site names from filepaths:
+
+```{r}
+data_list <- list() #blank list
+```
+
+3. Loop over all files to read each dataframe into data_list, make some formatting adjustments: 
+
+
+```{r, warning=F}
+for(i in 1:length(file.list)){
+  data_list[[i]]<-read.csv(file.list[i], skip = 1, col.names = c("obs", "date_time", "temp", "x1", "x2", "x3", "x4", "x5")) %>% #read in data files and store as obj in list; rename columns
+ select(2, 3)%>% #select second and third cols
+ rename("date_tm_char" = 1, "temp_c" = 2)%>% #rename first column "date_tm_char", second column "temp_c" 
+ mutate(
+ time_chr = substr(date_tm_char, 10, nchar(date_tm_char)), #Extract time (to avoid extra "/" in some files)
+ date_chr = substr(date_tm_char, 1, 8), #Extract date (to avoid extra "/" in some files)
+  date_tm = round_date(mdy_hms(paste(date_chr, time_chr, sep = " ")), unit = "hours"), #re-combine date and time; convert to R time format rounded to nearest hour     
+ site = substr(file.list[i], 37, (nchar(file.list[i])-8)),  #make new column w/site ID  with substring function to select the site name portion of the filepath
+ temp_c = as.numeric(temp_c), #recode temp_c as a number
+ year = as.numeric(substr(file.list[i], (nchar(file.list[i])-7), (nchar(file.list[i])-4))) #add year column with substring fxn to pull year out of each file name
+ )%>%
+select(-date_tm_char, -time_chr, -date_chr) #remove unnecessary intermediate cols from date creation
+}
+```
+
+
+Check first and last 6 rows of the first item in the list - should have columns "temp_c", "date_tm" (rounded to nearest hour), ""site", and "year". 
+
+```{r}
+head(data_list[[1]])
+tail(data_list[[1]])
+```
+
+----
+----
+
+## 2. Dealing with pre-deployment and post-clean up measurements: 
+
+**General Approach:**
+
+  1. Rowbind all dataframes in data_list to get one "master" dataframe with columns "temp_c", "date_tm", "site", and "year".  
+  2. Read in a .csv files with the deployment and retrevial dates for each site for each year with columns "year", "site", "deployment_plus1", and "retrevial_minus1". 
+  3. Merge these two dataframes by "site" and "year" to get a new dataframe with columns "site", "year", "temp_c", "date_tm", "deployment_plus1", and "retreviall_minus1"
+  4. Filter each site to remove any observations with date_tm < deployment_plus1 or > retrevial_minus1 (may need to split back into separate dataframes). 
+
+**1. Rowbind all dataframes in data_list: **
+
+```{r}
+full_rbind <- data_list %>%
+  bind_rows()
+
+head(full_rbind)
+tail(full_rbind)
+```
+
+
+**2. Read in a .csv files with the deployment and retrevial dates for each site for each year with columns "year", "site", "deployment_plus1", and "retrevial_minus1".** 
+ (Export from the "Deployment dates" google sheet: https://docs.google.com/spreadsheets/d/1yvyq_zOSwhUTm2_yDDuofD2SFVrExWLZfKlJ-aubgs8/edit?usp=sharing)
+ 
+```{r}
+dep_dates <- read.csv("Temperature/deployment_dates.csv")%>% #read datafile - this is the "Deployment dates" tab of the Deployment dates google sheet updated for the current year and saved as a .csv file
+  mutate(deployment_plus1 = mdy(deployment_plus1), #re-code deployment_plus1 as a date
+         retrieval_minus1 = mdy(retrieval_minus1), #re-code retrieval_minus1 as a date
+         year = as.numeric(year) #recode year as numeric
+           )
+```
+
+**3. Merge these two dataframes by "site" and "year" to get a new dataframe with columns "site", "year", "temp_c", "date_tm", "deployment_plus1", and "retreviall_minus1"**
+
+```{r}
+full_dep <- merge(full_rbind, dep_dates, all.x = T) #merge, keep all rows in full_rbind
+
+head(full_dep)
+tail(full_dep)#checking outputs
+```
+
+**4. Filter each site to remove any observations with date_tm < deployment_plus1 or > retrevial_minus1 (may need to split back into separate dataframes).** 
+
+a. Make new column with site and year to split dataframe by: 
+
+```{r}
+full_dep <- full_dep %>%
+  mutate(site_yr = paste(site, year, sep = "_"))%>% #new column with SiteName_year
+  arrange(site_yr, date_tm)
+
+head(full_dep) #Check output
+```
+
+b. Split by site_yr column to get a list of dataframes, one for each year for each site: 
+
+```{r}
+full_dep_split <- split(full_dep, full_dep$site_yr)
+
+head(full_dep_split[[1]]) 
+head(full_dep_split[[10]]) #Checking a few entries to ensure split was carried out correctly
+```
+
+c. Write a function to filter out any columns with date_tm <deployment_plus1 or date_tm > retrieval_minus1:
+
+```{r}
+deployment.fxn <- function(df){
+  df <- df %>% #overwrite with new dataframe
+    filter(!(date_tm < deployment_plus1), #remove any rows where date_tm is < deployment_plus1
+           !(date_tm > retrieval_minus1)) # or > retrieval_minus1
+}
+```
+
+d. Apply this function to the split list to remove pre/post deployment measures for each site and year: 
+
+```{r}
+cleaned_split <- lapply(full_dep_split, deployment.fxn)
+
+head(full_dep_split[[1]])
+head(cleaned_split[[1]])#check beginning
+
+
+tail(full_dep_split[[1]])
+tail(cleaned_split[[1]])# and end of first dataframe to confirm that correct dates were removed
+```
+
+
+
+e. Re-combine split dataframes to get back to cleaned master dataframe: 
+
+```{r}
+clean_rbind <- cleaned_split %>%
+  bind_rows()%>% #re-combine into single DF
+  select(site, year, date_tm, temp_c) #select desired cols
+
+#Check output: 
+
+head(clean_rbind)
+tail(clean_rbind)
+```
+
+### Initial data visualization and checking: 
+
+Line graphs and scatterplots for the entire period of record for each site: 
+
+```{r}
+site.lines <- ggplot(clean_rbind, aes(x = date_tm, y = temp_c, color = site))+
+  geom_line()+
+  facet_wrap(~site, scales = "free")+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(x = "Date", y = "Stream temperature, C")
+site.lines
+site.scatter <- ggplot(clean_rbind, aes(x = date_tm, y = temp_c, color = site))+
+  geom_point(pch = 20, size = 0.1)+
+  facet_wrap(~site, scales = "free")+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(x = "Date", y = "Stream temperature, C")
+site.scatter
+```
+
+Save these plots: 
+
+```{r}
+#Line: 
+ggsave("Temperature/plots/site_line.pdf", plot = site.lines, device = "pdf", dpi = "retina", width = 10, height = 10, units = "in")
+#Point:
+ggsave("Temperature/plots/site_scatter.pdf", plot = site.scatter, device = "pdf", dpi = "retina", width = 10, height = 10, units = "in")
+
+```
+
+
+---
+---
+
+
+## 3. Dealing with outliers, errors, etc. 
+
+### A. Low outliers: Set all values <0 C = 0 C: 
+
+```{r}
+clean_zero <- clean_rbind %>%
+  mutate(temp_c = if_else(temp_c < 0, 0, temp_c))
+```
+
+Check resulting plot to confirm results: 
+
+```{r}
+zero.scatter <- ggplot(clean_zero, aes(x = date_tm, y = temp_c, color = site))+
+  geom_point(pch = 20, size = 0.1)+
+  facet_wrap(~site, scales = "free")+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(x = "Date", y = "Stream temperature, C")
+zero.scatter
+```
+
+###B. Adding missing dates to get rid of connecting lines during periods with no data: 
+
+```{r}
+site_split <- split(clean_zero, clean_zero$site) # split into 17 df's, one for each site
+```
+
+Write function to fill in missing dates & apply to this list: 
+
+```{r}
+fill.date <- function(df){
+  df <- df %>%
+    mutate(date1 = as.Date(date_tm))%>%
+    complete(date1 = seq.Date(from = min(date1), to = max(date1), by = "day"))
+}
+
+site_split_filled <- lapply(site_split, fill.date)
+
+ggplot(site_split_filled$windcave, aes(x = date1, y = temp_c))+
+  geom_line()
+```
+
+Re-combine into single dataframe for further cleaning: 
+
+```{r}
+filled_clean <- site_split_filled %>%
+  bind_rows()
+```
+
+
+### C. Site-by-site data cleaning: 
+
+Sites of concern are: Cloudveil (spike in 2019), Windcave (spike in 2019), closer look at paintbrush to check for possible exposures. 
+
+#### I. Cloudveil: 
+
+First - plot the section in question: 
+
+```{r}
+cloudveil.exposure <- ggplot(filter(filled_clean, site == "cloudveil" & date_tm < "2019-09-28"&date_tm > "2019-09-10") , aes(x = date_tm, y = temp_c)
+                                    )+
+  geom_point()
+cloudveil.exposure
+```
+
+After narrowing down the dates - Logger appears to have been exposed from Sep 11th-27th, 2019 - Removing this period plus one day on either side from the dataset: 
+
+```{r}
+fully_cleaned1 <- filled_clean %>%
+  filter(!(site == "cloudveil" & date_tm < "2019-09-28"&date_tm > "2019-09-10")) #remove rows with site = cloudveil and dates between 9/10-9/28/19
+```
+
+Check the resulting plot: 
+
+```{r}
+cloudveil.cleaned <- ggplot(filter(fully_cleaned1, site == "cloudveil"), aes(x = date_tm, y = temp_c))+
+  geom_point()
+cloudveil.cleaned
+```
+
+Appears to be one additional outlier in summer of 2021 - remove this observation and check result: 
+
+```{r}
+fully_cleaned2 <- fully_cleaned1%>%
+  filter(!(site == "cloudveil"& temp_c >6))
+
+cloudveil.cleaned2 <- ggplot(filter(fully_cleaned2, site == "cloudveil"), aes(x = date_tm, y = temp_c))+
+  geom_point()
+cloudveil.cleaned2
+
+```
+
+Success! On to the next site: 
+
+#### II. Wind Cave: 
+
+Plot the section in question: 
+
+```{r}
+wc.exposure <- ggplot(filter(clean_zero, site == "windcave" & date_tm < "2018-08-01"&date_tm > "2018-06-17") , aes(x = date_tm, y = temp_c)
+                                    )+
+  geom_point()
+wc.exposure
+```
+
+Exposure appears to have started around June 18th, 2018 - removing everything from 6/17-8/1/18: 
+
+```{r}
+fully_cleaned3 <- fully_cleaned2 %>%
+  filter(!(site == "windcave" & date_tm < "2018-08-01"&date_tm > "2018-06-17"))
+```
+
+Check full wind cave plot to see if successful: 
+
+```{r}
+wc.cleaned <- ggplot(filter(fully_cleaned3, site == "windcave"), aes(x = date_tm, y = temp_c))+
+  geom_point()
+wc.cleaned
+```
+
+#### III. Paintbrush: 
+
+
+##### IIIa. Comparison with air temps: 
+
+```{r}
+airtemp <- read.csv("snotel_airtemps.csv")%>% #read in CSV with air temps for Phillips Bench & Grand Targhee
+  mutate(Date = mdy(Date))%>% #re-code date column as date
+  rename(targhee_f = 2, phillips_f = 3)%>% #rename temperature cols
+  mutate(targhee_c = (targhee_f-32)*(5/9), 
+         phillips_c = (as.numeric(phillips_f)-32)*(5/9))%>% #calculate temp in C for each site. 
+  select(Date, targhee_c, phillips_c)
+```
+
+Combine air temp and stream temp data: 
+
+```{r}
+pb <- filter(fully_cleaned3, site == "paintbrush")%>% #select data for paintbrush
+  mutate(Date = ymd(date1))%>% #extract just date w/out time from date_tm col
+  group_by(Date, year)%>% #group by day
+  summarise(stream_temp = mean(temp_c, na.rm = T), 
+            temp_range = (max(temp_c, na.rm = T)-min(temp_c, na.rm = T))) #calculate mean daily temp
+
+pb.air <- merge(pb, airtemp, all = T)%>% #merge with air temps
+  pivot_longer(!c(Date, year, temp_range), names_to = "measure", values_to = "temp_c")%>% #pivot longer for plotting
+  mutate(measure = if_else(measure == "stream_temp", "z_pb_t", measure), 
+         year = year(Date))%>%
+  filter(!year == 2015, !year == 2016)
+```
+
+Compare stream and air temps over entire period of record: 
+
+```{r}
+ggplot(pb.air, aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()
+
+```
+
+
+Examine each year: 
+
+2017:
+
+```{r}
+pb.17 <- ggplot(filter(pb.air, year == 2017 ), aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  theme(legend.position = "none")
+pb.17 
+```
+
+2018: 
+
+```{r}
+pb.18<-ggplot(filter(pb.air, year == 2018 ),  aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  theme(legend.position = "none")
+pb.18
+```
+
+2019: 
+
+```{r}
+pb.19 <- ggplot(filter(pb.air, year == 2019 ),  aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  theme(legend.position = "none")
+pb.19
+```
+
+2020: 
+
+```{r}
+pb.20<- ggplot(filter(pb.air, year == 2020 ),  aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  theme(legend.position = "none")
+pb.20
+```
+
+2021: 
+
+```{r}
+pb.21 <- ggplot(filter(pb.air, year == 2021 ),  aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  theme(legend.position = "bottom")
+pb.21
+```
+
+
+Stack all years and save: 
+
+```{r}
+pb.stack <- pb.17/pb.18/pb.19/pb.20/pb.21
+pb.stack
+```
+
+Save this plot: 
+
+```{r}
+ggsave("Temperature/plots/paintbrush.jpg", plot = pb.stack, device = "jpeg", width = 9, height = 12, dpi = "retina")
+
+```
+
+Substantial periods of overlap between and air temperatures each summer - could be due to exposure or due to losing flow and having logger in stagnant pool... hard to tell. 
+
+##### IIIb. Testing a diel temp change filter
+
+First, need to calculate daily temperature range for each day within each site:
+
+```{r}
+diel_tc <- fully_cleaned3 %>%
+  group_by(site, date1)%>%
+  summarise(t_xbar = mean(temp_c, na.rm = T), 
+            t_min = min(temp_c, na.rm = T), 
+            t_max = max(temp_c, na.rm = T))%>%
+  mutate(t_range= t_max-t_min)%>%
+  complete(date1 = seq.Date(from = min(date1), to = max(date1), by ="day" ))%>%
+  mutate(flag = if_else(t_range >= 10, "X", "OK"), 
+         flag = if_else(is.na(flag), "X", flag))
+```
+
+Plot Paintbrush with color depending on flag
+
+```{r}
+ggplot(filter(diel_tc, site == "paintbrush"), aes(x = date1, y = t_xbar, color = flag))+
+  geom_line()+
+  theme_classic()
+
+```
+
+Does appear to be identifying periods with overlap - how well? Merge with air temps, check visualizations for each year: 
+
+```{r}
+pb_diel <- diel_tc %>%
+  filter(site == "paintbrush")%>%
+  rename(Date = date1)%>%
+  filter(!flag == "X")
+
+pb_diel_air <- merge(pb_diel, airtemp, all = T)%>%
+  pivot_longer(!c(Date, site, t_min, t_max, t_range, flag), names_to = "type", values_to = "temp_c")%>%
+  mutate(year = year(Date))%>%
+  mutate(type = if_else(type == "t_xbar", "z_pb_t", type))%>%
+  filter(!year == 2015,! year == 2016)
+```
+
+Check plot w/out flagged data:
+
+```{r}
+pb.cleaned <- ggplot(pb_diel_air, aes(x = Date, y = temp_c, color = type))+
+  geom_line()+
+  theme_classic()+
+  facet_wrap(~year, nrow = 6, ncol =1, scales = "free")+
+  theme(strip.text = element_blank())+
+  labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
+  scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
+pb.cleaned
+```
+
+Save this plot: 
+
+```{r}
+ggsave("Temperature/plots/paintbrush_cleaned.jpg", plot = pb.cleaned, device = "jpeg", width = 9, height = 12, dpi = "retina")
+```
+
+Comparison to uncleaned: 
+
+```{r}
+pb.uncleaned <- ggplot(pb.air, aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  facet_wrap(~year, nrow = 6, ncol =1, scales = "free")+
+  theme(strip.text = element_blank())+
+  labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
+  scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
+pb.uncleaned
+```
+
+Save:
+
+```{r}
+ggsave("Temperature/plots/paintbrush_uncleaned.jpg", plot = pb.uncleaned, device = "jpeg", width = 9, height = 12, dpi = "retina")
+```
+
+
+Comparing 10, 13, 15, and no filter (above):
+
+Remove if TD >=10: 
+
+```{r}
+pb_10 <- pb.air%>%
+  mutate(temp_c = ifelse(temp_range >= 10&measure == "z_pb_t", NA, temp_c))
+
+
+pb.10 <- ggplot(pb_10, aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  facet_wrap(~year, nrow = 6, ncol =1, scales = "free")+
+  theme(strip.text = element_blank())+
+  labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
+  scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
+pb.10
+```
+
+
+Remove if TD >=13: 
+
+```{r}
+pb_13 <- pb.air%>%
+  mutate(temp_c = ifelse(temp_range >= 13&measure == "z_pb_t", NA, temp_c))
+
+
+pb.13 <- ggplot(pb_13, aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  facet_wrap(~year, nrow = 6, ncol =1, scales = "free")+
+  theme(strip.text = element_blank())+
+  labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
+  scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
+pb.13
+```
+
+Remove if TD >=15: 
+
+```{r}
+pb_15 <- pb.air%>%
+  mutate(temp_c = ifelse(temp_range >= 15&measure == "z_pb_t", NA, temp_c))
+
+
+pb.15 <- ggplot(pb_15, aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  facet_wrap(~year, nrow = 6, ncol =1, scales = "free")+
+  theme(strip.text = element_blank())+
+  labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
+  scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
+pb.15
+```
+
+Save these plots: 
+
+```{r}
+ggsave("Temperature/plots/paintbrush_10.jpg", plot = pb.10, device = "jpeg", width = 9, height = 12, dpi = "retina")
+ggsave("Temperature/plots/paintbrush_13.jpg", plot = pb.13, device = "jpeg", width = 9, height = 12, dpi = "retina")
+ggsave("Temperature/plots/paintbrush_15.jpg", plot = pb.15, device = "jpeg", width = 9, height = 12, dpi = "retina")
+```
+
+
+##### IIIc. Manual cleaning for periods with overlap: 
+##### (Method used for final dataset)
+
+First step: Identify years and times that appear to have significant overlap: 
+
+```{r}
+pb.uncleaned
+```
+
+Based on this plot, problem areas appear to be:
+
+  - Aug-Oct 2018
+  - Sep-Oct 2019
+  - Aug-Oct 2020
+  - Aug-Oct 2021
+  
+(2017 & 2022 look ok)
+
+Cleaning year-by year - General approach: 
+
+  1. Create plot of the problem area - Looking for:
+    a. Overlap - stream temp about the same as air temp AND
+    b. Trend - stream temp following the same trends at the same magnitudes as air temps. 
+  2. Adjust the date range on the plot to identify the last day without overlap and first day after overlap ends
+  3. Create a new object with the range of problem dates for cleaning
+
+**2018**
+
+Plot:
+
+```{r}
+ggplot(filter(pb.air, Date >= "2018-08-20" & Date <= "2018-10-14"), aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
+  scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
+```
+
+Problem period is **8/21-10/13/18**. Save these dates for later: 
+
+```{r}
+exposure.18 <- seq.Date(from = as.Date("2018-08-21"), to = as.Date("2018-10-13"), by = "day")
+```
+
+**2019**
+
+Plot:
+
+```{r}
+ggplot(filter(pb.air, Date >= "2019-08-23" & Date <= "2019-10-02"), aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
+  scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
+```
+
+Problem period is **08-23 to 10-02**. Save these dates for later: 
+
+```{r}
+exposure.19 <- seq.Date(from = as.Date("2019-08-23"), to = as.Date("2019-10-02"), by = "day")
+```
+
+**2020**
+
+Plot:
+
+```{r}
+ggplot(filter(pb.air, Date >= "2020-08-28" & Date <= "2020-10-11"), aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
+  scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
+```
+
+Problem period is **08-28 to 10-11**. Save these dates for later: 
+
+```{r}
+exposure.20 <- seq.Date(from = as.Date("2020-08-28"), to = as.Date("2020-10-11"), by = "day")
+```
+
+**2021**
+
+Plot:
+
+```{r}
+ggplot(filter(pb.air, Date >= "2021-08-05" & Date <= "2021-10-09"), aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
+  scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
+```
+
+Problem period is **08-05 to 10-09**. Save these dates for later: 
+
+```{r}
+exposure.21 <- seq.Date(from = as.Date("2021-08-05"), to = as.Date("2021-10-09"), by = "day")
+```
+
+**Removing these date ranges from the paintbrush data in the complete dataset:**
+
+```{r}
+fully_cleaned4 <- fully_cleaned3 %>%
+  filter(!(site == "paintbrush"&date1>=min(exposure.18)&date1<=max(exposure.18)), 
+         !(site == "paintbrush"&date1>=min(exposure.19)&date1<=max(exposure.19)),
+         !(site == "paintbrush"&date1>=min(exposure.20)&date1<=max(exposure.20)),
+         !(site == "paintbrush"&date1>=min(exposure.21)&date1<=max(exposure.21))
+         )
+```
+
+Check resulting plot: 
+
+```{r}
+ggplot(filter(fully_cleaned4, site == "paintbrush"), aes(x = date1, y = temp_c))+
+  geom_point()+
+  theme_classic()
+
+```
+
+Appears to have successfully removed the desired sections from each year - use this file (fully_cleaned4) for future calculations and analysis.
+
+### D. Some Final Cleaning/organizing for optimal plotting: 
+
+Re-filling missing date ranges after cleaning:
+
+```{r}
+full_clean_split <- split(fully_cleaned4, fully_cleaned4$site) # split into 17 df's, one for each site
+```
+
+Apply previously constructed function to this list to re-fill dates: 
+
+```{r}
+full_clean_filled_split <- lapply(full_clean_split, fill.date) #apply function
+
+ggplot(full_clean_filled_split$windcave, aes(x = date1, y = temp_c))+ #check windcave to see if successful
+  geom_line()
+```
+
+Re-combine into single dataframe for further cleaning: 
+
+```{r}
+temps_final <- full_clean_filled_split %>%
+  bind_rows(.id = "site")
+```
+
+Check if successful after rowbind:
+
+```{r}
+ggplot(filter(temps_final, site == "windcave"), aes(x = date1, y = temp_c))+
+  geom_line()
+```
+
+
+---
+---
+
+## 4. Final data visualization using cleaned temperature data; data export for future analysis: 
+
+```{r}
+cleaned.lines <- ggplot(filter(temps_final, !site == "death_canyon"), aes(x = date1, y = temp_c, color = site))+
+  geom_line()+
+  facet_wrap(~site, scales = "free")+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(x = "Date", y = "Stream temperature, C")
+cleaned.lines
+```
+
+```{r}
+#Line: 
+ggsave("Temperature/plots/cleaned_line.pdf", plot = cleaned.lines, device = "pdf", dpi = "retina", width = 10, height = 10, units = "in")
+```
+
+**Data Export - both full hourly data and daily mean/min/max data**:
+
+Hourly data:
+
+```{r}
+write.csv(temps_final, "Temperature/cleaned_full_datasets/temps_hourly.csv")
+```
+
+Daily mean, min, and max temps: 
+
+```{r}
+temp_avgs <- temps_final%>%
+  group_by(site, date1)%>%
+  summarise(temp_xbar = mean(temp_c), 
+         temp_max = max(temp_c), 
+         temp_min = min(temp_c))
+
+write.csv(temp_avgs, "Temperature/cleaned_full_datasets/temps_daily.csv")
+```
+  
+---
+---

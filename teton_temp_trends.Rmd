@@ -1,0 +1,380 @@
+---
+title: "Teton Temperature Trends"
+author: "Gordon Gianniny"
+date: "2023-02-21"
+output: html_document
+---
+
+```{r, echo=FALSE}
+#Loading Packages
+library(tidyverse) #For data wrangling
+library(lubridate) #For working with dates
+library(ggplot2) #Plotting
+library(RColorBrewer)
+library(patchwork)
+library(corrplot)
+library(broom)
+```
+
+
+## Overview
+
+This script goes contains different analyses testing for trends in stream temperature in the Teton range. It includes the following analyses: 
+
+  1. Using previously cleaned (by Scott) data - basic lm's testing the effects of year, air temp, snow pack on average summer (July-August) temperature (designed after the "real time warming..." paper from the Alps). 
+  
+
+
+
+## 1. lm's using previously cleaned data:
+
+### A. Data Import and Cleaning
+
+Read in datafiles
+
+```{r}
+ak_basin <- read.csv("Temperature/cleaned_csv/ak_basin_south.csv")
+middle_teton <- read.csv("Temperature/cleaned_csv/middle_teton.csv")
+n_teton <- read.csv("Temperature/cleaned_csv/n_fork_teton.csv")
+paintbrush <- read.csv("Temperature/cleaned_csv/paintbrush.csv")
+s_cascade <- read.csv("Temperature/cleaned_csv/s_cascade.csv")
+wind_cave <- read.csv("Temperature/cleaned_csv/wind_cave.csv")
+```
+
+Re-format data: 
+
+```{r}
+#AK Basin:
+
+ak_basin_pivot <- ak_basin %>%
+ select(Date, temp_2015:temp_2022)%>% #remove unnecessary cols
+  pivot_longer(!c(Date), names_to = "meas_date", values_to = "ak_basin_temp")%>% #pivot longer - make new columns for year and temp, one row for each date for each year
+  mutate(year = substr(meas_date,6, 9), #remove "temp_" at beginning of each year to get year column
+         dmy_date = paste(Date, year, sep = "-"), #create intermediate date column with year, month, and day
+         date_final = as.Date(dmy_date, format = "%d-%b-%Y") #convert intermediate to new date column with as.Date
+         )%>% 
+  select(-meas_date, -dmy_date, -Date)#%>% #remove intermediate/redundant date columns
+  #filter(!is.na(date_final)) #remove extra rows with no date
+
+#Middle Teton
+
+middle_teton_pivot <- middle_teton %>%
+  select(Date, temp_2015:temp_2022)%>% #remove unnecessary cols
+  pivot_longer(!c(Date), names_to = "meas_date", values_to = "mid_teton_temp")%>% #pivot longer - make new columns for year and temp, one row for each date for each year
+  mutate(year = substr(meas_date,6, 9), #remove "temp_" at beginning of each year to get year column
+         dmy_date = paste(Date, year, sep = "-"), #create intermediate date column with year, month, and day
+         date_final = as.Date(dmy_date, format = "%d-%b-%Y") #convert intermediate to new date column with as.Date
+         )%>% 
+  select(-meas_date, -dmy_date, -Date)%>% #remove intermediate/redundant date columns
+  filter(!is.na(date_final)) #remove extra rows with no date
+
+# N Teton
+
+n_teton_pivot <- n_teton %>%
+  select(Date, temp_2015:temp_2022)%>% #remove unnecessary cols
+  pivot_longer(!c(Date), names_to = "meas_date", values_to = "n_teton_temp")%>% #pivot longer - make new columns for year and temp, one row for each date for each year
+  mutate(year = substr(meas_date,6, 9), 
+         dmy_date = paste(Date, year, sep = "-"), 
+         date_final = as.Date(dmy_date, format = "%d-%b-%Y")
+         )%>% #remove "temp_" at beginning of each year
+  select(-meas_date, -dmy_date, -Date)%>%
+  filter(!is.na(date_final)) #remove extra rows with no date
+
+# Paintbrush
+
+paintbrush_pivot <- paintbrush %>%
+ select(Date, temp_2015:temp_2022)%>% #remove unnecessary cols
+  pivot_longer(!c(Date), names_to = "meas_date", values_to = "paintbrush_temp")%>% #pivot longer - make new columns for year and temp, one row for each date for each year
+  mutate(year = substr(meas_date,6, 9), 
+         dmy_date = paste(Date, year, sep = "-"), 
+         date_final = as.Date(dmy_date, format = "%d-%b-%Y")
+         )%>% #remove "temp_" at beginning of each year
+  select(-meas_date, -dmy_date, -Date)%>%
+  filter(!is.na(date_final)) #remove extra rows with no date
+
+# S cascade:
+
+s_cascade_pivot <- s_cascade  %>%
+  select(Date, temp_2015:temp_2022)%>% #remove unnecessary cols
+  pivot_longer(!c(Date), names_to = "meas_date", values_to = "s_cascade_temp")%>% #pivot longer - make new columns for year and temp, one row for each date for each year
+  mutate(year = substr(meas_date,6, 9), 
+         dmy_date = paste(Date, year, sep = "-"), 
+         date_final = as.Date(dmy_date, format = "%d-%b-%Y")
+         )%>% #remove "temp_" at beginning of each year
+  select(-meas_date, -dmy_date, -Date)%>%
+  filter(!is.na(date_final)) #remove extra rows with no date
+
+# Wind Cave: 
+
+wind_cave_pivot <- wind_cave %>%
+  select(Date, Year, Temp)%>%
+  rename(year = Year, windcave_temp = Temp)%>%
+  mutate(dmy_date = paste(Date, year, sep = "-"), 
+         date_final = as.Date(dmy_date, format = "%d-%b-%Y"), 
+         )%>%
+  select(-dmy_date, -Date)%>%
+  arrange(date_final)
+
+```
+
+
+Combine into master dataframe: 
+
+```{r}
+teton_temps <- merge(middle_teton_pivot, ak_basin_pivot)%>% 
+  merge(n_teton_pivot)%>%
+  merge(paintbrush_pivot)%>%
+  merge(s_cascade_pivot)%>%
+  merge(wind_cave_pivot, all.x = T) # Merge all 6 sites; all.x command for final merge keeps all 752 obs for each year. 
+```
+
+Calculate Mean summer (July-Aug, based on "real time warming" paper) temperature for each year by site; reformat for easier plotting: 
+
+```{r}
+mean_temps <- teton_temps %>%
+  mutate(month = month(date_final))%>% #creating month column
+  filter(month == 7|month == 8)%>% #filtering for ONLY July and August 
+  group_by(year)%>% #group by year
+  summarise(
+    mid_teton_xbar = mean(mid_teton_temp, na.rm = T), 
+    ak_basin_xbar = mean(ak_basin_temp, na.rm = T), 
+    n_teton_xbar = mean(n_teton_temp, na.rm = T), 
+    paintbrush_xbar = mean(paintbrush_temp, na.rm = T), 
+    s_cascade_xbar = mean(s_cascade_temp, na.rm = T), 
+    windcave_xbar = mean(windcave_temp, na.rm = T) #calculate average summer temp for each year, removing missing obs.
+  )%>%
+  pivot_longer(!year, names_to = "site", values_to = "mean_temp")%>% #pivot longer to get one column for site, one for mean temp, one row for each year
+  mutate(year = as.numeric(year)) #recode year column as number instead of character
+```
+
+Initial data exploration - plotting: 
+
+```{r, message=F, warning=F}
+temp.line <- ggplot(mean_temps, aes(x = year, y = mean_temp, color = site))+
+  geom_point()+
+  geom_smooth(se = F, method = "lm")+
+  theme_classic()+
+  labs(x = "Year", y = "Mean summer temperature, C", color = "Site Name")+
+  scale_color_manual(values = brewer.pal(6, "Dark2"), labels = c("AK Basin", "Middle Teton", "N Teton", "Paintbrush", "S Cascade", "Wind Cave"))
+temp.line
+```
+
+### B. Testing a linear model for the effects of year within each site: 
+
+First, nest data based on site: 
+
+```{r}
+temps_nested <- mean_temps %>%
+  nest(data = -site) #create new nested dataframe with one column for site, one column for data - data entries for each site include year and mean temp. 
+```
+
+Next, run a model for each site separately and return a summary table with the results for each site:
+
+```{r}
+temp_models <- temps_nested %>%
+  mutate(model = map(data, ~lm(mean_temp~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "year")  #remove intercept term to just get info on year for each site
+temp_models
+```
+
+Results: No siginificant trends in any site; non-significant (-) trends in AK basin, N Teton, Paintbrush, and S Cascade; non-significant positive trends in Mid Teton and Wind Cave - makes sense with the model visualization: 
+
+```{r, message = F, warning=F, echo=F}
+temp.line
+```
+
+### C. Testing a linear model that includes year, snow pack metrics, and air temperature metrics
+
+#### i. Data import and re-formatting:
+
+First, read in the data: Data from the Phillips Bench and Grand Targhee SNOTEL sites is in "teton_snotel.csv" in the teton_trends project directory (downloaded from the NRCS report generator and edited to remove headers, rename columns in Excel for easier import). This file has: 
+
+  * Snow-water equivalent (cm)
+  * Snow depth (cm)
+  * Air temperature (C)
+  
+For April 1st 2015 - March 1st 2023 for both sites. On average, peak snowpack for the Tetons is around April 1st (based on graphic from https://www.tetonconservation.org/snowpack-information ), so will try using April 1st SWE and snow depth as predictor variables. 
+
+Data import and some re-formatting: 
+
+```{r}
+snotel <- read.csv("teton_snotel.csv")%>% #read in file
+  mutate(date = as.Date(date, format = "%m/%d/%y"), #re-code date column as R date obj
+         airtemp_c = as.numeric(airtemp_c), #recode air temperature as numeric
+         snowdepth_cm = as.numeric(snowdepth_cm)) 
+```
+
+Next, calculate average of both sites by grouping by date, calculating overall means: 
+
+```{r}
+snotel_xbars <- snotel %>%
+  group_by(date)%>% # group by date
+  summarise(swe_xbar  = mean(swe_cm, na.rm = T), 
+            snowdepth_xbar = mean(snowdepth_cm, na.rm = T),
+            airtemp_xbar = mean(airtemp_c, na.rm = T))%>% #calculate means across both sites for each date
+ mutate(year = year(date), 
+        month = month(date), 
+        day = day(date)) #add columns with year, month, and day
+```
+
+End goal = data frame with year, mean summer (July-Aug) air temp, April 1st SWE and April 1st snow depth. Two steps: 
+
+  a. Get April 1st SWE and snow depth for each year: 
+
+```{r}
+snow <- snotel_xbars %>%
+  filter(month == 4 & day == 1)%>% #filter out observations for april 1st of each year
+  select(year, swe_xbar, snowdepth_xbar)%>% #select year, swe, and snow depth measurements; drop other cols
+  rename(swe_apr1 = swe_xbar, snowdepth_apr1 = snowdepth_xbar) #rename swe and snowdepth cols 
+```
+
+  b. Calculate mean summer air temp for each year: 
+  
+```{r}
+air <- snotel_xbars %>%
+  filter(month == 7 | month == 8) %>% #filter for just July and August 
+  group_by(year) %>% #group by year
+  summarise(summertemp_xbar = mean(airtemp_xbar))%>% #calculate mean summer air temp
+  select(year, summertemp_xbar) #select year and summer temp for easier merge
+```
+
+  c. Merge these to get final snotel data, then merge that dataframe with the mean summer stream temps calculated above: 
+  
+```{r}
+snotel_final <- merge(snow, air) # merge snowpack and air temp info
+
+summer_complete <- merge(mean_temps, snotel_final) #add snowpack and temp info to mean_temps dataframe
+```
+
+#### ii. On to modeling: 
+
+First pass: what are the visual relationships between stream temperature and SWE, Snow Depth, and summer air temp? What are the trends in these variables over time? 
+
+```{r, message = F, warning=F}
+stream.swe <- ggplot(summer_complete, aes(x = swe_apr1, y = mean_temp, color = site))+
+  geom_point()+
+  geom_smooth(se = F, method = "lm")+
+  theme_classic()+
+  labs(x = "April 1st SWE, cm", y = "Mean summer stream temperature, C", color = "Site Name")+
+  scale_color_manual(values = brewer.pal(6, "Dark2"), labels = c("AK Basin", "Middle Teton", "N Teton", "Paintbrush", "S Cascade", "Wind Cave"))
+stream.swe
+
+stream.sd <- ggplot(summer_complete, aes(x = snowdepth_apr1, y = mean_temp, color = site))+
+  geom_point()+
+  geom_smooth(se = F, method = "lm")+
+  theme_classic()+
+  labs(x = "April 1st Snow Depth, cm", y = "Mean summer stream temperature, C", color = "Site Name")+
+  scale_color_manual(values = brewer.pal(6, "Dark2"), labels = c("AK Basin", "Middle Teton", "N Teton", "Paintbrush", "S Cascade", "Wind Cave"))
+stream.sd
+
+stream.air <- ggplot(summer_complete, aes(x = summertemp_xbar, y = mean_temp, color = site))+
+  geom_point()+
+  geom_smooth(se = F, method = "lm")+
+  theme_classic()+
+  labs(x = "Mean July-Aug. Air temp, C", y = "Mean summer stream temperature, C", color = "Site Name")+
+  scale_color_manual(values = brewer.pal(6, "Dark2"), labels = c("AK Basin", "Middle Teton", "N Teton", "Paintbrush", "S Cascade", "Wind Cave"))
+stream.air
+```
+
+First pass: looks like there may be a fairly strong (-) correlation between April 1st SWE/Snow depth and stream temp at N teton and Paintbrush, but probably not in other sites.
+
+Modeling using same approach as above: 
+
+Checking for collinearity in predictor variables: 
+
+```{r}
+covariates <- summer_complete %>%
+  select(summertemp_xbar, swe_apr1, snowdepth_apr1) # New dataframe with just covariates of interest
+
+M <- cor(covariates) #calculate correlation matrix with the "cor" function (stats package)
+
+corrplot(M, method = "number") #plot the correlation matrix with the corrplot package
+```
+
+Strong correlation between snow depth and swe (no surprise), so can only include one at a time. 
+
+
+**Modeling**:
+
+First, nest data based on site: 
+
+```{r}
+summer_nested <- summer_complete %>%
+  nest(data = -site) #create new nested dataframe with one column for site, one column for data - data entries for each site include year and mean temp. 
+```
+
+Next, run a model for each site separately and return a summary table with the results for each site:
+
+```{r}
+summer_models <- summer_nested %>%
+  mutate(model = map(data, ~lm(mean_temp~swe_apr1+summertemp_xbar, data = .)%>% #run a model of temp~swe and summer temp for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "swe_apr1"|term == "summertemp_xbar")  #remove intercept term to just get info on swe and summer temp for each site
+summer_models
+```
+
+Marginally significant negative correlation between APR 1st SWE and mean summer temperature at Paintbrush (p = 0.09), not at any other sites; no significant correlations between summer air temp and summer stream temp. 
+
+#### iii. Tangent - any trends in snow depth, swe, or summer air temp between 2015-2022? 
+
+Plots: 
+
+```{r, message = F, warning=F}
+swe.time <- ggplot(snotel_final, aes(x = year, y = swe_apr1))+
+  geom_point()+
+  geom_smooth(se = F, method = "lm")+
+  theme_classic()+
+  labs(x = "Year", y = "April 1st SWE, cm")
+swe.time
+
+sd.time <- ggplot(snotel_final, aes(x = year, y = snowdepth_apr1))+
+  geom_point()+
+  geom_smooth(se = F, method = "lm")+
+  theme_classic()+
+  labs(x = "Year", y = "April 1st Snow Depth, cm")
+sd.time
+
+air.time <- ggplot(snotel_final, aes(x = year , y = summertemp_xbar))+
+  geom_point()+
+  geom_smooth(se = F, method = "lm")+
+  theme_classic()+
+  labs(x = "Year", y = "Mean July-Aug. Air temp, C")
+air.time
+```
+
+Looks like there could be a significant increase in air temp, weak decreases in snowpack, but nothing obvious. 
+
+Models: 
+
+**a. SWE:** 
+
+```{r}
+swe.lm <- lm(swe_apr1 ~ year, data = snotel_final)
+summary(swe.lm)
+```
+
+No trend in April 1st SWE
+
+**b. Snow depth:** 
+
+```{r}
+sd.lm <- lm(snowdepth_apr1 ~ year, data = snotel_final)
+summary(sd.lm)
+```
+
+No trend in snow depth. 
+
+**c. Summer air temp:** 
+
+```{r}
+air.lm <- lm(summertemp_xbar ~ year, data = snotel_final)
+summary(air.lm)
+```
+
+Significant (+) trend in air temp between 2015-2022 - warming of +0.26 degrees/year. Interesting that increased summer air temp didn't result in increased summer stream temp... 
+
+
+

@@ -1,0 +1,339 @@
+---
+title: "Invert Data Cleaning"
+author: "Gordon Gianniny"
+date: "2023-04-21"
+output: html_document
+---
+
+```{r, echo=FALSE}
+#Loading Packages
+library(tidyverse) #For data wrangling
+library(lubridate) #For working with dates
+library(ggplot2) #Plotting
+library(RColorBrewer)
+library(patchwork)
+library(stringr)
+library(vegan)
+```
+
+## Overview
+
+This script cleans and visualizes Invert data from the TASR monitoring project using data from 2015-2021. The end goal is to re-produce a non-metric multidimensional scaling (MDS) plot similar to the one in Tronstad et al. 2020. To re-create that plot, the first step is to calculate **Average density across replicates/fractions for each taxon and year** for each site. 
+
+Currently, data is in two different formats: 
+
+  a. 2015-2018 - "cleaned" format has columns: stream, name, type, site, year, date, area, fraction (large or small), Sampler, NoSurber, Rep (1, 2, or 3), Taxa, Biomass, Abundance, and Density. 
+  
+  b. 2019-2021 - "raw" data has columns: park, sampler, stream, date, rep (1, 2, or 3), fraction (large or small), Taxa, L1:L20 (# of L columns varies), MeanLength(mm), IndBiomass(mg_ind), Subsample, Abundance, Density, Biomass(mg/m2), stage, and Notes. (some years also have "W1...W*n*" columns) 
+
+A few additional notes: 
+  - Both Upper and Lower sites exist for 2015 - this script ONLY uses data from the Upper sites. 
+  - Adult taxa (noted in the "stage" column) will be removed before calculating densities. 
+
+**In both cases, cleaning steps will be to: **
+
+1. Read in raw data files
+2. Remove Adults (stage == "adult")
+3. Simplify data structure by selecting necessary columns for calculating density per site per year (site, year, taxon, and density)
+4. Calculate density per site per year
+5. Combine all density calculations into a "master" dataframe for N-MDS plotting and additional analyses. 
+
+## Data Cleaning
+
+**NOTE** - This script will only run if ALL input files have columns "Stream", "Year", "Taxa", "Abundance", "Density", and "Stage" (at a minimum - other columns don't need to be the same). If one of these columns is missing, add a blank column with the appropriate name to the .csv file in Excel. For The 2019-2021 files, I manually added a "Year" column with the corresponding year to each file in Excel. If one of these columns has a different name (e.g. Density(ind/m2) instead of Density), rename the column in the .csv file BEFORE running the script. 
+
+### 1. Read in, simplify, and combine data:
+
+First, make a list of all file names: 
+
+```{r}
+invert_files <- list.files("invert_data/raw_data/csv", full.names = T)
+```
+
+Initiate empty list for data import: 
+
+```{r}
+invert_list <- list()
+```
+
+Read in and clean data files as outlined above using a for loop: NOTE - not going to calculate mean density/total abundance yet b/c of inconsistent stream names between different years. 
+
+```{r}
+for(i in 1:length(invert_files)){
+  invert_list[[i]]<-read.csv(invert_files[[i]])%>% #store first .csv in file name list as first data frame in invert_list
+   filter(!(Stage == "adult"| Stage == "Adult"))%>% #1. Remove any observations where "Stage" = adult OR Adult
+    select(Stream, Year, Taxa, Density, Abundance) #2. Select desired columns: stream, year, taxa, and density
+}
+
+```
+
+Combine all density calculations into a "master" dataframe for N-MDS plotting + additional analysis: 
+
+```{r}
+invert_rbind <- invert_list %>%
+  bind_rows()%>%
+  arrange(Stream, Year)
+```
+
+### 2. Deal with inconsistencies in Site & Taxa naming
+
+Checking for inconsistent site names: 
+
+```{r}
+unique(invert_rbind$Stream)
+```
+
+Lots of inconsistency in site naming, plus some rows with no site name. Next steps: delete rows with no site name; standardize other names
+
+Remove rows w/out stream name:
+
+```{r}
+invert_rbind <- invert_rbind%>%
+  filter(!Stream == "")
+```
+
+Standardize stream names: 
+
+```{r}
+invert_rename <- invert_rbind %>%
+  mutate(Stream = case_when( # Using case_when + str_detect (stringr package) to rename all cells that contain a given text string to the specified new value - a little clunky, but effective. 
+    str_detect(Stream, "Delta") ~ "delta", 
+    str_detect(Stream, "Cloudveil") ~ "cloudveil", 
+    str_detect(Stream, "Basin South")|str_detect(Stream, "Icy Seep")|str_detect(Stream, "Basin RG") ~ "s_ak_basin", 
+    str_detect(Stream, "Basin North")~ "n_ak_basin", 
+    str_detect(Stream, "Grizzly")~ "grizzly", 
+    str_detect(Stream, "Mica") ~ "mica", 
+    str_detect(Stream, "North Fork Teton")|str_detect(Stream, "NF Teton")~"n_teton", 
+    str_detect(Stream, "Paintbrush")~"paintbrush", 
+    str_detect(Stream, "Quad")~"quad_cr", 
+    str_detect(Stream, "Silver") ~"silver_run", 
+    str_detect(Stream, "Cascade")~"s_cascade", 
+    str_detect(Stream, "South Fork Teton")|str_detect(Stream, "SF Teton")~"s_teton", 
+    str_detect(Stream, "Froze")~"froze_to_death", 
+    str_detect(Stream, "Middle")~"mid_teton", 
+    str_detect(Stream, "Skillet")~"skillet", 
+    str_detect(Stream, "Gusher")~"gusher", 
+    str_detect(Stream, "Beartooth")~"beartooth_cr", 
+    str_detect(Stream, "Death Rock")~"death_canyon", 
+    str_detect(Stream, "Petersen")~"petersen", 
+    str_detect(Stream, "Wind")~"windcave" 
+  ))
+```
+
+Check the output: 
+
+```{r}
+unique(invert_rename$Stream)
+```
+
+
+Also need to check for different spellings/etc of Taxa names: 
+
+```{r}
+invert_rename1 <- invert_rename %>%
+  mutate(taxa_lwr = tolower(Taxa))%>% #make all lowercase first to get rid of some duplicates w/ different cases
+  mutate(taxa_lwr = str_replace(taxa_lwr, "pupae", ""))%>% #remove "pupae" label from all names
+  mutate(taxa_lwr = str_replace(taxa_lwr, "pupa", ""))%>% #remove "pupa" label from all names
+  filter(!str_detect(taxa_lwr, "adult"))%>% #removing any rows with "adult" in any part of the taxa name
+  arrange(taxa_lwr)
+
+unique(invert_rename1$taxa_lwr) #check unique values
+```
+
+Fixing repeats/spelling errors: 
+
+```{r}
+invert_rename2 <- invert_rename1%>% 
+  mutate(taxa_lwr = ifelse(str_detect(taxa_lwr, "megarcys"), "megarcys", taxa_lwr))%>% 
+  mutate(taxa_lwr = str_replace(taxa_lwr, "chrionomidae", "chironomidae"))%>%
+  mutate(taxa_lwr = str_replace(taxa_lwr, "venma", "vemna"))%>% 
+  mutate(taxa_lwr = str_replace(taxa_lwr, "brannea", "brunnea"))%>%
+  mutate(taxa_lwr = str_replace(taxa_lwr, "homp", "homop"))%>%
+  mutate(taxa_lwr = ifelse(taxa_lwr == "non-tany", "non-tanypodinae", taxa_lwr))%>%
+  mutate(taxa_lwr = str_replace(taxa_lwr, "prosimuliium", "prosimulium"))%>%
+  mutate(taxa_lwr = str_replace(taxa_lwr, "coloradenis", "coloradensis"))%>%
+  mutate(taxa_lwr = str_replace(taxa_lwr, "group", ""))%>% #remove "group" from all names
+  mutate(taxa_lwr = str_replace(taxa_lwr, "sub", "subgroup"))%>% #add "group" back into "subgroup" names
+  mutate(taxa_lwr = str_trim(taxa_lwr, side = "both")) #remove white space from before and after all names
+
+invert_rename2$taxa_lwr[2587] <- "rhyacophila brunnea/vemna" #manually over-writing one cell that wasn't correcting using fxns above for some reasons
+
+
+unique(invert_rename2$taxa_lwr) #checking resulting unique values
+```
+
+
+---
+---
+
+### 3. Calculate average density & total abundance for each taxa/site/yr
+
+
+Now, calculate average density and total abundance for each taxa for each year in each site: 
+
+```{r}
+invert_avgs <- invert_rename2 %>%
+  group_by(Stream, Year, taxa_lwr) %>% # group by taxa w/in year w/in stream
+  summarise(density_xbar = mean(Density), #calculate mean density for each taxa/year/site
+            abundance_total = sum(Abundance))%>% #calculate total abundance for each taxa/yr/site
+  arrange(Stream, Year) #sort by stream & year
+
+```
+
+## Plotting & Analysis
+
+### 1. Making a non-metric MDS site for the long-term sites
+
+First, ID which sites have long records: 
+
+```{r}
+site_lengths <- invert_avgs %>%
+  group_by(Stream)%>%
+  summarise(first = min(Year), 
+            last = max(Year))%>%
+  mutate(monitoring_yrs = last-first)%>%
+  arrange(desc(monitoring_yrs))
+site_lengths
+```
+
+Sites with 5+ years of data are: mid_teton, n_teton, s_cascade, s_teton, windcave, and s_ak_basin. 
+
+Subset data from these sites: 
+
+```{r}
+mds_sites <- invert_avgs %>%
+  filter(Stream == "mid_teton"|Stream == "n_teton"|Stream == "s_cascade"|Stream == "s_teton"|Stream == 
+           "windcave"|Stream == "s_ak_basin")
+```
+
+Goal is to run an NMDS treating each stream+year combo as a unique "site" - will need: 
+  - Columns with stream name and year (for plotting later)
+  - ID column with stream name + year (to use as the "site" identifier in the NMDS)
+  - Columns for each taxa, rows populated with density for that combo of site/year and taxa
+
+#### Data re-organization
+
+Create site + year index column; pivot wider to get columns for each taxa:
+
+```{r}
+invert_alt <- mds_sites%>%
+  mutate(site_yr = paste(Stream, Year, sep = "_"))%>% #add column with site and year
+  dplyr::select(Stream, Year, site_yr, taxa_lwr, density_xbar)%>% #select desired cols
+  pivot_wider(id_cols = c(Stream, Year, site_yr), values_from = density_xbar, names_from = taxa_lwr)%>% #pivot wider to create columns for each taxa populated w/ density for the corresponding year+stream combo 
+   dplyr::mutate_if(is.numeric, ~replace_na(., 0)) #replace all NA values with "0"
+```
+
+
+Next, want to select subset of taxa to be used in NMDS calculations. For now, going with the **15 most common species across all sites** (calculated as highest mean density across all sites):
+
+```{r}
+d.means <-sort(colMeans(invert_alt[4:ncol(invert_alt)])) #calculate mean density for each taxa across all sites and years
+to.select<-names(d.means[(length(d.means)-14):(length(d.means))]) #create vector of names of 15 most common taxa (i.e the last 15 in the sorted d.means list)
+
+invert_subset <- invert_alt %>%
+  dplyr::select(Stream, Year, site_yr, all_of(to.select)) #select ID columns plus all taxa in the "to.select" list
+```
+
+#### Run NMDS:
+
+Run the NMDS using the metaMDS fuction (vegan pkg):
+
+```{r}
+set.seed(1) #for reproducability
+full.mds <- metaMDS(comm = invert_subset[,4:18], #specify community as columns 4-18
+                    distance = "bray") #use bray-curtis distance calc
+full.mds
+```
+
+#### NMDS Plotting:
+
+Data set-up: extract point locations for plot creation:
+
+```{r}
+mds_scores <- as.data.frame(scores(full.mds)$site)%>% #extract point locations for each site (stream*year combo)
+  mutate(stream = invert_subset$Stream,  
+         year = invert_subset$Year,
+         stream_yr = invert_subset$site_yr)%>%#add columns for stream, year, and combo of stream_yr
+  mutate(stream_code = case_when(
+    stream == "mid_teton"~"MT", stream == "n_teton" ~"NT", stream == "s_ak_basin"~"AK", stream == "s_cascade"~"SC", stream == 
+      "s_teton" ~ "ST", stream == "windcave" ~ "WC"
+  )) #Add "stream_code" column for point labeling
+
+mds_species <- as.data.frame(scores(full.mds)$species)%>% #Extract point locations for each species
+  rownames_to_column(var = "species") #convert rownames to a column w/species names
+```
+
+Create plots:
+
+*first pass: putting everything on one plot:*
+
+```{r}
+nmds.single <- ggplot(mds_scores)+
+  geom_point(data = mds_species, aes(x = NMDS1, y = NMDS2), alpha = 0.5, size = 1)+ #add points for each species, adjust opacity & size
+  geom_text(data = mds_species, aes(x = NMDS1, y = NMDS2, label = species), #add labels to each taxa point
+            size = 3, color = "Grey", hjust = 0.5, vjust = -0.5, fontface = "italic")+ #adjusting size, color, position, and face of taxa labels
+  geom_point(data = mds_scores, aes(x = NMDS1, y = NMDS2, color = stream, shape = as.factor(year)), size = 3)+ #add points for each site (stream+year combo); color code by stream, different shapes for different years. 
+  geom_text(data = mds_scores, aes(x = NMDS1, y = NMDS2, label = stream_code), #add stream code labels to each site point
+            hjust = 0, vjust = -1, fontface = "bold")+ #adjusting position and face of stream code labels
+  annotate(geom = "text", x = -1.1, y = 0.9, size = 4, fontface = "italic", label = paste("Stress: ", round(full.mds$stress, digits = 3)))+ #adding label to plot with stress score from model
+  theme_classic()+ 
+  theme(legend.position = "right")+
+  labs(color = "Stream", shape = "Year")+
+  scale_color_manual(values = brewer.pal(7, "Dark2")
+                     , labels = c("Middle Teton", "North Teton","AK Basin S", "South Cascade", "South Teton", "Wind Cave")
+                     )+ #adjusting color palatte and labels
+  scale_shape_manual(values = c(15, 16, 17, 3, 4, 18, 6, 7)) #setting shape palatte
+nmds.single
+```
+
+```{r}
+ggsave("invert_data/plots/nmds_single.jpg", nmds.single, device = "jpeg", width = 6.5, height = 5, units = "in", dpi = "retina")
+```
+
+
+*Seperating into facets for each site*
+
+```{r}
+nmds.facet <- ggplot(mds_scores)+
+  geom_point(data = mds_species, aes(x = NMDS1, y = NMDS2), alpha = 0.5, size = 1)+
+  geom_text(data = mds_species, aes(x = NMDS1, y = NMDS2, label = species), size = 3, color = "Grey", hjust = 0.5, vjust = -0.5, fontface = "italic")+
+  geom_point(data = mds_scores, aes(x = NMDS1, y = NMDS2, color = as.factor(year)), size = 3)+
+  theme_classic()+
+  facet_wrap(~stream)+
+  theme(legend.position = "bottom", 
+        plot.tag.position = c(0.1, 0.1), 
+        plot.tag = element_text(size = 10, face = "italic"))+
+  labs(color = "Year", tag = paste("Stress: ", round(full.mds$stress, digits = 3)))+
+  scale_color_manual(values = brewer.pal(7, "Blues"))
+nmds.facet
+```
+
+```{r}
+ggsave("invert_data/plots/nmds_facet.jpg", nmds.facet, device = "jpeg", width = 6.5, height = 5, units = "in", dpi = "retina")
+```
+
+*Just plotting first and last year for each site*
+
+```{r}
+nmds.simple <- ggplot(filter(mds_scores, year == 2016|year == 2021))+ #filtering data to only include 2016 & 2021
+  geom_point(data = mds_species, aes(x = NMDS1, y = NMDS2), alpha = 0.5, size = 1)+
+  geom_text(data = mds_species, aes(x = NMDS1, y = NMDS2, label = species), size = 3, color = "Grey", hjust = 0.5, vjust = -0.5, fontface = "italic")+
+  geom_point(data = filter(mds_scores, year == 2016|year == 2021), aes(x = NMDS1, y = NMDS2, color = stream, shape = as.factor(year)), size = 3)+
+  geom_text(data = filter(mds_scores, year == 2016|year == 2021), aes(x = NMDS1, y = NMDS2, label = stream_code), hjust = -0.3, vjust = 0.1, fontface = "bold")+
+  annotate(geom = "text", x = -0.7, y = 0.9, size = 4, fontface = "italic", label = paste("Stress: ", round(full.mds$stress, digits = 3)))+
+  theme_classic()+
+  theme(legend.position = "right")+
+  labs(color = "Stream", shape = "Year")+
+  scale_color_manual(values = brewer.pal(7, "Dark2")
+                     , labels = c("Middle Teton", "North Teton","AK Basin S", "South Cascade", "South Teton", "Wind Cave")
+                     )+
+  scale_shape_manual(values = c(15, 16))
+nmds.simple
+```
+
+Save:
+
+```{r}
+ggsave("invert_data/plots/nmds_simple.jpg", nmds.simple, device = "jpeg", width = 6.5, height = 5, units = "in", dpi = "retina") #Save plot
+```
+

@@ -15,6 +15,7 @@ library(patchwork)
 library(stringr)
 library(vegan)
 library(broom)
+library(sp)
 ```
 
 ## Overview
@@ -341,7 +342,6 @@ site_labels <- mds_scores %>%
 Calculating convex hulls for each group:
 
 ```{r}
-
 # Find the convex hull of the points being plotted
 hull <- mds_scores %>% 
   group_by(stream) %>%
@@ -484,6 +484,88 @@ Save:
 ```{r}
 ggsave("invert_data/plots/nmds_simple.jpg", nmds.simple, device = "jpeg", width = 6.5, height = 5, units = "in", dpi = "retina") #Save plot
 ```
+
+#### Statistics - how do convex hull areas compare amongst sources? 
+
+First, need to calculate area of convex hulls, which will require converting them to polygons. Formatting-wise, this means we'll need to repeat the first row for each site at the end of that site to "close" the polygon:
+
+Split data by site:
+
+```{r}
+hull_split <- split(hull, hull$stream)
+```
+
+Write a function to paste first row at end of dataframe and extract the hull coordinates as a matrix; apply to the split list: 
+
+```{r}
+paste.row <- function(df){
+  df<-rbind(df, df[1,]) #rowbind first row to bottom of dataframe
+  df<-df %>%
+    select(2:3)
+}
+
+hull_split_closed <- lapply(hull_split, paste.row) #apply to hull_split list
+```
+
+Next, calculate area of each site's polygon using a for loop:
+
+```{r}
+hull_areas<-c() #initialize empty vector to recieve outputs
+
+for(i in 1:length(hull_split_closed)){ #for each object in the hull_split_closed list:
+  pg <- Polygon(hull_split_closed[[i]][,2:3], hole = F) #use columns 2 and 3 (x and y coords) to create a polygon
+  hull_areas[i] <- pg@area #calculate area of that polygon and store in the hull_areas vector
+}
+```
+
+Add site info back in: 
+
+```{r}
+site_areas <- hull %>%
+  select(stream, source, stream_code)%>% #select desired cols
+  distinct(stream, source, stream_code) #remove duplicate rows
+site_areas$area <- hull_areas #add areas
+
+site_areas <- site_areas %>%
+  filter(!area == 0) #remove sites with area = 0
+```
+
+Plotting - how do areas compare between sources?
+
+```{r}
+source.areas <- ggplot(site_areas, aes(x = source, y = area, fill = source))+
+  geom_boxplot()+
+  theme_classic()+
+  theme(legend.position = "none", 
+        axis.text = element_text(size = 11), 
+        axis.title= element_text(size = 12, face = "bold"))+
+  scale_fill_manual(values = source.pal, labels = c("Glacier", "Snowmelt", "Subterranean Ice"))+
+  labs(y = "Convex Hull Area", x = "Stream Source")
+source.areas
+```
+
+Snowmelt appears to have larger area than glacier or subterranean ice - are these differences significant? 
+
+Save: 
+
+```{r}
+ggsave("invert_data/plots/source_areas.pdf", source.areas, width = 6.5, height = 5, units = "in", device = "pdf", dpi = "retina")
+```
+
+Basic ANOVA:
+
+```{r}
+source.aov <- aov(area~source, data = site_areas)
+summary(source.aov)
+```
+
+Weak effect of source on area - which differences are significant? 
+
+```{r}
+TukeyHSD(source.aov)
+```
+
+Marginally significant difference between snowmelt and glacier (snowmelt = significantly larger area than glacier), no difference between subterranean ice and glacier or subterranean ice and snowmelt. 
 
 
 ### 2. How is Taxonomic Richness changing over time?
@@ -733,7 +815,209 @@ Save:
 ggsave("invert_data/plots/cumulative_taxa.pdf", cum.taxa, width = 6.5, height = 4, units = "in", device = "pdf", dpi = "retina")
 ```
 
+Appears to be a steady increase in cumulative richness, but that could be a side effect of having data from more sites in later years. 
+
 ### 5. Relationships between Temp/SWE/Etc and richness at a given site? 
+
+#### A. Richness ~ mean summer (July-Aug) stream temp; mean summer max and min temp:
+
+First, read in cleaned temperature dataset: 
+
+```{r}
+temps <- read.csv("Temperature/cleaned_full_datasets/temps_daily.csv")
+head(temps)
+```
+
+Next, calculate mean summer (July-Aug) stream temperature for each year at each site: 
+
+```{r}
+summer_temps <- temps %>%
+  mutate(date1 = ymd(date1), #recode date as r date obj
+         mo = month(date1), #new col with month
+         yr = year(date1))%>% #new col with year
+  filter(mo == 6 | mo == 7 | mo ==8)%>% #extract rows with month = 6, 7, or 8
+  group_by(site, yr)%>% #group by site and year
+  summarise(t_xbar = mean(temp_xbar, na.rm = T), #calculate mean summer temp
+            tmax_xbar = mean(temp_max, na.rm = T), #calculate avg max temp 
+            tmin_xbar = mean(temp_min, na.rm = T)) %>%#calculate avg min temp
+  rename(Stream = site, Year = yr) #renaming for merge
+
+```
+
+Next, merge with richness dataset: 
+
+```{r}
+richness_temps <- merge(summer_temps, richness)
+```
+
+Visual comparison: any visible relationships between richness, mean summer temp, mean max or mean min temp? 
+
+**Mean summer temp**: 
+
+```{r}
+txbar.richness <- ggplot(filter(richness_temps, !Stream == "silver_run"), aes(x = t_xbar, y = richness, color = Stream))+
+  geom_point()+
+  geom_line()+
+  theme_classic()+
+  facet_wrap(~Stream, scales = "free_x")+
+  theme(legend.position = "none")+
+  labs(x = "Mean summer (June-Aug.) stream temperature, C", y = "Taxonomic Richness")
+txbar.richness
+```
+
+**Mean summer max temp**: 
+
+```{r}
+tmax.richness <- ggplot(filter(richness_temps, !Stream == "silver_run"), aes(x = tmax_xbar, y = richness, color = Stream))+
+  geom_point()+
+  geom_smooth(se = F, linetype = "dashed", method = "lm")+
+  theme_classic()+
+  facet_wrap(~Stream, scales = "free_x")+
+  theme(legend.position = "none")+
+  labs(x = "Mean maximum summer (June-Aug.) stream temperature, C", y = "Taxonomic Richness")
+tmax.richness
+```
+
+**Mean summer min temp**: 
+
+```{r}
+tmin.richness <- ggplot(filter(richness_temps, !Stream == "silver_run"), aes(x = tmin_xbar, y = richness, color = Stream))+
+  geom_point()+
+  geom_smooth(se = F, linetype = "dashed", method = "lm")+
+  theme_classic()+
+  facet_wrap(~Stream, scales = "free_x")+
+  theme(legend.position = "none")+
+  labs(x = "Mean minimum summer (June-Aug.) stream temperature, C", y = "Taxonomic Richness")
+tmin.richness
+```
+
+No obvious relationships between summer temps and richness within sites - what about across sites? 
+
+```{r}
+st.richness.all <- ggplot(richness_temps, aes(x = t_xbar, y = richness))+
+  geom_point()+
+  geom_smooth(se = F, linetype = "dashed", method = "lm")+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(x = "Mean summer (June-Aug.) stream temperature, C", y = "Taxonomic Richness")
+st.richness.all
+```
+
+No obvious trends there either. 
+
+#### LM Richness ~ Summer Temps: 
+
+First, nest data based on site: 
+
+```{r}
+rt_nested <- richness_temps %>%
+  nest(data = -Stream) #create new nested dataframe with one column for Stream, one column for data - data entries for each site include year and richness. 
+```
+
+Next, run a model of richness ~ mean temp for each site separately and return a summary table with the results for each site:
+
+```{r}
+rt_models <- rt_nested %>%
+  mutate(model = map(data, ~lm(richness~t_xbar, data = .)%>% #run a model of richness~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "t_xbar")  #remove intercept term to just get info on year for each site
+rt_models
+```
+
+Significant (-) relationship between mean summer temp and richness at Gusher, not at any other sites. 
+
+#### B. SWE vs. Richness
+
+First, read in SNOTEL data, reformat: 
+
+```{r}
+snotel <- read.csv("teton_snotel.csv")%>%
+  mutate(date = mdy(date), #recode date as date format
+         yr = year(date))%>% #new column with year
+  select(date, yr, station_name, swe_cm, snowdepth_cm) #select desired columns
+```
+
+Next, extract maximum SWE and snow depth for each year: 
+
+```{r}
+snow_max <- snotel %>%
+  group_by(station_name, yr)%>% #group by station name & year
+  summarise(swe_max = max(swe_cm, na.rm = T) #calculate max SWE
+           )%>% 
+  rename(Year = yr)%>% #rename year col for merge
+  pivot_wider(id_cols = Year, names_from = station_name, values_from = swe_max)%>% #pivot wider to get seperate cols for each station
+  rename(targhee_swe = 2, phillips_swe = 3) #rename swe columns
+```
+
+Merge with richness dataset:
+
+```{r}
+richness_swe <- merge(richness, snow_max)%>%
+  arrange(Stream)
+```
+
+Visual check for trends:
+
+**Targhee**:
+
+```{r}
+targhee.richness <- ggplot(filter(richness_swe, !Stream == "silver_run"), aes(x = targhee_swe, y = richness, color = Stream))+
+  geom_point()+
+  geom_smooth(se = F, linetype = "dashed", method = "lm")+
+  theme_classic()+
+  facet_wrap(~Stream)+
+  theme(legend.position = "none")+
+  labs(x = "Maximum SWE, Grand Targhee SNOTEL Station", y = "Taxonomic Richness")
+targhee.richness
+```
+
+#### LM Richness ~ Targhee SWE: 
+
+First, nest data based on site: 
+
+```{r}
+rswe_nested <- richness_swe %>%
+  nest(data = -Stream) #create new nested dataframe with one column for Stream, one column for data - data entries for each site include year and richness. 
+```
+
+Next, run a model of richness ~ Targhee SWE for each site separately and return a summary table with the results for each site:
+
+```{r}
+rswe_models <- rswe_nested %>%
+  mutate(model = map(data, ~lm(richness~targhee_swe, data = .)%>% #run a model of richness~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "targhee_swe")  #remove intercept term to just get info on year for each site
+rswe_models
+```
+No significant relationships between Max SWE at Targhee and richness
+
+**Phillips**:
+
+```{r}
+phillips.richness <- ggplot(filter(richness_swe, !Stream == "silver_run"), aes(x = phillips_swe, y = richness, color = Stream))+
+  geom_point()+
+  geom_smooth(se = F, linetype = "dashed", method = "lm")+
+  theme_classic()+
+  facet_wrap(~Stream)+
+  theme(legend.position = "none")+
+  labs(x = "Maximum SWE, Phillips Bench SNOTEL Station", y = "Taxonomic Richness")
+phillips.richness
+```
+
+#### LM Richness ~ Phillips Bench SWE
+
+```{r}
+rswe_pb<- rswe_nested %>%
+  mutate(model = map(data, ~lm(richness~phillips_swe, data = .)%>% #run a model of richness~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "phillips_swe")  #remove intercept term to just get info on year for each site
+rswe_pb
+```
+
+Significant (-) relationship between SWE @ Phillips bench and richness at CLoudveil; close to significant at S cascade. 
 
 ### 6. Temperature variability vs. richness? 
 

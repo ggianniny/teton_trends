@@ -14,6 +14,7 @@ library(RColorBrewer)
 library(patchwork)
 library(stringr)
 library(vegan)
+library(broom)
 ```
 
 ## Overview
@@ -180,59 +181,114 @@ invert_avgs <- invert_rename2 %>%
 
 ```
 
+Save this file for future analysis: 
+
+```{r}
+write.csv(invert_avgs, "invert_data/cleaned_csv/full_invert_densities.csv")
+
+```
+
+
 ## Plotting & Analysis
 
 ### 1. Making a non-metric MDS site for the long-term sites
 
-First, ID which sites have long records: 
+#### Data Subsetting
+
+**Updates 4/27: Use all sites w/ 2+yrs of data; use log transform of density measurements; remove taxa that only occur at one site; remove taxa that represent <1% of total abundance** 
+
+*Remove sites with only one year of data*
+
+First, ID which sites have 2+ yrs of data: 
 
 ```{r}
 site_lengths <- invert_avgs %>%
   group_by(Stream)%>%
   summarise(first = min(Year), 
             last = max(Year))%>%
-  mutate(monitoring_yrs = last-first)%>%
+  mutate(monitoring_yrs = (last-first)+1)%>%
   arrange(desc(monitoring_yrs))
 site_lengths
 ```
 
-Sites with 5+ years of data are: mid_teton, n_teton, s_cascade, s_teton, windcave, and s_ak_basin. 
-
-Subset data from these sites: 
+Make a list of site names w/ only one year of data:
 
 ```{r}
-mds_sites <- invert_avgs %>%
-  filter(Stream == "mid_teton"|Stream == "n_teton"|Stream == "s_cascade"|Stream == "s_teton"|Stream == 
-           "windcave"|Stream == "s_ak_basin")
+one.yr <- site_lengths %>%
+  filter(monitoring_yrs < 2)%>% #select sites w/ <2yrs data
+  select(Stream) #remove extra cols
 ```
+
+Remove all observations from streams with one year of data:
+
+```{r}
+two_plus <- invert_avgs %>%
+  filter(!Stream%in%one.yr$Stream) #remove all rows with a value of "Stream" that occurs "in" the one.yr$stream vector created above. 
+```
+
+*Remove taxa that only occur at one site*
+
+Calculate # of different sites @ which each taxa occurs; make a list of all taxa occurring at only one site:
+
+```{r}
+one.site <- two_plus %>%
+  group_by(taxa_lwr)%>% #group by taxa
+  summarise(no_sites = length(unique(Stream)))%>% #count # of unique site names w/in each taxa group
+  arrange(no_sites)%>% #sort by site count
+  filter(no_sites == 1) #extract all taxa occuring at only one site
+```
+
+Remove these taxa from the main dataframe:
+
+```{r}
+no_single <- two_plus %>%
+  filter(!taxa_lwr%in%one.site$taxa_lwr)
+```
+
+*Remove taxa that account for <1% of total abundance*
+
+NOTE - using a 1% threshold for each site/year (ie removing any species that makes up <1% of the total abundance for a given site in a given year). 
+
+Calculate total abundance per site per year:
+
+```{r}
+overall.abundance <- no_single %>%
+  group_by(Stream, Year)%>% #group by stream and year
+  summarise(tot_abund = sum(abundance_total, na.rm = T)) #calculate total abundance w/in each site + year combo
+```
+
+Calculate % of total abundance for each taxa for each year; remove any taxa w/ <1% of total abundance:
+
+```{r}
+no_rare <- merge(no_single, overall.abundance)%>% #add total abundance for each site + year to main dataset
+  mutate(ab_perc = (abundance_total/tot_abund)*100)%>% #calculate abundance percent
+  filter(!ab_perc < 1) #remove all taxa with abundance percent <1
+```
+
+*Calculate log transform of remaining density data*: 
+
+```{r}
+nmds_data <- no_rare %>%
+  mutate(log10_density = log10(density_xbar))%>%
+  select(Stream, Year, taxa_lwr, log10_density)
+```
+
+#### Data re-organization
 
 Goal is to run an NMDS treating each stream+year combo as a unique "site" - will need: 
   - Columns with stream name and year (for plotting later)
   - ID column with stream name + year (to use as the "site" identifier in the NMDS)
   - Columns for each taxa, rows populated with density for that combo of site/year and taxa
 
-#### Data re-organization
-
 Create site + year index column; pivot wider to get columns for each taxa:
 
 ```{r}
-invert_alt <- mds_sites%>%
-  mutate(site_yr = paste(Stream, Year, sep = "_"))%>% #add column with site and year
-  dplyr::select(Stream, Year, site_yr, taxa_lwr, density_xbar)%>% #select desired cols
-  pivot_wider(id_cols = c(Stream, Year, site_yr), values_from = density_xbar, names_from = taxa_lwr)%>% #pivot wider to create columns for each taxa populated w/ density for the corresponding year+stream combo 
-   dplyr::mutate_if(is.numeric, ~replace_na(., 0)) #replace all NA values with "0"
+nmds_wide <- nmds_data %>%
+  pivot_wider(id_cols = c(Stream, Year), values_from = log10_density, names_from = taxa_lwr)%>%
+  mutate_if(is.numeric, ~replace_na(.,0))
 ```
 
-
-Next, want to select subset of taxa to be used in NMDS calculations. For now, going with the **15 most common species across all sites** (calculated as highest mean density across all sites):
-
-```{r}
-d.means <-sort(colMeans(invert_alt[4:ncol(invert_alt)])) #calculate mean density for each taxa across all sites and years
-to.select<-names(d.means[(length(d.means)-14):(length(d.means))]) #create vector of names of 15 most common taxa (i.e the last 15 in the sorted d.means list)
-
-invert_subset <- invert_alt %>%
-  dplyr::select(Stream, Year, site_yr, all_of(to.select)) #select ID columns plus all taxa in the "to.select" list
-```
+**Note - still have some species that only occur @ 1 site in this data after removing taxa that account for <1% of total abundance at each site/yr**
 
 #### Run NMDS:
 
@@ -240,7 +296,7 @@ Run the NMDS using the metaMDS fuction (vegan pkg):
 
 ```{r}
 set.seed(1) #for reproducability
-full.mds <- metaMDS(comm = invert_subset[,4:18], #specify community as columns 4-18
+full.mds <- metaMDS(comm = nmds_wide[,3:18], #specify community as columns 4-18
                     distance = "bray") #use bray-curtis distance calc
 full.mds
 ```
@@ -251,13 +307,9 @@ Data set-up: extract point locations for plot creation:
 
 ```{r}
 mds_scores <- as.data.frame(scores(full.mds)$site)%>% #extract point locations for each site (stream*year combo)
-  mutate(stream = invert_subset$Stream,  
-         year = invert_subset$Year,
-         stream_yr = invert_subset$site_yr)%>%#add columns for stream, year, and combo of stream_yr
-  mutate(stream_code = case_when(
-    stream == "mid_teton"~"MT", stream == "n_teton" ~"NT", stream == "s_ak_basin"~"AK", stream == "s_cascade"~"SC", stream == 
-      "s_teton" ~ "ST", stream == "windcave" ~ "WC"
-  )) #Add "stream_code" column for point labeling
+  mutate(stream = nmds_wide$Stream,  
+         year = nmds_wide$Year)#%>%#add columns for stream, and year
+  #mutate(stream_code = case_when(stream == "mid_teton"~"MT", stream == "n_teton" ~"NT", stream == "s_ak_basin"~"AK", stream == "s_cascade"~"SC", stream == "s_teton" ~ "ST", stream == "windcave" ~ "WC")) #Add "stream_code" column for point labeling
 
 mds_species <- as.data.frame(scores(full.mds)$species)%>% #Extract point locations for each species
   rownames_to_column(var = "species") #convert rownames to a column w/species names
@@ -267,27 +319,121 @@ Create plots:
 
 *first pass: putting everything on one plot:*
 
+
+
+
+Add source info: 
+
 ```{r}
-nmds.single <- ggplot(mds_scores)+
+source <- read.csv("source_info.csv") #read in sources
+
+mds_scores <- merge(mds_scores, source) #merge source and stream code info with scores dataframe
+
+#new dataframe for adding site labels (1 per site):
+site_labels <- mds_scores %>% 
+  group_by(stream, stream_code, source) %>% # group by stream
+  summarise(NMDS1 = mean(NMDS1), 
+            NMDS2 = mean(NMDS2)) %>% #extract NMDS coordinates for first observation for each stream
+  ungroup() #ungroup
+```
+
+
+Calculating convex hulls for each group:
+
+```{r}
+
+# Find the convex hull of the points being plotted
+hull <- mds_scores %>% 
+  group_by(stream) %>%
+  slice(chull(NMDS1, NMDS2))
+```
+
+Plotting:
+
+*Color by site; diff shapes = diff years*
+
+```{r}
+nmds.site <- ggplot(mds_scores)+
   geom_point(data = mds_species, aes(x = NMDS1, y = NMDS2), alpha = 0.5, size = 1)+ #add points for each species, adjust opacity & size
   geom_text(data = mds_species, aes(x = NMDS1, y = NMDS2, label = species), #add labels to each taxa point
             size = 3, color = "Grey", hjust = 0.5, vjust = -0.5, fontface = "italic")+ #adjusting size, color, position, and face of taxa labels
   geom_point(data = mds_scores, aes(x = NMDS1, y = NMDS2, color = stream, shape = as.factor(year)), size = 3)+ #add points for each site (stream+year combo); color code by stream, different shapes for different years. 
-  geom_text(data = mds_scores, aes(x = NMDS1, y = NMDS2, label = stream_code), #add stream code labels to each site point
-            hjust = 0, vjust = -1, fontface = "bold")+ #adjusting position and face of stream code labels
-  annotate(geom = "text", x = -1.1, y = 0.9, size = 4, fontface = "italic", label = paste("Stress: ", round(full.mds$stress, digits = 3)))+ #adding label to plot with stress score from model
+  #geom_text(data = mds_scores, aes(x = NMDS1, y = NMDS2, label = stream_code), #add stream code labels to each site point
+    # hjust = 0, vjust = -1, fontface = "bold")+ #adjusting position and face of stream code labels
+  geom_polygon(data = hull, alpha = 0.2, aes(x = NMDS1, y = NMDS2, fill = stream, color = stream))+ #add hulls for each group
+  annotate(geom = "text", x = -0.6, y = 1.2, size = 4, fontface = "italic", label = paste("Stress: ", round(full.mds$stress, digits = 3)))+ #adding label to plot with stress score from model
   theme_classic()+ 
   theme(legend.position = "right")+
   labs(color = "Stream", shape = "Year")+
-  scale_color_manual(values = brewer.pal(7, "Dark2")
-                     , labels = c("Middle Teton", "North Teton","AK Basin S", "South Cascade", "South Teton", "Wind Cave")
+  scale_color_manual(values = c(brewer.pal(12, "Set3"), "#000000"), name = "Stream"
+                     #, labels = c("Middle Teton", "North Teton","AK Basin S", "South Cascade", "South Teton", "Wind Cave")
                      )+ #adjusting color palatte and labels
-  scale_shape_manual(values = c(15, 16, 17, 3, 4, 18, 6, 7)) #setting shape palatte
-nmds.single
+  scale_shape_manual(values = c(15, 16, 17, 3, 4, 18, 6, 7))+ #setting shape palatte
+  scale_fill_manual(values = c(brewer.pal(12, "Set3"), "#000000"), name = "Stream")+ #setting fill pallate
+  labs(fill = "Stream", color = "Stream", shape = "Year")
+nmds.site
 ```
 
 ```{r}
-ggsave("invert_data/plots/nmds_single.jpg", nmds.single, device = "jpeg", width = 6.5, height = 5, units = "in", dpi = "retina")
+ggsave("invert_data/plots/nmds_site.pdf", nmds.site, device = "pdf", width = 6.5, height = 5, units = "in", dpi = "retina")
+```
+
+*Color by source; shape = year; label with stream codes*
+
+```{r}
+source.pal <- c("#C6DBEF" , "#4292C6" , "#08306B", "#000000")
+
+nmds.source <- ggplot(mds_scores)+
+  geom_point(data = mds_species, aes(x = NMDS1, y = NMDS2), alpha = 0.5, size = 1)+ #add points for each species, adjust opacity & size
+  geom_text(data = mds_species, aes(x = NMDS1, y = NMDS2, label = species), #add labels to each taxa point
+            size = 3, color = "Grey", hjust = 0.5, vjust = -0.5, fontface = "italic")+ #adjusting size, color, position, and face of taxa labels
+  geom_point(data = mds_scores, aes(x = NMDS1, y = NMDS2, color = source, shape = as.factor(year)), size = 3)+ #add points for each site; color code by source, different shapes for different years. 
+  geom_text(data = site_labels, aes(x = NMDS1, y = NMDS2, label = stream_code, color = source), #add stream code labels to each site point
+     hjust = 0, vjust = 0, fontface = "bold")+ #adjusting position and face of stream code labels
+  geom_polygon(data = hull, alpha = 0.2, aes(x = NMDS1, y = NMDS2, fill = source, color = source))+ #add hulls for each stream, color coded by source
+  annotate(geom = "text", x = -0.6, y = 1.2, size = 4, fontface = "italic", label = paste("Stress: ", round(full.mds$stress, digits = 3)))+ #adding label to plot with stress score from model
+  theme_classic()+ 
+  theme(legend.position = "right")+
+  labs(fill = "Source", color = "Source", shape = "Year")+
+  scale_color_manual(values = source.pal, name = "Source"
+                     , labels = c("Glacier", "Snowmelt", "Subterranean Ice", "Unknown")
+                     )+ #adjusting color palatte and labels
+  scale_shape_manual(values = c(15, 16, 17, 3, 4, 18, 6, 7))+ #setting shape palatte
+  scale_fill_manual(values = source.pal, name = "Source", labels = c("Glacier", "Snowmelt", "Subterranean Ice", "Unknown")) #setting fill pallate
+nmds.source
+```
+
+```{r}
+ggsave("invert_data/plots/nmds_source.pdf", nmds.source, device = "pdf", width = 9.5, height = 6.5, units = "in", dpi = "retina")
+```
+
+
+
+*Facet by source*:
+
+```{r}
+source.facet <- ggplot(mds_scores)+
+  geom_point(data = mds_species, aes(x = NMDS1, y = NMDS2), alpha = 0.5, size = 1)+ #add points for each species, adjust opacity & size
+  geom_text(data = mds_species, aes(x = NMDS1, y = NMDS2, label = species), #add labels to each taxa point
+            size = 3, color = "Grey", hjust = 0.5, vjust = -0.5, fontface = "italic")+ #adjusting size, color, position, and face of taxa labels
+  geom_point(data = mds_scores, aes(x = NMDS1, y = NMDS2, color = source, shape = as.factor(year)), size = 3)+ #add points for each site; color code by source, different shapes for different years. 
+  geom_text(data = site_labels, aes(x = NMDS1, y = NMDS2, label = stream_code), #add stream code labels to each site point
+     hjust = 0, vjust =0, fontface = "bold")+ #adjusting position and face of stream code labels
+  geom_polygon(data = hull, alpha = 0.2, aes(x = NMDS1, y = NMDS2, fill = source, color = source))+ #add hulls for each stream, color coded by source
+  theme_classic()+ 
+  theme(legend.position = "right", 
+        plot.tag.position = c(0.87, 0.1), 
+        plot.tag = element_text(size = 10, face = "italic"))+
+  labs(fill = "Source", color = "Source", shape = "Year", tag = paste("Stress: ", round(full.mds$stress, digits = 3)))+
+  scale_color_manual(values = source.pal, name = "Source",labels = c("Glacier", "Snowmelt", "Subterranian Ice", "Unknown"))+ #adjusting color palatte and labels
+  scale_shape_manual(values = c(15, 16, 17, 3, 4, 18, 6, 7))+ #setting shape palatte
+  scale_fill_manual(values = source.pal, labels = c("Glacier", "Snowmelt", "Subterranian Ice", "Unknown"),name = "Source")+ #setting fill pallate
+  facet_wrap(~source)
+source.facet
+```
+
+```{r}
+ggsave("invert_data/plots/nmds_source_facet.pdf", source.facet, device = "pdf", units = "in", height = 5, width = 6.5, dpi = "retina")
 ```
 
 
@@ -295,21 +441,23 @@ ggsave("invert_data/plots/nmds_single.jpg", nmds.single, device = "jpeg", width 
 
 ```{r}
 nmds.facet <- ggplot(mds_scores)+
-  geom_point(data = mds_species, aes(x = NMDS1, y = NMDS2), alpha = 0.5, size = 1)+
-  geom_text(data = mds_species, aes(x = NMDS1, y = NMDS2, label = species), size = 3, color = "Grey", hjust = 0.5, vjust = -0.5, fontface = "italic")+
-  geom_point(data = mds_scores, aes(x = NMDS1, y = NMDS2, color = as.factor(year)), size = 3)+
+  #geom_point(data = mds_species, aes(x = NMDS1, y = NMDS2), alpha = 0.5, size = 1)+
+  #geom_text(data = mds_species, aes(x = NMDS1, y = NMDS2, label = species), size = 3, color = "Grey", hjust = 0.5, vjust = -0.5, fontface = "italic")+
+  geom_point(aes(x = NMDS1, y = NMDS2, color = as.numeric(year)), size = 2)+
+  geom_path(mapping = aes(x = NMDS1, y = NMDS2, color = as.numeric(mds_scores$year)), arrow = arrow(type = "closed", ends = "last", length = unit(0.2, "cm")))+
   theme_classic()+
   facet_wrap(~stream)+
-  theme(legend.position = "bottom", 
-        plot.tag.position = c(0.1, 0.1), 
+  theme(legend.direction = "horizontal", 
+        legend.position = c(0.75, 0.05), 
+        plot.tag.position = c(0.5, 0.1), 
         plot.tag = element_text(size = 10, face = "italic"))+
   labs(color = "Year", tag = paste("Stress: ", round(full.mds$stress, digits = 3)))+
-  scale_color_manual(values = brewer.pal(7, "Blues"))
+  scale_color_gradient(low = "#C6DBEF", high = "#084594", labels = c(2015, 2018, 2021), breaks = c(2015, 2018, 2021))
 nmds.facet
 ```
 
 ```{r}
-ggsave("invert_data/plots/nmds_facet.jpg", nmds.facet, device = "jpeg", width = 6.5, height = 5, units = "in", dpi = "retina")
+ggsave("invert_data/plots/nmds_facet.pdf", nmds.facet, device = "pdf", width = 6.5, height = 6.5, units = "in", dpi = "retina")
 ```
 
 *Just plotting first and last year for each site*
@@ -324,8 +472,8 @@ nmds.simple <- ggplot(filter(mds_scores, year == 2016|year == 2021))+ #filtering
   theme_classic()+
   theme(legend.position = "right")+
   labs(color = "Stream", shape = "Year")+
-  scale_color_manual(values = brewer.pal(7, "Dark2")
-                     , labels = c("Middle Teton", "North Teton","AK Basin S", "South Cascade", "South Teton", "Wind Cave")
+  scale_color_manual(values = c(brewer.pal(12, "Set3"), "#000000")
+                    # , labels = c("Middle Teton", "North Teton","AK Basin S", "South Cascade", "South Teton", "Wind Cave")
                      )+
   scale_shape_manual(values = c(15, 16))
 nmds.simple
@@ -336,4 +484,263 @@ Save:
 ```{r}
 ggsave("invert_data/plots/nmds_simple.jpg", nmds.simple, device = "jpeg", width = 6.5, height = 5, units = "in", dpi = "retina") #Save plot
 ```
+
+
+### 2. How is Taxonomic Richness changing over time?
+
+First, need to calculate richness (#species present) for each site - **NOTE:** using ALL taxa from sites with >1yr data here, NOT the subset of taxa used for NMDS.
+
+```{r}
+richness <- invert_avgs %>% 
+  filter(!Stream%in%one.yr$Stream)%>%
+  group_by(Stream, Year)%>% #group by stream/year
+  summarise(richness = length(unique(taxa_lwr))) #calculate # of unique values of taxa_lwr for each stream + year combo
+```
+
+Save file for future analysis:
+
+```{r}
+write.csv(richness, "invert_data/cleaned_csv/invert_richness.csv")
+```
+
+Plotting - how has richness changed over time at all of these sites? 
+
+```{r}
+richness.line <- ggplot(richness, aes(x = Year, y = richness, color = Stream))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  labs(x = "Year", y = "Species Richness", color = "Stream")+
+  scale_color_manual(values = c(brewer.pal(12, "Set3"), "#000000")
+                     #, labels = c("Middle Teton", "North Teton", "AK Basin S", "S Cascade", "S Teton", "Wind Cave")
+                     )
+richness.line
+```
+
+Appears to be a decreasing trend in richness across most sites - are any of these trends significant?
+
+(save this plot)
+
+```{r}
+ggsave("invert_data/plots/richness_line.pdf", richness.line, device = "pdf", height = 4, width = 6.5, units = "in", dpi = "retina")
+```
+
+
+#### LM for richness ~ year: 
+
+First, nest data based on site: 
+
+```{r}
+richness_nested <- richness %>%
+  nest(data = -Stream) #create new nested dataframe with one column for Stream, one column for data - data entries for each site include year and richness. 
+```
+
+Next, run a model for each site separately and return a summary table with the results for each site:
+
+```{r}
+richness_models <- richness_nested %>%
+  mutate(model = map(data, ~lm(richness~Year, data = .)%>% #run a model of richness~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "Year")  #remove intercept term to just get info on year for each site
+richness_models
+```
+
+Significant declines in richness at mid teton, s cascade, s teton. Could just be an artifact of the high richness values at all sites in 2016. 
+
+
+#### Richness across all sites: 
+
+Calculate total richness (no taxa) observed across all sites for each year **NOTE**: using ALL taxa from sites with >1yr data here, NOT the subset of taxa used for NMDS.
+
+```{r}
+yearly_richness <- invert_avgs %>%
+  filter(!Stream%in%one.yr$Stream)%>%
+  group_by(Year)%>%
+  summarise(total_richness = length(unique(taxa_lwr)))
+```
+
+Plotting: 
+
+```{r}
+yearly.richness <- ggplot(yearly_richness, aes(x = Year, y = total_richness, color = as.numeric(Year)))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(aes(x = Year, y= total_richness, color = as.numeric(Year)), se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  labs(x = "Year", y = "Species Richness", color = "Year")+
+  scale_color_gradient(low = "#C6DBEF", high = "#084594", labels = c(2015, 2018, 2021), breaks = c(2015, 2018, 2021))+
+  theme(legend.position = "none")
+  
+yearly.richness
+```
+
+Save: 
+
+```{r}
+ggsave("invert_data/plots/yearly_richness.pdf", yearly.richness, width = 6.5, height = 4, units = "in", dpi = "retina")
+```
+
+Basic LM:
+
+```{r}
+yr.rich <- lm(total_richness~Year, data = yearly_richness)
+summary(yr.rich)
+```
+
+No significant trend. 
+
+
+### 3. How does intermittency affect richness at Paintbrush?
+
+First, extract paintbrush data:
+
+```{r}
+pb_inverts <- richness %>%
+  filter(Stream == "paintbrush")
+```
+
+Read in paintbrush exposure dates (saved from teton_data_cleaning script); calculate no days exposed per year:
+
+```{r}
+pb_exposure <- read.csv("Temperature/pb_exposure.csv")%>%
+  group_by(yr)%>%
+  summarise(no_days = length(exposed_dates))%>%
+  rename(Year = yr)
+```
+
+Merge with invert data: 
+
+```{r}
+pb_full <- merge(pb_inverts, pb_exposure, all = T)%>%
+ # mutate(no_days = ifelse(Year == 2017, 0, no_days))%>% #replacing 2017 "NA" with 0 dry days
+  filter(!is.na(richness), !is.na(no_days))
+```
+
+Visual check for trends:
+
+```{r}
+pb.richness <- ggplot(pb_full, aes(x = no_days, y = richness))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(method = "lm", se = F, linetype = "dashed")+
+  theme_classic()+
+  labs(x = "Number dry days", y = "Taxonomic Richness")
+pb.richness 
+```
+
+Fairly strong negative trend, but very little data - so hard to tell if that's a "real" trend. 
+
+```{r}
+ggsave("invert_data/plots/pb_richness.pdf", pb.richness, device = "pdf", width = 6.5, height = 4, units = "in", dpi = "retina")
+```
+
+Basic LM: 
+
+```{r}
+pb.mod <- lm(richness~no_days, data = pb_full)
+summary(pb.mod)
+```
+
+No significant trends, which is unsurprising bc of the very limited data - trend may emerge with longer term dataset. 
+
+
+### 4. Cumulative taxa thru time? Any new taxa showing up that weren't there previously? 
+
+First, re-arrange data to get list of all unique taxa for each year: 
+
+```{r}
+yr_taxa <- invert_avgs %>%
+  select(Year, taxa_lwr)%>% #select year and taxa columns
+  group_by(Year)%>% #group by year
+  summarise(taxa = unique(taxa_lwr))%>% #extract all unique values of taxa for each year
+  mutate(taxa_yr = paste(Year, taxa, sep = "_"))%>% #add new col with taxa and year
+  pivot_wider(names_from = Year, values_from = taxa_yr)%>% #pivot wider to get columns for each year, rows for each taxa - yearly columns will have NA's when a taxa isn't present. 
+  arrange(taxa)
+```
+
+Next, convert to binary "1" for present, "0" for absent:
+
+```{r}
+to.binary <- function(col){
+  col = ifelse(is.na(col), 0, 1) #write function to convert replace all NA's with 0; all other values with 1
+}
+
+yr_binary <- yr_taxa %>%
+  mutate(across(.cols = c(2:8), to.binary)) #apply this function across all year columns in yr_taxa 
+```
+
+Check the resulting output: 
+
+```{r}
+head(yr_binary)
+```
+
+Want to calculate the *cumulative* richness over time - i.e. only count taxa that haven't been seen in previous years. Based on the above format, need to keep ONLY the first observation of each taxa, remove all others. 
+
+First, re-format data to get rows for each year, columns for each taxa, fill rows with binary presence/absence data:
+  
+```{r}
+binary_wide <- yr_binary%>%
+  pivot_longer(!taxa, values_to = "presence", names_to = "yr")%>% #first pivot longer to get taxa, presence, and year columns
+  pivot_wider(id_cols = yr, names_from = taxa, values_from = presence) #then pivot wider using year as ID col instead of taxa to get cols for each taxa, fill in with presence/absence data
+```
+
+Next, need to replace all subsequent observations with a 0 to get a dataframe that has a 1 for a given taxa in the year that that taxa first ocurred, 0 in all other rows for that taxa. 
+
+```{r}
+apperance.calc <- function(x){ #write a function to:
+  x = cumsum(x) #a. calculate the cumulative sum of each column
+  x = ifelse(x == 1 &lag(x) == 0, 1, 0)  #b. replace all cells that are not = 1 and don't have 0 in the previous cell with 0's. 
+}
+
+binary_lag <- binary_wide %>%
+  mutate(across(c(2:94), apperance.calc))#apply to all taxa cols
+
+binary_lag[1,]<-binary_wide[1,] #replace first row (will be all NAs) with first row from original wide dataframe
+```
+
+
+Now, calculate new taxa observed in each year by calculating row sums for all taxa columns: 
+
+```{r}
+new_taxa <- rowSums(binary_lag[,2:94])
+```
+
+Add this to a new dataframe with year; calculate cumulative taxa observed each year: 
+
+```{r}
+cumulative_richness <- data.frame(c(2015:2021), new_taxa)%>% #bind new_taxa object with vector of years
+  rename(yr = 1)%>% #rename first column "yr"
+  mutate(cumulative_taxa =cumsum(new_taxa)) #calculate cumulative taxa observed for each year
+```
+
+Plot:
+
+```{r}
+cum.taxa <- ggplot(cumulative_richness, aes(x = yr, y = cumulative_taxa))+ #plot x = year, y = cumulative taxa 
+  geom_point()+
+  geom_line()+
+  theme_classic()+
+  labs(x = "Year", y = "Cumulative Taxa Observed")
+cum.taxa
+```
+
+Save:
+
+```{r}
+ggsave("invert_data/plots/cumulative_taxa.pdf", cum.taxa, width = 6.5, height = 4, units = "in", device = "pdf", dpi = "retina")
+```
+
+### 5. Relationships between Temp/SWE/Etc and richness at a given site? 
+
+### 6. Temperature variability vs. richness? 
+
+### 7. Ternary diagram comparing sources (Glacier, Snow, Sub Ice)
+
+
+
+
+
 

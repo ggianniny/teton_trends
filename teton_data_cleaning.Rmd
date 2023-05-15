@@ -716,6 +716,18 @@ fully_cleaned4 <- fully_cleaned3 %>%
          )
 ```
 
+
+Make dataframe with exposure dates for future reference:
+
+```{r}
+exposure_dates <- as.data.frame(c(exposure.18, exposure.19, exposure.20, exposure.21))%>%
+  rename(exposed_dates = 1)%>%
+  mutate(yr = year(exposed_dates)) 
+
+write.csv(exposure_dates, "Temperature/pb_exposure.csv")
+
+```
+
 Check resulting plot: 
 
 ```{r}

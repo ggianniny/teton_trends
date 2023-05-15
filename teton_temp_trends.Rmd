@@ -152,7 +152,8 @@ Initial data exploration - plotting:
 ```{r, message=F, warning=F}
 temp.line <- ggplot(mean_temps, aes(x = year, y = mean_temp, color = site))+
   geom_point()+
-  geom_smooth(se = F, method = "lm")+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
   theme_classic()+
   labs(x = "Year", y = "Mean summer temperature, C", color = "Site Name")+
   scale_color_manual(values = brewer.pal(6, "Dark2"), labels = c("AK Basin", "Middle Teton", "N Teton", "Paintbrush", "S Cascade", "Wind Cave"))
@@ -377,4 +378,29 @@ summary(air.lm)
 Significant (+) trend in air temp between 2015-2022 - warming of +0.26 degrees/year. Interesting that increased summer air temp didn't result in increased summer stream temp... 
 
 
+##2. Comparisons with invert data: 
 
+### A. Testing lm's of richness ~ stream temp
+
+Bring in richness data:
+
+```{r}
+richness <- read.csv("invert_data/cleaned_csv/invert_richness.csv")%>%
+  rename("site" = "Stream", "year" = "Year")%>%
+  select(-X)
+```
+
+Add to avg. summer stream temp data: 
+
+```{r}
+temps_rename <- mean_temps %>%
+  mutate(site = str_remove(site, "_xbar"))%>%
+  mutate(site = ifelse(site == "ak_basin", "s_ak_basin", site))
+```
+
+Merge: 
+
+```{r}
+temps_richness <- merge(richness, temps_rename, all = T)%>%
+  filter(!(site == "paintbrush"|site == "s_teton"), !is.na(richness))
+```

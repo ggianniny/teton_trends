@@ -171,14 +171,20 @@ unique(invert_rename2$taxa_lwr) #checking resulting unique values
 ### 3. Calculate average density & total abundance for each taxa/site/yr
 
 
-Now, calculate average density and total abundance for each taxa for each year in each site: 
+Now, calculate average density and total abundance for each taxa for each year in each site; add source info: 
 
 ```{r}
 invert_avgs <- invert_rename2 %>%
   group_by(Stream, Year, taxa_lwr) %>% # group by taxa w/in year w/in stream
   summarise(density_xbar = mean(Density), #calculate mean density for each taxa/year/site
-            abundance_total = sum(Abundance))%>% #calculate total abundance for each taxa/yr/site
-  arrange(Stream, Year) #sort by stream & year
+            abundance_total = sum(Abundance))#calculate total abundance for each taxa/yr/site
+
+source <- read.csv("source_info.csv")%>% #read in source data
+  rename(Stream = stream) #rename for merge
+
+invert_avgs <- merge(invert_avgs, source)%>%
+    filter(!density_xbar == 0)%>% #remove extra taxa names that have no observations
+    arrange(Stream, Year) #sort by stream & year
 
 ```
 
@@ -436,6 +442,56 @@ source.facet
 ggsave("invert_data/plots/nmds_source_facet.pdf", source.facet, device = "pdf", units = "in", height = 5, width = 6.5, dpi = "retina")
 ```
 
+**Same as above, but only TASR Sites**
+
+Data Prep:
+
+```{r}
+tasr.sites <- c("cloudveil", "delta", "grizzly", "gusher", "mid_teton", "n_teton", "paintbrush", "s_ak_basin", "s_cascade", "s_teton", "skillet", "windcave") #make list of TASR sites
+
+tasr_nmds <- mds_scores %>%
+  filter(stream%in%tasr.sites) #extract data for TASR sites from mds_scores data
+
+tasr_labels <- site_labels%>%
+  filter(stream%in%tasr.sites) #extract TASR site labels for plotting
+
+pres.pal <- c("#C26ED6", "#F89225", "#76D96F") #matching color pallate to site map
+
+```
+
+Plotting:
+
+```{r}
+tasr.facet <- ggplot(tasr_nmds)+
+  geom_point(data = mds_species, aes(x = NMDS1, y = NMDS2), alpha = 0.5, size = 1)+ #add points for each species, adjust opacity & size
+  geom_text(data = mds_species, aes(x = NMDS1, y = NMDS2, label = species), #add labels to each taxa point
+            size = 3, color = "Grey", hjust = 0.5, vjust = -0.5, fontface = "italic")+ #adjusting size, color, position, and face of taxa labels
+  geom_point(data = tasr_nmds, aes(x = NMDS1, y = NMDS2, color = source, shape = as.factor(year)), size = 3)+ #add points for each site; color code by source, different shapes for different years. 
+  geom_text(data = tasr_labels, aes(x = NMDS1, y = NMDS2, label = stream_code), #add stream code labels to each site point
+     hjust = 0, vjust =0, fontface = "bold")+ #adjusting position and face of stream code labels
+  geom_polygon(data = hull, alpha = 0.2, aes(x = NMDS1, y = NMDS2, fill = source, color = source))+ #add hulls for each stream, color coded by source
+  theme_classic()+ 
+  theme(legend.position = "right", 
+        plot.tag.position = c(0.87, 0.1), 
+        plot.tag = element_text(size = 10, face = "italic"), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 10), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))+
+  labs(fill = "Source", color = "Source", shape = "Year", tag = paste("Stress: ", round(full.mds$stress, digits = 3)))+
+  scale_color_manual(values = pres.pal, name = "Source",labels = c("Glacier", "Snowmelt", "Subterranian Ice", "Unknown"))+ #adjusting color palatte and labels
+  scale_shape_manual(values = c(15, 16, 17, 3, 4, 18, 6, 7))+ #setting shape palatte
+  scale_fill_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Subterranian Ice", "Unknown"),name = "Source")+ #setting fill pallate
+  facet_wrap(~source)
+tasr.facet
+```
+
+Save:
+
+```{r}
+ggsave("pres_figures/tasr_nmds.pdf", tasr.facet, width = 8.5, height = 6.5, units = "in", device = "pdf", dpi = "retina")
+```
 
 *Seperating into facets for each site*
 
@@ -450,7 +506,12 @@ nmds.facet <- ggplot(mds_scores)+
   theme(legend.direction = "horizontal", 
         legend.position = c(0.75, 0.05), 
         plot.tag.position = c(0.5, 0.1), 
-        plot.tag = element_text(size = 10, face = "italic"))+
+        plot.tag = element_text(size = 10, face = "italic"), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 10), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))+
   labs(color = "Year", tag = paste("Stress: ", round(full.mds$stress, digits = 3)))+
   scale_color_gradient(low = "#C6DBEF", high = "#084594", labels = c(2015, 2018, 2021), breaks = c(2015, 2018, 2021))
 nmds.facet
@@ -459,6 +520,35 @@ nmds.facet
 ```{r}
 ggsave("invert_data/plots/nmds_facet.pdf", nmds.facet, device = "pdf", width = 6.5, height = 6.5, units = "in", dpi = "retina")
 ```
+
+**Same as above, but just for TASR sites:***
+
+```{r}
+tasr.nmds.line <- ggplot(tasr_nmds)+
+  #geom_point(data = mds_species, aes(x = NMDS1, y = NMDS2), alpha = 0.5, size = 1)+
+  #geom_text(data = mds_species, aes(x = NMDS1, y = NMDS2, label = species), size = 3, color = "Grey", hjust = 0.5, vjust = -0.5, fontface = "italic")+
+  geom_point(aes(x = NMDS1, y = NMDS2, color = as.numeric(year)), size = 2)+
+  geom_path(mapping = aes(x = NMDS1, y = NMDS2, color = as.numeric(tasr_nmds$year)), arrow = arrow(type = "closed", ends = "last", length = unit(0.2, "cm")))+
+  theme_classic()+
+  facet_wrap(~full_name, nrow = 2, ncol = 6)+
+  theme(legend.direction = "horizontal", 
+        legend.position = "bottom", 
+        plot.tag.position = c(0.3, 0.1), 
+        plot.tag = element_text(size = 10, face = "italic"), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 10), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))+
+  labs(color = "Year", tag = paste("Stress: ", round(full.mds$stress, digits = 3)))+
+  scale_color_gradient(low = "#C6DBEF", high = "#084594", labels = c(2015, 2018, 2021), breaks = c(2015, 2018, 2021))
+tasr.nmds.line
+```
+
+```{r}
+ggsave("pres_figures/tasr_nmds_line.pdf", tasr.nmds.line, width = 12.5, height = 5, units = "in", device = "pdf", dpi = "retina")
+```
+
 
 *Just plotting first and last year for each site*
 
@@ -575,7 +665,7 @@ First, need to calculate richness (#species present) for each site - **NOTE:** u
 ```{r}
 richness <- invert_avgs %>% 
   filter(!Stream%in%one.yr$Stream)%>%
-  group_by(Stream, Year)%>% #group by stream/year
+  group_by(Stream, Year, source, full_name)%>% #group by stream/year
   summarise(richness = length(unique(taxa_lwr))) #calculate # of unique values of taxa_lwr for each stream + year combo
 ```
 
@@ -629,8 +719,45 @@ richness_models <- richness_nested %>%
 richness_models
 ```
 
-Significant declines in richness at mid teton, s cascade, s teton. Could just be an artifact of the high richness values at all sites in 2016. 
+Significant declines (p<0.05) in richness at s cascade, weakly significant (p<0.1) decreases at mid teton, wind cave. 
 
+#### Presentation Richness plot: 
+
+**Richness at 12 TASR sties, add trendline for overall average**
+
+Data prep:
+
+```{r}
+tasr.sites <- c("cloudveil", "delta", "grizzly", "gusher", "mid_teton", "n_teton", "paintbrush", "s_ak_basin", "s_cascade", "s_teton", "skillet", "windcave") #make list of TASR sites
+
+tasr_richness <- richness %>%
+  filter(Stream%in%tasr.sites) #remove non-TASR sites
+```
+
+Plotting: 
+
+```{r}
+tasr.richness <- ggplot(tasr_richness, aes(x = Year, y = richness, color = full_name))+
+  geom_point(alpha = 0.5)+
+  geom_line(alpha = 0.5)+
+  geom_line(stat = "smooth", method = "lm", formula = y~x, linetype = "dashed", size = 0.5, alpha = 0.5)+
+  geom_smooth(aes(x = Year, y = richness), se = F, method = "lm", linetype = "dashed", size = 1, color = "Black")+
+  theme_classic()+
+  labs(x = "Year", y = "Species Richness", color = "Stream")+
+  scale_color_manual(values = c(brewer.pal(8, "Dark2"), brewer.pal(4, "Set1")))+
+  theme(axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 10), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"))+
+  ylim(0, 32)
+tasr.richness
+```
+
+Save: 
+
+```{r}
+ggsave("pres_figures/tasr_richness.pdf", tasr.richness, width = 12, height = 5, units = "in", device = "pdf", dpi = "retina")
+```
 
 #### Richness across all sites: 
 
@@ -725,7 +852,7 @@ pb.mod <- lm(richness~no_days, data = pb_full)
 summary(pb.mod)
 ```
 
-No significant trends, which is unsurprising bc of the very limited data - trend may emerge with longer term dataset. 
+No significant trends, which is unsurprising bc of the very limited data - trend may emerge with longer term dataset. R2 is pretty high. 
 
 
 ### 4. Cumulative taxa thru time? Any new taxa showing up that weren't there previously? 

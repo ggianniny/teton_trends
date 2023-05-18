@@ -1,1191 +1,805 @@
-"","Stream","Year","taxa_lwr","density_xbar","abundance_total"
-"1","beartooth_cr",2017,"acari",4,1
-"2","beartooth_cr",2017,"allomyia",18,5
-"3","beartooth_cr",2017,"chironomidae",7,2
-"4","beartooth_cr",2017,"cinygmula",18,5
-"5","beartooth_cr",2017,"collembola",169,94
-"6","beartooth_cr",2017,"dicranota",47,13
-"7","beartooth_cr",2017,"heterocloeon",4,1
-"8","beartooth_cr",2017,"homophylax",4,1
-"9","beartooth_cr",2017,"megarcys",9,5
-"10","beartooth_cr",2017,"non-tanypodinae",1286.5,717
-"11","beartooth_cr",2017,"ostracoda",14,4
-"12","beartooth_cr",2017,"prosimulium",14,4
-"13","beartooth_cr",2017,"sweltsa",7,2
-"14","beartooth_cr",2017,"yoraperla",7,2
-"15","beartooth_cr",2017,"zapada",7,2
-"16","cloudveil",2019,"baetis",11,1
-"17","cloudveil",2019,"chironomidae",11,1
-"18","cloudveil",2019,"lednia",36.3333333333333,10
-"19","cloudveil",2019,"non-tanypodinae",265.5,148
-"20","cloudveil",2019,"oligochaeta",11,1
-"21","cloudveil",2020,"chironomidae",11,1
-"22","cloudveil",2020,"dicranota",11,1
-"23","cloudveil",2020,"homophylax",11,1
-"24","cloudveil",2020,"lednia",30,11
-"25","cloudveil",2020,"non-tanypodinae",448.5,250
-"26","cloudveil",2021,"allomyia",10.76426265,1
-"27","cloudveil",2021,"chironomidae",43.05705059,4
-"28","cloudveil",2021,"lednia",78.9379260833333,44
-"29","cloudveil",2021,"megarcys",10.76426265,1
-"30","cloudveil",2021,"non-tanypodinae",1361.679225,759
-"31","cloudveil",2021,"oligochaeta",37.674919275,14
-"32","cloudveil",2021,"plecoptera",16.146393975,3
-"33","cloudveil",2021,"trichoptera",10.76426265,1
-"34","death_canyon",2016,"acari",43,13
-"35","death_canyon",2016,"allomyia",102.5,58
-"36","death_canyon",2016,"alloperla",37.5,14
-"37","death_canyon",2016,"baetis",0,0
-"38","death_canyon",2016,"chironomidae",12.5,7
-"39","death_canyon",2016,"cinygmula",7,1
-"40","death_canyon",2016,"clinocera",0,0
-"41","death_canyon",2016,"collembola",66.5,11
-"42","death_canyon",2016,"dicranota",0,0
-"43","death_canyon",2016,"dixella",0,0
-"44","death_canyon",2016,"drunella",0,0
-"45","death_canyon",2016,"epeorus",2,2
-"46","death_canyon",2016,"helodon",0,0
-"47","death_canyon",2016,"homophylax",0,0
-"48","death_canyon",2016,"lednia",0,0
-"49","death_canyon",2016,"macroveliidae",0,0
-"50","death_canyon",2016,"megarcys",20.75,46
-"51","death_canyon",2016,"nematoda",0,0
-"52","death_canyon",2016,"non-tanypodinae",2642.5,1665
-"53","death_canyon",2016,"oligochaeta",0,0
-"54","death_canyon",2016,"oreogeton",68,34
-"55","death_canyon",2016,"ormosia",0,0
-"56","death_canyon",2016,"ostracoda",0,0
-"57","death_canyon",2016,"paradelphomyia",0,0
-"58","death_canyon",2016,"pentacora",0,0
-"59","death_canyon",2016,"probezzia",0,0
-"60","death_canyon",2016,"prosimulium",0,0
-"61","death_canyon",2016,"psychoglypha",0,0
-"62","death_canyon",2016,"rhithrogena",7,1
-"63","death_canyon",2016,"rhyacophila",0,0
-"64","death_canyon",2016,"simuliidae",0,0
-"65","death_canyon",2016,"staphylinidae",0,0
-"66","death_canyon",2016,"suwallia",0,0
-"67","death_canyon",2016,"sweltsa",0,0
-"68","death_canyon",2016,"tipula",0,0
-"69","death_canyon",2016,"trichoptera",0,0
-"70","death_canyon",2016,"turbellaria",97,108
-"71","death_canyon",2016,"zapada",1244,547
-"72","delta",2017,"acari",11,1
-"73","delta",2017,"baetis",11,1
-"74","delta",2017,"chironomidae",22,2
-"75","delta",2017,"collembola",11,1
-"76","delta",2017,"lednia",23.8,11
-"77","delta",2017,"megarcys",16.5,3
-"78","delta",2017,"non-tanypodinae",3507.16666666667,1955
-"79","delta",2017,"oligochaeta",79,22
-"80","delta",2017,"prosimulium",16.5,3
-"81","delta",2017,"rhyacophila",22,2
-"82","delta",2017,"staphylinidae",22,2
-"83","delta",2017,"suwallia",11,1
-"84","delta",2017,"turbellaria",36,10
-"85","delta",2017,"zapada",165.8,77
-"86","delta",2018,"acari",60.25,23
-"87","delta",2018,"baetis",18,7
-"88","delta",2018,"chironomidae",53,23
-"89","delta",2018,"dicranota",11,3
-"90","delta",2018,"lednia",21.5,4
-"91","delta",2018,"megarcys",47,13
-"92","delta",2018,"non-tanypodinae",4644.83333333333,2843
-"93","delta",2018,"oligochaeta",303.6,195
-"94","delta",2018,"prosimulium",21.5,4
-"95","delta",2018,"rhyacophila",11,1
-"96","delta",2018,"staphylinidae",11,1
-"97","delta",2018,"sweltsa",9,3
-"98","delta",2018,"turbellaria",40.4,22
-"99","delta",2018,"zapada",655,379
-"100","delta",2019,"agathon",11,1
-"101","delta",2019,"baetis",43,4
-"102","delta",2019,"chironomidae",32.5,18
-"103","delta",2019,"helodon",27,5
-"104","delta",2019,"hirudinea",11,1
-"105","delta",2019,"lednia",11,2
-"106","delta",2019,"limonia",11,1
-"107","delta",2019,"megarcys",11,3
-"108","delta",2019,"non-tanypodinae",1878.33333333333,1047
-"109","delta",2019,"oligochaeta",43,8
-"110","delta",2019,"prosimulium",11,1
-"111","delta",2019,"rhyacophila brunnea/vemna",11,1
-"112","delta",2019,"tanypodinae",28.6666666666667,8
-"113","delta",2019,"zapada",34.6,16
-"114","delta",2020,"chironomidae",18,5
-"115","delta",2020,"megarcys",NA,NA
-"116","delta",2020,"non-tanypodinae",1849.66666666667,1031
-"117","delta",2020,"oligochaeta",43,4
-"118","delta",2020,"rhyacophila alberta",11,1
-"119","delta",2020,"rhyacophila coloradensis",11,4
-"120","delta",2020,"rhyacophila verrula",11,1
-"121","delta",2020,"zapada",36,10
-"122","delta",2021,"agathon",10.76426265,1
-"123","delta",2021,"baetis",16.146393975,3
-"124","delta",2021,"chironomidae",181.198421241667,101
-"125","delta",2021,"homophylax",10.76426265,1
-"126","delta",2021,"lednia",34.983853605,13
-"127","delta",2021,"megarcys",37.67491927,7
-"128","delta",2021,"nematoda",10.76426265,1
-"129","delta",2021,"non-tanypodinae",4106.56620033333,2289
-"130","delta",2021,"oligochaeta",673.842841746,313
-"131","delta",2021,"prosimulium",14.3523502,4
-"132","delta",2021,"rhyacophila alberta",10.76426265,1
-"133","delta",2021,"zapada",71.76175099,40
-"134","froze_to_death",2017,"non-tanypodinae",396.5,221
-"135","grizzly",2017,"acari",32,3
-"136","grizzly",2017,"allomyia",11,1
-"137","grizzly",2017,"clinocera",11,1
-"138","grizzly",2017,"collembola",48.5,9
-"139","grizzly",2017,"dicranota",11,1
-"140","grizzly",2017,"homophylax",65,12
-"141","grizzly",2017,"non-tanypodinae",77.6,36
-"142","grizzly",2017,"oligochaeta",18,5
-"143","grizzly",2017,"prosimulium",102.333333333333,57
-"144","grizzly",2017,"turbellaria",82.5,46
-"145","grizzly",2018,"acari",43,8
-"146","grizzly",2018,"collembola",11,2
-"147","grizzly",2018,"non-tanypodinae",767.833333333333,428
-"148","grizzly",2018,"oligochaeta",258.4,120
-"149","grizzly",2018,"prosimulium",294,164
-"150","grizzly",2018,"turbellaria",323.25,120
-"151","grizzly",2019,"allomyia",11,1
-"152","grizzly",2019,"chironomidae",16.5,3
-"153","grizzly",2019,"clinocera",11,2
-"154","grizzly",2019,"dicranota",11,3
-"155","grizzly",2019,"helodon",1509,701
-"156","grizzly",2019,"homophylax",11,3
-"157","grizzly",2019,"non-tanypodinae",263.833333333333,147
-"158","grizzly",2019,"oligochaeta",57.3333333333333,16
-"159","grizzly",2019,"prosimulium",202.4,94
-"160","grizzly",2019,"simuliidae (unknown)",40.25,15
-"161","grizzly",2019,"trichoptera homophylax or allomyia",11,1
-"162","grizzly",2020,"acari",11,1
-"163","grizzly",2020,"chironomidae",34.6,16
-"164","grizzly",2020,"helodon",64.6,30
-"165","grizzly",2020,"homophylax",21.5,4
-"166","grizzly",2020,"megarcys",11,1
-"167","grizzly",2020,"nematoda",11,1
-"168","grizzly",2020,"non-tanypodinae",2762.66666666667,1540
-"169","grizzly",2020,"oligochaeta",199,37
-"170","grizzly",2020,"prosimulium",314.166666666667,175
-"171","grizzly",2020,"simuliidae",11,1
-"172","grizzly",2020,"sphaeridiinae",11,1
-"173","grizzly",2021,"acari",10.76426265,1
-"174","grizzly",2021,"homophylax",10.76426265,1
-"175","grizzly",2021,"nematoda",10.76426265,1
-"176","grizzly",2021,"non-tanypodinae",213.491209181667,119
-"177","grizzly",2021,"oligochaeta",43.05705059,4
-"178","grizzly",2021,"prosimulium",64.585575886,30
-"179","grizzly",2021,"psychoglypha",21.5285252966667,6
-"180","grizzly",2021,"simuliidae",111.23071403,62
-"181","gusher",2020,"acari",11,1
-"182","gusher",2020,"agathon",11,1
-"183","gusher",2020,"allomyia",11,1
-"184","gusher",2020,"baetis",11,1
-"185","gusher",2020,"chironomidae",79,44
-"186","gusher",2020,"clinocera",11,1
-"187","gusher",2020,"dicranota",11,1
-"188","gusher",2020,"heterocloeon",18.3333333333333,5
-"189","gusher",2020,"lednia",62.6666666666667,35
-"190","gusher",2020,"megarcys",23.8,11
-"191","gusher",2020,"non-tanypodinae",1433.5,799
-"192","gusher",2020,"oligochaeta",22,2
-"193","gusher",2020,"prosimulium",29.75,11
-"194","gusher",2020,"rhyacophila brunnea/vemna",11,1
-"195","gusher",2020,"zapada",653.166666666667,364
-"196","gusher",2021,"allomyia",16.146393975,3
-"197","gusher",2021,"baetis",17.9404377466667,5
-"198","gusher",2021,"baetis 2",32.292787945,12
-"199","gusher",2021,"chironomidae",25.834230356,12
-"200","gusher",2021,"homophylax",10.76426265,1
-"201","gusher",2021,"lednia",69.96770721,26
-"202","gusher",2021,"megarcys",82.52601363,23
-"203","gusher",2021,"neothremma",10.76426265,1
-"204","gusher",2021,"non-tanypodinae",1284.53534268333,716
-"205","gusher",2021,"prosimulium",43.05705059,16
-"206","gusher",2021,"simuliidae",16.146393975,3
-"207","gusher",2021,"trichoptera",10.76426265,2
-"208","gusher",2021,"zapada",450.30498741,251
-"209","mica",2016,"acari",0,0
-"210","mica",2016,"allomyia",0,0
-"211","mica",2016,"alloperla",0,0
-"212","mica",2016,"baetis",0,0
-"213","mica",2016,"chironomidae",0,0
-"214","mica",2016,"cinygmula",0,0
-"215","mica",2016,"clinocera",0,0
-"216","mica",2016,"collembola",16,18
-"217","mica",2016,"dicranota",1,1
-"218","mica",2016,"dixella",0,0
-"219","mica",2016,"drunella",0,0
-"220","mica",2016,"epeorus",0,0
-"221","mica",2016,"helodon",4,4
-"222","mica",2016,"homophylax",0,0
-"223","mica",2016,"lednia",0,0
-"224","mica",2016,"macroveliidae",0,0
-"225","mica",2016,"megarcys",0,0
-"226","mica",2016,"nematoda",0,0
-"227","mica",2016,"non-tanypodinae",443,494
-"228","mica",2016,"oligochaeta",0,0
-"229","mica",2016,"oreogeton",0,0
-"230","mica",2016,"ormosia",1,1
-"231","mica",2016,"ostracoda",0,0
-"232","mica",2016,"paradelphomyia",0,0
-"233","mica",2016,"pentacora",1,1
-"234","mica",2016,"probezzia",0,0
-"235","mica",2016,"prosimulium",0,0
-"236","mica",2016,"psychoglypha",0,0
-"237","mica",2016,"rhithrogena",0,0
-"238","mica",2016,"rhyacophila",0,0
-"239","mica",2016,"simuliidae",0,0
-"240","mica",2016,"staphylinidae",1,1
-"241","mica",2016,"suwallia",0,0
-"242","mica",2016,"sweltsa",0,0
-"243","mica",2016,"tipula",0,0
-"244","mica",2016,"trichoptera",0,0
-"245","mica",2016,"turbellaria",0,0
-"246","mica",2016,"zapada",0,0
-"247","mid_teton",2015,"acari",0,0
-"248","mid_teton",2015,"allomyia",1,1
-"249","mid_teton",2015,"alloperla",0,0
-"250","mid_teton",2015,"baetidae",3.5,1
-"251","mid_teton",2015,"chironomidae",44,20
-"252","mid_teton",2015,"chloroperlidae",0,0
-"253","mid_teton",2015,"clinocera",2.75,4
-"254","mid_teton",2015,"collembola",1,1
-"255","mid_teton",2015,"dicranota",1,2
-"256","mid_teton",2015,"drunella",0,0
-"257","mid_teton",2015,"empididae",0,0
-"258","mid_teton",2015,"epeorus",0,0
-"259","mid_teton",2015,"helodon",121,95
-"260","mid_teton",2015,"hemiptera",0,0
-"261","mid_teton",2015,"lednia",1,1
-"262","mid_teton",2015,"lipogomphus",0,0
-"263","mid_teton",2015,"megarcys",0,0
-"264","mid_teton",2015,"nematoda",0,0
-"265","mid_teton",2015,"non-tanypodinae",5376.25,2578
-"266","mid_teton",2015,"oligochaeta",0,0
-"267","mid_teton",2015,"parapsyche",0,0
-"268","mid_teton",2015,"pentacora",0,0
-"269","mid_teton",2015,"perlodidae",2.25,1
-"270","mid_teton",2015,"probezzia",0,0
-"271","mid_teton",2015,"prosimulium",0,0
-"272","mid_teton",2015,"rhithrogena",0,0
-"273","mid_teton",2015,"rhyacophila",0.5,1
-"274","mid_teton",2015,"simuliidae",0,0
-"275","mid_teton",2015,"simulium",0,0
-"276","mid_teton",2015,"sphaeriidae",0,0
-"277","mid_teton",2015,"tipula",0,0
-"278","mid_teton",2015,"trichoptera",0,0
-"279","mid_teton",2015,"turbellaria",0,0
-"280","mid_teton",2015,"zapada",0,0
-"281","mid_teton",2016,"acari",0,0
-"282","mid_teton",2016,"allomyia",0,0
-"283","mid_teton",2016,"alloperla",0,0
-"284","mid_teton",2016,"baetis",0,0
-"285","mid_teton",2016,"chironomidae",8.5,1
-"286","mid_teton",2016,"cinygmula",0,0
-"287","mid_teton",2016,"clinocera",20,5
-"288","mid_teton",2016,"collembola",60.5,7
-"289","mid_teton",2016,"dicranota",1,1
-"290","mid_teton",2016,"dixella",0,0
-"291","mid_teton",2016,"drunella",0,0
-"292","mid_teton",2016,"epeorus",0,0
-"293","mid_teton",2016,"helodon",129,29
-"294","mid_teton",2016,"homophylax",1,1
-"295","mid_teton",2016,"lednia",0,0
-"296","mid_teton",2016,"macroveliidae",0,0
-"297","mid_teton",2016,"megarcys",0,0
-"298","mid_teton",2016,"nematoda",0,0
-"299","mid_teton",2016,"non-tanypodinae",1916,996
-"300","mid_teton",2016,"oligochaeta",106.5,15
-"301","mid_teton",2016,"oreogeton",0,0
-"302","mid_teton",2016,"ormosia",0,0
-"303","mid_teton",2016,"ostracoda",0,0
-"304","mid_teton",2016,"paradelphomyia",0,0
-"305","mid_teton",2016,"pentacora",0,0
-"306","mid_teton",2016,"probezzia",0,0
-"307","mid_teton",2016,"prosimulium",2,2
-"308","mid_teton",2016,"psychoglypha",0,0
-"309","mid_teton",2016,"rhithrogena",0,0
-"310","mid_teton",2016,"rhyacophila",1,1
-"311","mid_teton",2016,"simuliidae",0,0
-"312","mid_teton",2016,"staphylinidae",0,0
-"313","mid_teton",2016,"suwallia",0,0
-"314","mid_teton",2016,"sweltsa",0,0
-"315","mid_teton",2016,"tipula",0,0
-"316","mid_teton",2016,"trichoptera",0,0
-"317","mid_teton",2016,"turbellaria",0,0
-"318","mid_teton",2016,"zapada",0,0
-"319","mid_teton",2017,"acari",11,1
-"320","mid_teton",2017,"chironomidae",11,2
-"321","mid_teton",2017,"clinocera",11,1
-"322","mid_teton",2017,"dicranota",22,2
-"323","mid_teton",2017,"helodon",34.3333333333333,19
-"324","mid_teton",2017,"non-tanypodinae",811,452
-"325","mid_teton",2017,"oligochaeta",11,3
-"326","mid_teton",2018,"allomyia",11,1
-"327","mid_teton",2018,"chironomidae",22,4
-"328","mid_teton",2018,"clinocera",11,3
-"329","mid_teton",2018,"collembola",11,1
-"330","mid_teton",2018,"helodon",21.6666666666667,6
-"331","mid_teton",2018,"lednia",11,1
-"332","mid_teton",2018,"non-tanypodinae",1563,726
-"333","mid_teton",2018,"oligochaeta",11,1
-"334","mid_teton",2018,"prosimulium",22,2
-"335","mid_teton",2018,"rhyacophila",11,1
-"336","mid_teton",2018,"staphylinidae",11,1
-"337","mid_teton",2019,"clinocera",11,1
-"338","mid_teton",2019,"collembola",11,1
-"339","mid_teton",2019,"non-tanypodinae",1399.5,780
-"340","mid_teton",2019,"oligochaeta",32.5,6
-"341","mid_teton",2019,"stenelmis",11,1
-"342","mid_teton",2019,"twinnia",11,1
-"343","mid_teton",2020,"chironomidae",19,7
-"344","mid_teton",2020,"clinocera",21.5,4
-"345","mid_teton",2020,"non-tanypodinae",1948.33333333333,1086
-"346","mid_teton",2020,"oligochaeta",22,2
-"347","mid_teton",2021,"carabidae",10.76426265,1
-"348","mid_teton",2021,"chironomidae",50.23322569,14
-"349","mid_teton",2021,"dicranota",10.76426265,1
-"350","mid_teton",2021,"hemiptera",10.76426265,2
-"351","mid_teton",2021,"lednia",10.76426265,1
-"352","mid_teton",2021,"non-tanypodinae",4659.13168283333,2597
-"353","mid_teton",2021,"oligochaeta",14.3523502,4
-"354","n_ak_basin",2016,"acari",0,0
-"355","n_ak_basin",2016,"allomyia",10.5,5
-"356","n_ak_basin",2016,"alloperla",0,0
-"357","n_ak_basin",2016,"baetis",0,0
-"358","n_ak_basin",2016,"chironomidae",1,1
-"359","n_ak_basin",2016,"cinygmula",0,0
-"360","n_ak_basin",2016,"clinocera",0,0
-"361","n_ak_basin",2016,"collembola",7,1
-"362","n_ak_basin",2016,"dicranota",0,0
-"363","n_ak_basin",2016,"dixella",0,0
-"364","n_ak_basin",2016,"drunella",0,0
-"365","n_ak_basin",2016,"epeorus",0,0
-"366","n_ak_basin",2016,"helodon",0,0
-"367","n_ak_basin",2016,"homophylax",0,0
-"368","n_ak_basin",2016,"lednia",0,0
-"369","n_ak_basin",2016,"macroveliidae",0,0
-"370","n_ak_basin",2016,"megarcys",0,0
-"371","n_ak_basin",2016,"nematoda",8,2
-"372","n_ak_basin",2016,"non-tanypodinae",232.5,49
-"373","n_ak_basin",2016,"oligochaeta",265.5,44
-"374","n_ak_basin",2016,"oreogeton",0,0
-"375","n_ak_basin",2016,"ormosia",0,0
-"376","n_ak_basin",2016,"ostracoda",0,0
-"377","n_ak_basin",2016,"paradelphomyia",0,0
-"378","n_ak_basin",2016,"pentacora",0,0
-"379","n_ak_basin",2016,"probezzia",0,0
-"380","n_ak_basin",2016,"prosimulium",0,0
-"381","n_ak_basin",2016,"psychoglypha",0,0
-"382","n_ak_basin",2016,"rhithrogena",0,0
-"383","n_ak_basin",2016,"rhyacophila",0,0
-"384","n_ak_basin",2016,"simuliidae",0,0
-"385","n_ak_basin",2016,"staphylinidae",0,0
-"386","n_ak_basin",2016,"suwallia",0,0
-"387","n_ak_basin",2016,"sweltsa",0,0
-"388","n_ak_basin",2016,"tipula",3.5,4
-"389","n_ak_basin",2016,"trichoptera",2.5,3
-"390","n_ak_basin",2016,"turbellaria",41,18
-"391","n_ak_basin",2016,"zapada",0,0
-"392","n_teton",2015,"acari",21.5,3
-"393","n_teton",2015,"allomyia",5,3
-"394","n_teton",2015,"alloperla",57.5,8
-"395","n_teton",2015,"baetidae",72,5
-"396","n_teton",2015,"chironomidae",48.25,14
-"397","n_teton",2015,"collembola",14,1
-"398","n_teton",2015,"dicranota",7,1
-"399","n_teton",2015,"elmidae",14,1
-"400","n_teton",2015,"epeorus",14,1
-"401","n_teton",2015,"leuctridae",35.5,5
-"402","n_teton",2015,"limnephilidae",5,3
-"403","n_teton",2015,"megarcys",45.6666666666667,14
-"404","n_teton",2015,"neothremma",790,166
-"405","n_teton",2015,"non-tanypodinae",642,220
-"406","n_teton",2015,"oligochaeta",14,1
-"407","n_teton",2015,"oreogeton",43,3
-"408","n_teton",2015,"ostracoda",72,5
-"409","n_teton",2015,"prosimulium",107.5,39
-"410","n_teton",2015,"rhyacophila",40,38
-"411","n_teton",2015,"simuliidae",14,1
-"412","n_teton",2015,"trichoptera",14,1
-"413","n_teton",2015,"turbellaria",229.666666666667,48
-"414","n_teton",2015,"zapada",105,75
-"415","n_teton",2016,"acari",7,2
-"416","n_teton",2016,"allomyia",9,4
-"417","n_teton",2016,"alloperla",0,0
-"418","n_teton",2016,"baetis",0,0
-"419","n_teton",2016,"chironomidae",138,70
-"420","n_teton",2016,"cinygmula",0,0
-"421","n_teton",2016,"clinocera",0,0
-"422","n_teton",2016,"collembola",0,0
-"423","n_teton",2016,"dicranota",14,10
-"424","n_teton",2016,"dixella",0,0
-"425","n_teton",2016,"drunella",0,0
-"426","n_teton",2016,"epeorus",0,0
-"427","n_teton",2016,"helodon",49.5,28
-"428","n_teton",2016,"homophylax",0,0
-"429","n_teton",2016,"lednia",0,0
-"430","n_teton",2016,"macroveliidae",0,0
-"431","n_teton",2016,"megarcys",7.5,14
-"432","n_teton",2016,"nematoda",0,0
-"433","n_teton",2016,"non-tanypodinae",3383,1224
-"434","n_teton",2016,"oligochaeta",0,0
-"435","n_teton",2016,"oreogeton",7,2
-"436","n_teton",2016,"ormosia",0,0
-"437","n_teton",2016,"ostracoda",0,0
-"438","n_teton",2016,"paradelphomyia",0,0
-"439","n_teton",2016,"pentacora",1,1
-"440","n_teton",2016,"probezzia",0,0
-"441","n_teton",2016,"prosimulium",0,0
-"442","n_teton",2016,"psychoglypha",5.5,6
-"443","n_teton",2016,"rhithrogena",0,0
-"444","n_teton",2016,"rhyacophila",3.5,4
-"445","n_teton",2016,"simuliidae",6,4
-"446","n_teton",2016,"staphylinidae",0,0
-"447","n_teton",2016,"suwallia",0,0
-"448","n_teton",2016,"sweltsa",0,0
-"449","n_teton",2016,"tipula",0,0
-"450","n_teton",2016,"trichoptera",0,0
-"451","n_teton",2016,"turbellaria",21.5,9
-"452","n_teton",2016,"zapada",0,0
-"453","n_teton",2017,"acari",21.5,4
-"454","n_teton",2017,"helodon",22,2
-"455","n_teton",2017,"homophylax",22,4
-"456","n_teton",2017,"hydrophilidae",11,1
-"457","n_teton",2017,"megarcys",89.6666666666667,50
-"458","n_teton",2017,"non-tanypodinae",46.6666666666667,26
-"459","n_teton",2017,"prosimulium",161.5,90
-"460","n_teton",2017,"rhyacophila",21.5,8
-"461","n_teton",2017,"turbellaria",22,2
-"462","n_teton",2017,"twinnia",15.2,7
-"463","n_teton",2018,"acari",22,2
-"464","n_teton",2018,"collembola",11,1
-"465","n_teton",2018,"limonia",11,1
-"466","n_teton",2018,"megarcys",18,5
-"467","n_teton",2018,"non-tanypodinae",154,43
-"468","n_teton",2018,"prosimulium",416.333333333333,116
-"469","n_teton",2018,"rhyacophila",11,2
-"470","n_teton",2019,"allomyia",11,1
-"471","n_teton",2019,"chironomidae",11,3
-"472","n_teton",2019,"dicranota",13.2,6
-"473","n_teton",2019,"helodon",81,30
-"474","n_teton",2019,"homophylax",11,3
-"475","n_teton",2019,"molophilus",11,2
-"476","n_teton",2019,"non-tanypodinae",103.4,48
-"477","n_teton",2019,"oligochaeta",11,1
-"478","n_teton",2019,"prosimulium",43.1666666666667,24
-"479","n_teton",2019,"rhyacophila",11,1
-"480","n_teton",2019,"rhyacophila alberta",11,1
-"481","n_teton",2019,"suwallia",29.75,11
-"482","n_teton",2020,"chironomidae",11,1
-"483","n_teton",2020,"dicranota",11,1
-"484","n_teton",2020,"megarcys",16.5,3
-"485","n_teton",2020,"non-tanypodinae",326.166666666667,182
-"486","n_teton",2020,"prosimulium",24.5,9
-"487","n_teton",2020,"rhyacophila coloradensis",11,1
-"488","n_teton",2020,"zapada",11,1
-"489","n_teton",2021,"acari",10.76426265,1
-"490","n_teton",2021,"chironomidae",10.76426265,1
-"491","n_teton",2021,"dicranota",16.146393975,3
-"492","n_teton",2021,"hemiptera",17.22282024,8
-"493","n_teton",2021,"homophylax",10.76426265,1
-"494","n_teton",2021,"megarcys",26.9106566225,10
-"495","n_teton",2021,"non-tanypodinae",2086.47290998167,1163
-"496","n_teton",2021,"oligochaeta",21.5285253,2
-"497","n_teton",2021,"plecoptera",10.76426265,1
-"498","n_teton",2021,"prosimulium",21.528525295,4
-"499","n_teton",2021,"rhyacophila alberta",43.05705059,4
-"500","n_teton",2021,"simuliidae",21.5285253,2
-"501","paintbrush",2016,"acari",0,0
-"502","paintbrush",2016,"allomyia",0,0
-"503","paintbrush",2016,"alloperla",0,0
-"504","paintbrush",2016,"baetis",0,0
-"505","paintbrush",2016,"chironomidae",230,165
-"506","paintbrush",2016,"cinygmula",0,0
-"507","paintbrush",2016,"clinocera",3.5,4
-"508","paintbrush",2016,"collembola",57.5,22
-"509","paintbrush",2016,"dicranota",0,0
-"510","paintbrush",2016,"dixella",0,0
-"511","paintbrush",2016,"drunella",0,0
-"512","paintbrush",2016,"epeorus",0,0
-"513","paintbrush",2016,"helodon",0,0
-"514","paintbrush",2016,"homophylax",0,0
-"515","paintbrush",2016,"lednia",2.5,3
-"516","paintbrush",2016,"macroveliidae",0,0
-"517","paintbrush",2016,"megarcys",0,0
-"518","paintbrush",2016,"nematoda",0,0
-"519","paintbrush",2016,"non-tanypodinae",3344,2601
-"520","paintbrush",2016,"oligochaeta",294,209
-"521","paintbrush",2016,"oreogeton",0,0
-"522","paintbrush",2016,"ormosia",0,0
-"523","paintbrush",2016,"ostracoda",0,0
-"524","paintbrush",2016,"paradelphomyia",3.5,4
-"525","paintbrush",2016,"pentacora",0,0
-"526","paintbrush",2016,"probezzia",0,0
-"527","paintbrush",2016,"prosimulium",125.5,98
-"528","paintbrush",2016,"psychoglypha",0,0
-"529","paintbrush",2016,"rhithrogena",0,0
-"530","paintbrush",2016,"rhyacophila",4.5,5
-"531","paintbrush",2016,"simuliidae",0,0
-"532","paintbrush",2016,"staphylinidae",0,0
-"533","paintbrush",2016,"suwallia",0,0
-"534","paintbrush",2016,"sweltsa",0,0
-"535","paintbrush",2016,"tipula",0,0
-"536","paintbrush",2016,"trichoptera",0,0
-"537","paintbrush",2016,"turbellaria",0,0
-"538","paintbrush",2016,"zapada",0,0
-"539","paintbrush",2017,"allomyia",11,1
-"540","paintbrush",2017,"cinygmula",11,1
-"541","paintbrush",2017,"clinocera",16.5,3
-"542","paintbrush",2017,"dicranota",11,1
-"543","paintbrush",2017,"helodon",32.5,6
-"544","paintbrush",2017,"non-tanypodinae",32.5,18
-"545","paintbrush",2017,"oligochaeta",608.166666666667,339
-"546","paintbrush",2017,"rhyacophila",14.6666666666667,4
-"547","paintbrush",2018,"chironomidae",11,2
-"548","paintbrush",2018,"non-tanypodinae",5472,1525
-"549","paintbrush",2018,"oligochaeta",298,83
-"550","paintbrush",2018,"prosimulium",43,8
-"551","paintbrush",2019,"helodon",54,10
-"552","paintbrush",2019,"homophylax",27,5
-"553","paintbrush",2019,"non-tanypodinae",543.666666666667,303
-"554","paintbrush",2019,"oligochaeta",72,40
-"555","paintbrush",2019,"prosimulium",80.75,30
-"556","paintbrush",2019,"staphylinidae",11,1
-"557","paintbrush",2020,"chironomidae",11,2
-"558","paintbrush",2020,"helodon",11,1
-"559","paintbrush",2020,"homophylax",22,2
-"560","paintbrush",2020,"non-tanypodinae",2088.16666666667,1164
-"561","paintbrush",2020,"oligochaeta",24.25,9
-"562","paintbrush",2020,"prosimulium",48.5,9
-"563","petersen",2015,"acari",0.75,2
-"564","petersen",2015,"allomyia",0,0
-"565","petersen",2015,"alloperla",0,0
-"566","petersen",2015,"baetidae",12.5,32
-"567","petersen",2015,"chironomidae",4.5,11
-"568","petersen",2015,"chloroperlidae",0,0
-"569","petersen",2015,"clinocera",0.5,1
-"570","petersen",2015,"collembola",1,2
-"571","petersen",2015,"dicranota",0,0
-"572","petersen",2015,"drunella",0,0
-"573","petersen",2015,"empididae",0,0
-"574","petersen",2015,"epeorus",20.75,54
-"575","petersen",2015,"helodon",2,5
-"576","petersen",2015,"hemiptera",0,0
-"577","petersen",2015,"lednia",0,0
-"578","petersen",2015,"lipogomphus",0,0
-"579","petersen",2015,"megarcys",0,0
-"580","petersen",2015,"nematoda",0,0
-"581","petersen",2015,"non-tanypodinae",52,125
-"582","petersen",2015,"oligochaeta",0.5,1
-"583","petersen",2015,"parapsyche",0,0
-"584","petersen",2015,"pentacora",0.5,1
-"585","petersen",2015,"perlodidae",2,5
-"586","petersen",2015,"probezzia",0,0
-"587","petersen",2015,"prosimulium",0.75,2
-"588","petersen",2015,"rhithrogena",0,0
-"589","petersen",2015,"rhyacophila",0,0
-"590","petersen",2015,"simuliidae",1.25,3
-"591","petersen",2015,"simulium",0.75,2
-"592","petersen",2015,"sphaeriidae",0,0
-"593","petersen",2015,"tipula",0,0
-"594","petersen",2015,"trichoptera",0,0
-"595","petersen",2015,"turbellaria",0,0
-"596","petersen",2015,"zapada",2.75,7
-"597","quad_cr",2021,"acari",48.439181915,9
-"598","quad_cr",2021,"allomyia",21.5285253,2
-"599","quad_cr",2021,"chironomidae",419.80624325,78
-"600","quad_cr",2021,"clinocera",32.29278794,3
-"601","quad_cr",2021,"dicranota",16.146393975,3
-"602","quad_cr",2021,"helodon",10.76426265,1
-"603","quad_cr",2021,"megarcys",279.8708288,26
-"604","quad_cr",2021,"non-tanypodinae",6420.8826695,1193
-"605","quad_cr",2021,"prosimulium",10.76426265,1
-"606","quad_cr",2021,"psychoglypha",53.82131324,5
-"607","quad_cr",2021,"zapada",10.76426265,2
-"608","s_ak_basin",2016,"acari",14.5,2
-"609","s_ak_basin",2016,"allomyia",9,3
-"610","s_ak_basin",2016,"alloperla",18,6
-"611","s_ak_basin",2016,"baetis",28.5,11
-"612","s_ak_basin",2016,"chironomidae",9,3
-"613","s_ak_basin",2016,"cinygmula",43,27
-"614","s_ak_basin",2016,"clinocera",0,0
-"615","s_ak_basin",2016,"collembola",0,0
-"616","s_ak_basin",2016,"dicranota",1,1
-"617","s_ak_basin",2016,"dixella",0,0
-"618","s_ak_basin",2016,"drunella",2,2
-"619","s_ak_basin",2016,"epeorus",5.5,6
-"620","s_ak_basin",2016,"helodon",0,0
-"621","s_ak_basin",2016,"homophylax",0,0
-"622","s_ak_basin",2016,"lednia",0,0
-"623","s_ak_basin",2016,"macroveliidae",1,1
-"624","s_ak_basin",2016,"megarcys",54.25,51
-"625","s_ak_basin",2016,"nematoda",0,0
-"626","s_ak_basin",2016,"non-tanypodinae",725.5,669
-"627","s_ak_basin",2016,"oligochaeta",99,40
-"628","s_ak_basin",2016,"oreogeton",18,13
-"629","s_ak_basin",2016,"ormosia",0,0
-"630","s_ak_basin",2016,"ostracoda",14.5,2
-"631","s_ak_basin",2016,"paradelphomyia",0,0
-"632","s_ak_basin",2016,"pentacora",0,0
-"633","s_ak_basin",2016,"probezzia",1,1
-"634","s_ak_basin",2016,"prosimulium",0,0
-"635","s_ak_basin",2016,"psychoglypha",1,1
-"636","s_ak_basin",2016,"rhithrogena",4.5,5
-"637","s_ak_basin",2016,"rhyacophila",2,2
-"638","s_ak_basin",2016,"simuliidae",0,0
-"639","s_ak_basin",2016,"staphylinidae",0,0
-"640","s_ak_basin",2016,"suwallia",0,0
-"641","s_ak_basin",2016,"sweltsa",0,0
-"642","s_ak_basin",2016,"tipula",0,0
-"643","s_ak_basin",2016,"trichoptera",1,1
-"644","s_ak_basin",2016,"turbellaria",34,10
-"645","s_ak_basin",2016,"zapada",104,39
-"646","s_ak_basin",2017,"acari",255.75,95
-"647","s_ak_basin",2017,"agathon",11,2
-"648","s_ak_basin",2017,"allomyia",137,51
-"649","s_ak_basin",2017,"baetis",37.8333333333333,21
-"650","s_ak_basin",2017,"chironomidae",54,15
-"651","s_ak_basin",2017,"cinygmula",89.8333333333333,50
-"652","s_ak_basin",2017,"clinocera",46.6666666666667,13
-"653","s_ak_basin",2017,"collembola",11,1
-"654","s_ak_basin",2017,"dicranota",11,1
-"655","s_ak_basin",2017,"drunella",70.25,26
-"656","s_ak_basin",2017,"epeorus",22,2
-"657","s_ak_basin",2017,"helodon",75,7
-"658","s_ak_basin",2017,"heterocloeon",36,20
-"659","s_ak_basin",2017,"lednia",11,1
-"660","s_ak_basin",2017,"megarcys",74.125,55
-"661","s_ak_basin",2017,"non-tanypodinae",2109.83333333333,1176
-"662","s_ak_basin",2017,"oligochaeta",68,19
-"663","s_ak_basin",2017,"rhyacophila",22,2
-"664","s_ak_basin",2017,"suwallia",11,1
-"665","s_ak_basin",2017,"sweltsa",43,12
-"666","s_ak_basin",2017,"tipula",11,1
-"667","s_ak_basin",2017,"turbellaria",39.6666666666667,11
-"668","s_ak_basin",2017,"twinnia",11,1
-"669","s_ak_basin",2017,"zapada",127.5,71
-"670","s_ak_basin",2018,"acari",67.25,25
-"671","s_ak_basin",2018,"allomyia",11,2
-"672","s_ak_basin",2018,"baetis",26,12
-"673","s_ak_basin",2018,"cinygmula",53.8,25
-"674","s_ak_basin",2018,"clinocera",11,1
-"675","s_ak_basin",2018,"heterocloeon",16.5,3
-"676","s_ak_basin",2018,"megarcys",23.8,11
-"677","s_ak_basin",2018,"non-tanypodinae",1698.6,789
-"678","s_ak_basin",2018,"oligochaeta",75.3333333333333,21
-"679","s_ak_basin",2018,"pomoleuctra",11,1
-"680","s_ak_basin",2018,"rhyacophila",11,1
-"681","s_ak_basin",2018,"sweltsa",11,2
-"682","s_ak_basin",2018,"turbellaria",36.4,17
-"683","s_ak_basin",2018,"zapada",49.6,23
-"684","s_ak_basin",2019,"acari",11,3
-"685","s_ak_basin",2019,"baetis",39.6666666666667,11
-"686","s_ak_basin",2019,"chironomidae",11,3
-"687","s_ak_basin",2019,"cinygmula",29,16
-"688","s_ak_basin",2019,"clinocera",11,2
-"689","s_ak_basin",2019,"drunella",32,3
-"690","s_ak_basin",2019,"epeorus",51.8,24
-"691","s_ak_basin",2019,"helodon",11,1
-"692","s_ak_basin",2019,"heterocloeon",16.5,3
-"693","s_ak_basin",2019,"lednia",11,1
-"694","s_ak_basin",2019,"megarcys",39.6666666666667,11
-"695","s_ak_basin",2019,"nematoda",43,4
-"696","s_ak_basin",2019,"non-tanypodinae",753.5,420
-"697","s_ak_basin",2019,"oligochaeta",116.4,54
-"698","s_ak_basin",2019,"ostracoda",27,5
-"699","s_ak_basin",2019,"rithrogena",16.5,3
-"700","s_ak_basin",2019,"suwallia",55.6666666666667,31
-"701","s_ak_basin",2019,"sweltsa",14.6666666666667,4
-"702","s_ak_basin",2019,"tipula",11,2
-"703","s_ak_basin",2019,"zapada",64.6,30
-"704","s_ak_basin",2020,"allomyia",22,2
-"705","s_ak_basin",2020,"baetis",39.3333333333333,11
-"706","s_ak_basin",2020,"chironomidae",22,2
-"707","s_ak_basin",2020,"cinygmula",24,11
-"708","s_ak_basin",2020,"clinocera",11,1
-"709","s_ak_basin",2020,"drunella",11,1
-"710","s_ak_basin",2020,"epeorus",11,1
-"711","s_ak_basin",2020,"megarcys",29.75,11
-"712","s_ak_basin",2020,"non-tanypodinae",997.5,556
-"713","s_ak_basin",2020,"oligochaeta",27.25,10
-"714","s_ak_basin",2020,"sweltsa",11,3
-"715","s_ak_basin",2020,"tipula",11,1
-"716","s_ak_basin",2020,"zapada",43.4,20
-"717","s_ak_basin",2021,"acari",28.7047003933333,8
-"718","s_ak_basin",2021,"allomyia",21.5285252966667,6
-"719","s_ak_basin",2021,"baetis",197.344815233333,55
-"720","s_ak_basin",2021,"baetis 2",10.76426265,4
-"721","s_ak_basin",2021,"chironomidae",10.76426265,2
-"722","s_ak_basin",2021,"cinygmula",37.6749192683333,21
-"723","s_ak_basin",2021,"clinocera",25.1166128466667,7
-"724","s_ak_basin",2021,"diptera",10.76426265,1
-"725","s_ak_basin",2021,"epeorus",28.7047003933333,8
-"726","s_ak_basin",2021,"hemiptera",10.76426265,1
-"727","s_ak_basin",2021,"megarcys",44.8510943683333,25
-"728","s_ak_basin",2021,"non-tanypodinae",2783.33077047857,1810
-"729","s_ak_basin",2021,"oligochaeta",75.3498385466667,21
-"730","s_ak_basin",2021,"probezzia",10.76426265,1
-"731","s_ak_basin",2021,"rhyacophila vobara subgroup",10.76426265,1
-"732","s_ak_basin",2021,"rithrogena",10.76426265,1
-"733","s_ak_basin",2021,"sweltsa",17.94043775,5
-"734","s_ak_basin",2021,"zapada",30.4987441716667,17
-"735","s_cascade",2015,"acari",7.25,1
-"736","s_cascade",2015,"allomyia",4.5,10
-"737","s_cascade",2015,"alloperla",0,0
-"738","s_cascade",2015,"baetidae",14.5,5
-"739","s_cascade",2015,"chironomidae",41.75,12
-"740","s_cascade",2015,"chloroperlidae",0,0
-"741","s_cascade",2015,"clinocera",6.5,4
-"742","s_cascade",2015,"collembola",8.75,3
-"743","s_cascade",2015,"dicranota",0,0
-"744","s_cascade",2015,"drunella",0,0
-"745","s_cascade",2015,"empididae",14.25,2
-"746","s_cascade",2015,"epeorus",50.25,28
-"747","s_cascade",2015,"helodon",3.25,6
-"748","s_cascade",2015,"hemiptera",0,0
-"749","s_cascade",2015,"lednia",0,0
-"750","s_cascade",2015,"lipogomphus",0,0
-"751","s_cascade",2015,"megarcys",0,0
-"752","s_cascade",2015,"nematoda",380.25,53
-"753","s_cascade",2015,"non-tanypodinae",2601.75,1330
-"754","s_cascade",2015,"oligochaeta",5.5,8
-"755","s_cascade",2015,"parapsyche",0,0
-"756","s_cascade",2015,"pentacora",0,0
-"757","s_cascade",2015,"perlodidae",10.75,3
-"758","s_cascade",2015,"probezzia",0,0
-"759","s_cascade",2015,"prosimulium",16.25,9
-"760","s_cascade",2015,"rhithrogena",0,0
-"761","s_cascade",2015,"rhyacophila",0.5,1
-"762","s_cascade",2015,"simuliidae",3.5,2
-"763","s_cascade",2015,"simulium",0,0
-"764","s_cascade",2015,"sphaeriidae",0,0
-"765","s_cascade",2015,"tipula",0.5,1
-"766","s_cascade",2015,"trichoptera",1,2
-"767","s_cascade",2015,"turbellaria",0,0
-"768","s_cascade",2015,"zapada",14.75,26
-"769","s_cascade",2016,"acari",16.25,9
-"770","s_cascade",2016,"allomyia",47.75,79
-"771","s_cascade",2016,"alloperla",0,0
-"772","s_cascade",2016,"baetis",0.5,1
-"773","s_cascade",2016,"chironomidae",1.75,1
-"774","s_cascade",2016,"cinygmula",0,0
-"775","s_cascade",2016,"clinocera",0,0
-"776","s_cascade",2016,"collembola",14.25,8
-"777","s_cascade",2016,"dicranota",0,0
-"778","s_cascade",2016,"dixella",0,0
-"779","s_cascade",2016,"drunella",1,2
-"780","s_cascade",2016,"epeorus",5.5,12
-"781","s_cascade",2016,"helodon",0,0
-"782","s_cascade",2016,"homophylax",0,0
-"783","s_cascade",2016,"lednia",3,4
-"784","s_cascade",2016,"macroveliidae",0,0
-"785","s_cascade",2016,"megarcys",15.5,45
-"786","s_cascade",2016,"nematoda",0,0
-"787","s_cascade",2016,"non-tanypodinae",369.5,311
-"788","s_cascade",2016,"oligochaeta",1,2
-"789","s_cascade",2016,"oreogeton",0,0
-"790","s_cascade",2016,"ormosia",0,0
-"791","s_cascade",2016,"ostracoda",88,49
-"792","s_cascade",2016,"paradelphomyia",0,0
-"793","s_cascade",2016,"pentacora",0,0
-"794","s_cascade",2016,"probezzia",0,0
-"795","s_cascade",2016,"prosimulium",0,0
-"796","s_cascade",2016,"psychoglypha",0,0
-"797","s_cascade",2016,"rhithrogena",0,0
-"798","s_cascade",2016,"rhyacophila",0.5,1
-"799","s_cascade",2016,"simuliidae",0,0
-"800","s_cascade",2016,"staphylinidae",0,0
-"801","s_cascade",2016,"suwallia",0,0
-"802","s_cascade",2016,"sweltsa",0,0
-"803","s_cascade",2016,"tipula",0.5,1
-"804","s_cascade",2016,"trichoptera",0,0
-"805","s_cascade",2016,"turbellaria",90.75,106
-"806","s_cascade",2016,"zapada",9.25,12
-"807","s_cascade",2018,"chironomidae",5.5,3
-"808","s_cascade",2018,"non-tanypodinae",502.5,280
-"809","s_cascade",2019,"molophilus",11,1
-"810","s_cascade",2019,"non-tanypodinae",202.833333333333,113
-"811","s_cascade",2020,"lednia",11,1
-"812","s_cascade",2020,"non-tanypodinae",136.5,76
-"813","s_cascade",2021,"chironomidae",10.76426265,2
-"814","s_cascade",2021,"hydrophilidae",10.76426265,1
-"815","s_cascade",2021,"non-tanypodinae",491.567994333333,274
-"816","s_cascade",2021,"oligochaeta",21.5285253,2
-"817","s_teton",2015,"acari",14,24
-"818","s_teton",2015,"allomyia",6,11
-"819","s_teton",2015,"alloperla",6.75,8
-"820","s_teton",2015,"baetidae",29.5,39
-"821","s_teton",2015,"chironomidae",21,29
-"822","s_teton",2015,"chloroperlidae",0,0
-"823","s_teton",2015,"clinocera",1,1
-"824","s_teton",2015,"collembola",4.5,6
-"825","s_teton",2015,"dicranota",3.75,6
-"826","s_teton",2015,"drunella",23.75,44
-"827","s_teton",2015,"empididae",1,2
-"828","s_teton",2015,"epeorus",295.5,249
-"829","s_teton",2015,"helodon",7.75,7
-"830","s_teton",2015,"hemiptera",1,1
-"831","s_teton",2015,"lednia",0,0
-"832","s_teton",2015,"lipogomphus",1,1
-"833","s_teton",2015,"megarcys",21.5,30
-"834","s_teton",2015,"nematoda",1.5,2
-"835","s_teton",2015,"non-tanypodinae",829,975
-"836","s_teton",2015,"oligochaeta",1.5,3
-"837","s_teton",2015,"parapsyche",1,2
-"838","s_teton",2015,"pentacora",0,0
-"839","s_teton",2015,"perlodidae",43,80
-"840","s_teton",2015,"probezzia",7,10
-"841","s_teton",2015,"prosimulium",1,1
-"842","s_teton",2015,"rhithrogena",54.5,66
-"843","s_teton",2015,"rhyacophila",50.5,111
-"844","s_teton",2015,"simuliidae",0,0
-"845","s_teton",2015,"simulium",0,0
-"846","s_teton",2015,"sphaeriidae",0.5,1
-"847","s_teton",2015,"tipula",7.75,5
-"848","s_teton",2015,"trichoptera",27.5,16
-"849","s_teton",2015,"turbellaria",10.75,6
-"850","s_teton",2015,"zapada",78,138
-"851","s_teton",2016,"acari",7,1
-"852","s_teton",2016,"allomyia",9,3
-"853","s_teton",2016,"alloperla",0,0
-"854","s_teton",2016,"baetis",22.5,11
-"855","s_teton",2016,"chironomidae",9,3
-"856","s_teton",2016,"cinygmula",169,97
-"857","s_teton",2016,"clinocera",0,0
-"858","s_teton",2016,"collembola",0,0
-"859","s_teton",2016,"dicranota",0,0
-"860","s_teton",2016,"dixella",0,0
-"861","s_teton",2016,"drunella",0,0
-"862","s_teton",2016,"epeorus",54,60
-"863","s_teton",2016,"helodon",5.5,6
-"864","s_teton",2016,"homophylax",0,0
-"865","s_teton",2016,"lednia",0,0
-"866","s_teton",2016,"macroveliidae",0,0
-"867","s_teton",2016,"megarcys",15.25,20
-"868","s_teton",2016,"nematoda",0,0
-"869","s_teton",2016,"non-tanypodinae",207.5,77
-"870","s_teton",2016,"oligochaeta",7,1
-"871","s_teton",2016,"oreogeton",0,0
-"872","s_teton",2016,"ormosia",0,0
-"873","s_teton",2016,"ostracoda",0,0
-"874","s_teton",2016,"paradelphomyia",0,0
-"875","s_teton",2016,"pentacora",0,0
-"876","s_teton",2016,"probezzia",15,17
-"877","s_teton",2016,"prosimulium",0,0
-"878","s_teton",2016,"psychoglypha",1,1
-"879","s_teton",2016,"rhithrogena",2.5,3
-"880","s_teton",2016,"rhyacophila",11,12
-"881","s_teton",2016,"simuliidae",1,1
-"882","s_teton",2016,"staphylinidae",1,1
-"883","s_teton",2016,"suwallia",2,2
-"884","s_teton",2016,"sweltsa",78,24
-"885","s_teton",2016,"tipula",18,20
-"886","s_teton",2016,"trichoptera",0,0
-"887","s_teton",2016,"turbellaria",136,68
-"888","s_teton",2016,"zapada",82.5,15
-"889","s_teton",2017,"acari",18.3333333333333,5
-"890","s_teton",2017,"allomyia",29,8
-"891","s_teton",2017,"baetis",22,2
-"892","s_teton",2017,"chironomidae",11,3
-"893","s_teton",2017,"cinygmula",107.5,60
-"894","s_teton",2017,"epeorus",35,13
-"895","s_teton",2017,"helodon",27,10
-"896","s_teton",2017,"heterocloeon",16.5,6
-"897","s_teton",2017,"megarcys",47.4,22
-"898","s_teton",2017,"non-tanypodinae",49.8,23
-"899","s_teton",2017,"probezzia",11,2
-"900","s_teton",2017,"rhyacophila",35.25,13
-"901","s_teton",2017,"rithrogena",11,1
-"902","s_teton",2017,"skwala",32.5,6
-"903","s_teton",2017,"sweltsa",54,20
-"904","s_teton",2017,"tipula",75.3333333333333,21
-"905","s_teton",2017,"turbellaria",21.8333333333333,12
-"906","s_teton",2017,"zapada",54,30
-"907","s_teton",2018,"acari",11,1
-"908","s_teton",2018,"allomyia",24.25,9
-"909","s_teton",2018,"baetis",11,4
-"910","s_teton",2018,"chironomidae",21.6666666666667,6
-"911","s_teton",2018,"cinygmula",79.8,37
-"912","s_teton",2018,"collembola",11,1
-"913","s_teton",2018,"epeorus",115.75,43
-"914","s_teton",2018,"heterocloeon",11,1
-"915","s_teton",2018,"megarcys",61.7142857142857,40
-"916","s_teton",2018,"non-tanypodinae",393.8,183
-"917","s_teton",2018,"oligochaeta",32,3
-"918","s_teton",2018,"ostracoda",11,1
-"919","s_teton",2018,"probezzia",21.5,4
-"920","s_teton",2018,"prosimulium",81.8,38
-"921","s_teton",2018,"rhyacophila",29.75,11
-"922","s_teton",2018,"rithrogena",18.3333333333333,5
-"923","s_teton",2018,"simuliidae",11,1
-"924","s_teton",2018,"suwallia",38,7
-"925","s_teton",2018,"sweltsa",84,39
-"926","s_teton",2018,"tipula",97,27
-"927","s_teton",2018,"turbellaria",75.25,28
-"928","s_teton",2018,"zapada",38,14
-"929","s_teton",2019,"allomyia",11,4
-"930","s_teton",2019,"baetis",25.3333333333333,7
-"931","s_teton",2019,"chironomidae",56,26
-"932","s_teton",2019,"cinygmula",91.5,34
-"933","s_teton",2019,"culicoides",11,1
-"934","s_teton",2019,"dicranota",25.3333333333333,7
-"935","s_teton",2019,"epeorus",80.75,30
-"936","s_teton",2019,"helodon",48.5,9
-"937","s_teton",2019,"heterocloeon",24.5,9
-"938","s_teton",2019,"homophylax",22,2
-"939","s_teton",2019,"megarcys",32.6666666666667,9
-"940","s_teton",2019,"molophilus",11,1
-"941","s_teton",2019,"molophilus did not fit well with key",11,1
-"942","s_teton",2019,"non-tanypodinae",278,155
-"943","s_teton",2019,"oligochaeta",22,2
-"944","s_teton",2019,"probezzia",86,8
-"945","s_teton",2019,"prosimulium",15.2,7
-"946","s_teton",2019,"rhyacophila verrula",11,2
-"947","s_teton",2019,"rhyacophila vofixa subgroup vobara subgroup",16.5,3
-"948","s_teton",2019,"rithrogena",27,5
-"949","s_teton",2019,"suwallia",29.75,11
-"950","s_teton",2019,"sweltsa",73.5,41
-"951","s_teton",2019,"tipula",18,5
-"952","s_teton",2019,"zapada",88.75,33
-"953","s_teton",2020,"allomyia",11,1
-"954","s_teton",2020,"chironomidae",22,2
-"955","s_teton",2020,"cinygmula",82.6666666666667,46
-"956","s_teton",2020,"epeorus",57.5,32
-"957","s_teton",2020,"heterocloeon",11,1
-"958","s_teton",2020,"megarcys",NA,NA
-"959","s_teton",2020,"non-tanypodinae",489.833333333333,273
-"960","s_teton",2020,"prosimulium",16.5,3
-"961","s_teton",2020,"rhyacophila blarina",11,5
-"962","s_teton",2020,"rhyacophila coloradensis",11,2
-"963","s_teton",2020,"simuliidae",11,1
-"964","s_teton",2020,"sweltsa",66.5,37
-"965","s_teton",2020,"tipula (arctotipula)",111.333333333333,31
-"966","s_teton",2020,"zapada",36.8,17
-"967","s_teton",2021,"allomyia",10.76426265,1
-"968","s_teton",2021,"baetis",202.726946523333,113
-"969","s_teton",2021,"baetis 2",24.21959096,9
-"970","s_teton",2021,"cinygmula",231.431646916667,129
-"971","s_teton",2021,"epeorus",147.111589546667,41
-"972","s_teton",2021,"homophylax",10.76426265,1
-"973","s_teton",2021,"megarcys",10.76426265,2
-"974","s_teton",2021,"non-tanypodinae",224.255471838333,125
-"975","s_teton",2021,"ostracoda",10.76426265,1
-"976","s_teton",2021,"probezzia",32.292787945,12
-"977","s_teton",2021,"prosimulium",10.76426265,1
-"978","s_teton",2021,"psychoglypha",10.76426265,2
-"979","s_teton",2021,"rhyacophila",10.76426265,1
-"980","s_teton",2021,"rhyacophila arnaudi",21.528525295,4
-"981","s_teton",2021,"rhyacophila vobara subgroup",28.7047003933333,8
-"982","s_teton",2021,"rithrogena",21.5285253,2
-"983","s_teton",2021,"sweltsa",121.994976675,68
-"984","s_teton",2021,"tipula",53.8213132466667,15
-"985","s_teton",2021,"zapada",21.528525295,4
-"986","silver_run",2017,"acari",256.5,143
-"987","silver_run",2017,"allomyia",5.5,3
-"988","silver_run",2017,"chironomidae",11,6
-"989","silver_run",2017,"cinygmula",9,5
-"990","silver_run",2017,"clinocera",9,5
-"991","silver_run",2017,"drunella",5.5,3
-"992","silver_run",2017,"gonomyodes",4,1
-"993","silver_run",2017,"helodon",4,1
-"994","silver_run",2017,"homophylax",7,2
-"995","silver_run",2017,"megarcys",11,9
-"996","silver_run",2017,"non-tanypodinae",845,471
-"997","silver_run",2017,"oligochaeta",7,2
-"998","silver_run",2017,"ostracoda",4,1
-"999","silver_run",2017,"probezzia",11,3
-"1000","silver_run",2017,"rhyacophila",54,15
-"1001","silver_run",2017,"sweltsa",163.5,91
-"1002","silver_run",2017,"zapada",93,52
-"1003","silver_run",2021,"acari",32.29278794,3
-"1004","silver_run",2021,"allomyia",10.76426265,1
-"1005","silver_run",2021,"baetis",10.76426265,2
-"1006","silver_run",2021,"baetis 2",1097.9547903,204
-"1007","silver_run",2021,"chironomidae",53.82131324,10
-"1008","silver_run",2021,"cinygmula",37.67491927,7
-"1009","silver_run",2021,"clinocera",32.292787945,6
-"1010","silver_run",2021,"drunella",16.146393975,3
-"1011","silver_run",2021,"megarcys",43.05705059,8
-"1012","silver_run",2021,"non-tanypodinae",2163.6167923,402
-"1013","silver_run",2021,"ostracoda",43.05705059,4
-"1014","silver_run",2021,"pentacora",10.76426265,1
-"1015","silver_run",2021,"probezzia",21.528525295,4
-"1016","silver_run",2021,"prosimulium",10.76426265,2
-"1017","silver_run",2021,"rhyacophila",10.76426265,1
-"1018","silver_run",2021,"rhyacophila alberta",43.05705059,4
-"1019","silver_run",2021,"rhyacophila ventina complex",32.29278794,3
-"1020","silver_run",2021,"rhyacophila verrula",43.05705059,4
-"1021","silver_run",2021,"rhyacophila viquaea",10.76426265,1
-"1022","silver_run",2021,"sweltsa",403.65984929,75
-"1023","silver_run",2021,"zapada",522.06673865,97
-"1024","skillet",2017,"acari",11,1
-"1025","skillet",2017,"agathon",123.833333333333,69
-"1026","skillet",2017,"allomyia",37.75,14
-"1027","skillet",2017,"chironomidae",32.5,6
-"1028","skillet",2017,"dicranota",11,2
-"1029","skillet",2017,"gonomyodes",64.75,24
-"1030","skillet",2017,"helodon",11,1
-"1031","skillet",2017,"heterocloeon",193.833333333333,108
-"1032","skillet",2017,"lednia",51.25,19
-"1033","skillet",2017,"limonia",11,1
-"1034","skillet",2017,"non-tanypodinae",398.5,222
-"1035","skillet",2017,"oligochaeta",16.5,3
-"1036","skillet",2017,"prosimulium",138.166666666667,77
-"1037","skillet",2017,"rhyacophila",26,12
-"1038","skillet",2017,"simuliidae",11,1
-"1039","skillet",2017,"turbellaria",11,1
-"1040","skillet",2017,"twinnia",22,2
-"1041","skillet",2018,"acari",4,2
-"1042","skillet",2018,"allomyia",7,2
-"1043","skillet",2018,"chironomidae",20.6666666666667,13
-"1044","skillet",2018,"gonomyodes",13,11
-"1045","skillet",2018,"lednia",18,5
-"1046","skillet",2018,"non-tanypodinae",1346.66666666667,1126
-"1047","skillet",2018,"oligochaeta",11,3
-"1048","skillet",2018,"prosimulium",34.6666666666667,29
-"1049","skillet",2018,"rhyacophila",9,3
-"1050","skillet",2018,"turbellaria",10.5,6
-"1051","skillet",2019,"allomyia",32.5,12
-"1052","skillet",2019,"chironomidae",22,2
-"1053","skillet",2019,"clinocera",11,2
-"1054","skillet",2019,"dicranota",11,3
-"1055","skillet",2019,"gonomyodes",21.6666666666667,6
-"1056","skillet",2019,"helodon",11,4
-"1057","skillet",2019,"lednia",11,2
-"1058","skillet",2019,"non-tanypodinae",453.833333333333,253
-"1059","skillet",2019,"prosimulium",22,4
-"1060","skillet",2019,"rhyacophila arnaudi",32,3
-"1061","skillet",2019,"rhyacophila blarina",11,1
-"1062","skillet",2019,"rhyacophila hyalinata",11,1
-"1063","skillet",2019,"rhyacophila vatina complex",11,1
-"1064","skillet",2019,"rhyacophila verrula",16.5,3
-"1065","skillet",2019,"rhyacophila vobara subgroup",11,1
-"1066","skillet",2019,"rhyacophila vofixa",11,1
-"1067","skillet",2019,"staphylinidae",11,1
-"1068","skillet",2019,"sweltsa",11,1
-"1069","skillet",2020,"agathon",11,1
-"1070","skillet",2020,"allomyia",11,1
-"1071","skillet",2020,"chironomidae",22,2
-"1072","skillet",2020,"lednia",11,4
-"1073","skillet",2020,"non-tanypodinae",455.5,254
-"1074","skillet",2020,"prosimulium",18,5
-"1075","skillet",2020,"rhyacophila blarina",11,1
-"1076","skillet",2020,"rhyacophila brunnea/vemna",11,1
-"1077","skillet",2020,"rhyacophila ecosa",11,1
-"1078","skillet",2020,"rhyacophila hyalinata banks",32,3
-"1079","skillet",2020,"rhyacophila verrula milne",32,3
-"1080","skillet",2020,"tanypodinae",22,2
-"1081","skillet",2021,"allomyia",21.528525295,4
-"1082","skillet",2021,"baetis 2",10.76426265,1
-"1083","skillet",2021,"chironomidae",48.4391819075,18
-"1084","skillet",2021,"clinocera",10.76426265,1
-"1085","skillet",2021,"dicranota",10.76426265,1
-"1086","skillet",2021,"gonomyodes",26.91065662,10
-"1087","skillet",2021,"hemiptera",21.528525295,4
-"1088","skillet",2021,"heteroceridae",21.5285253,2
-"1089","skillet",2021,"lednia",10.76426265,2
-"1090","skillet",2021,"non-tanypodinae",4115.53641911667,2294
-"1091","skillet",2021,"oligochaeta",17.9404377466667,5
-"1092","skillet",2021,"plecoptera",21.5285253,2
-"1093","skillet",2021,"prosimulium",30.139935418,14
-"1094","skillet",2021,"rhyacophila alberta",10.76426265,1
-"1095","skillet",2021,"rhyacophila arnaudi",16.146393975,6
-"1096","skillet",2021,"staphylinidae",21.5285253,2
-"1097","windcave",2015,"acari",6.33333333333333,3
-"1098","windcave",2015,"allomyia",4.33333333333333,3
-"1099","windcave",2015,"alloperla",5,2
-"1100","windcave",2015,"baetidae",16,6
-"1101","windcave",2015,"chironomidae",29,26
-"1102","windcave",2015,"clinocera",1,1
-"1103","windcave",2015,"megarcys",45.6666666666667,48
-"1104","windcave",2015,"neothremma",1,1
-"1105","windcave",2015,"non-tanypodinae",505.25,550
-"1106","windcave",2015,"prosimulium",11,4
-"1107","windcave",2015,"rhyacophila",1,2
-"1108","windcave",2015,"turbellaria",45,52
-"1109","windcave",2015,"zapada",80.25,118
-"1110","windcave",2016,"acari",3.5,1
-"1111","windcave",2016,"allomyia",0,0
-"1112","windcave",2016,"alloperla",0,0
-"1113","windcave",2016,"baetis",0,0
-"1114","windcave",2016,"chironomidae",9.5,5
-"1115","windcave",2016,"cinygmula",0,0
-"1116","windcave",2016,"clinocera",0,0
-"1117","windcave",2016,"collembola",0,0
-"1118","windcave",2016,"dicranota",0,0
-"1119","windcave",2016,"dixella",7,2
-"1120","windcave",2016,"drunella",0,0
-"1121","windcave",2016,"epeorus",0,0
-"1122","windcave",2016,"helodon",0,0
-"1123","windcave",2016,"homophylax",0,0
-"1124","windcave",2016,"lednia",0,0
-"1125","windcave",2016,"macroveliidae",0,0
-"1126","windcave",2016,"megarcys",50.75,77
-"1127","windcave",2016,"nematoda",0,0
-"1128","windcave",2016,"non-tanypodinae",859,424
-"1129","windcave",2016,"oligochaeta",0,0
-"1130","windcave",2016,"oreogeton",0,0
-"1131","windcave",2016,"ormosia",0,0
-"1132","windcave",2016,"ostracoda",0,0
-"1133","windcave",2016,"paradelphomyia",0,0
-"1134","windcave",2016,"pentacora",0,0
-"1135","windcave",2016,"probezzia",0,0
-"1136","windcave",2016,"prosimulium",1,1
-"1137","windcave",2016,"psychoglypha",0,0
-"1138","windcave",2016,"rhithrogena",0,0
-"1139","windcave",2016,"rhyacophila",2,2
-"1140","windcave",2016,"simuliidae",0,0
-"1141","windcave",2016,"staphylinidae",0,0
-"1142","windcave",2016,"suwallia",0,0
-"1143","windcave",2016,"sweltsa",0,0
-"1144","windcave",2016,"tipula",0,0
-"1145","windcave",2016,"trichoptera",0,0
-"1146","windcave",2016,"turbellaria",6,4
-"1147","windcave",2016,"zapada",483,205
-"1148","windcave",2017,"acari",136.333333333333,38
-"1149","windcave",2017,"allomyia",22,2
-"1150","windcave",2017,"baetis",11,2
-"1151","windcave",2017,"chironomidae",17.4,8
-"1152","windcave",2017,"megarcys",122.166666666667,68
-"1153","windcave",2017,"non-tanypodinae",1354.33333333333,755
-"1154","windcave",2017,"prosimulium",11,1
-"1155","windcave",2017,"rhyacophila",105.6,49
-"1156","windcave",2017,"sweltsa",11,1
-"1157","windcave",2017,"turbellaria",32.3333333333333,9
-"1158","windcave",2017,"zapada",1266.33333333333,706
-"1159","windcave",2018,"acari",83.5,31
-"1160","windcave",2018,"chironomidae",32.5,12
-"1161","windcave",2018,"collembola",11,1
-"1162","windcave",2018,"megarcys",164.428571428571,107
-"1163","windcave",2018,"non-tanypodinae",396.2,184
-"1164","windcave",2018,"prosimulium",11,1
-"1165","windcave",2018,"rhyacophila",94.25,35
-"1166","windcave",2018,"staphylinidae",32,3
-"1167","windcave",2018,"turbellaria",220.5,41
-"1168","windcave",2018,"zapada",721.2,335
-"1169","windcave",2019,"chironomidae",32.5,6
-"1170","windcave",2019,"lednia",11,1
-"1171","windcave",2019,"non-tanypodinae",409.166666666667,228
-"1172","windcave",2019,"rhyacophila rotunda",22,2
-"1173","windcave",2019,"suwallia",23.8,11
-"1174","windcave",2019,"sweltsa",11,1
-"1175","windcave",2019,"zapada",36,10
-"1176","windcave",2020,"acari",11,1
-"1177","windcave",2020,"chironomidae",21.6666666666667,6
-"1178","windcave",2020,"megarcys",185.2,86
-"1179","windcave",2020,"non-tanypodinae",651.166666666667,363
-"1180","windcave",2020,"rhyacophila rotunda",14.6666666666667,4
-"1181","windcave",2020,"zapada",151,84
-"1182","windcave",2021,"acari",16.146393975,3
-"1183","windcave",2021,"chironomidae",32.2927879433333,9
-"1184","windcave",2021,"clinocera",10.76426265,1
-"1185","windcave",2021,"hydrophilidae",10.76426265,1
-"1186","windcave",2021,"megarcys",99.5694294925,37
-"1187","windcave",2021,"non-tanypodinae",3013.99354153167,1680
-"1188","windcave",2021,"prosimulium",25.1166128466667,7
-"1189","windcave",2021,"rhyacophila rotunda",51.668460706,24
-"1190","windcave",2021,"zapada",186.580552561667,104
+"","Stream","Year","taxa_lwr","density_xbar","abundance_total","source","stream_code","full_name"
+"1","cloudveil",2019,"lednia",36.3333333333333,10,"glacier","CV","Cloudveil"
+"2","cloudveil",2019,"non-tanypodinae",265.5,148,"glacier","CV","Cloudveil"
+"3","cloudveil",2019,"chironomidae",11,1,"glacier","CV","Cloudveil"
+"4","cloudveil",2019,"oligochaeta",11,1,"glacier","CV","Cloudveil"
+"5","cloudveil",2019,"baetis",11,1,"glacier","CV","Cloudveil"
+"6","cloudveil",2020,"dicranota",11,1,"glacier","CV","Cloudveil"
+"7","cloudveil",2020,"chironomidae",11,1,"glacier","CV","Cloudveil"
+"8","cloudveil",2020,"non-tanypodinae",448.5,250,"glacier","CV","Cloudveil"
+"9","cloudveil",2020,"homophylax",11,1,"glacier","CV","Cloudveil"
+"10","cloudveil",2020,"lednia",30,11,"glacier","CV","Cloudveil"
+"11","cloudveil",2021,"trichoptera",10.76426265,1,"glacier","CV","Cloudveil"
+"12","cloudveil",2021,"megarcys",10.76426265,1,"glacier","CV","Cloudveil"
+"13","cloudveil",2021,"plecoptera",16.146393975,3,"glacier","CV","Cloudveil"
+"14","cloudveil",2021,"oligochaeta",37.674919275,14,"glacier","CV","Cloudveil"
+"15","cloudveil",2021,"lednia",78.9379260833333,44,"glacier","CV","Cloudveil"
+"16","cloudveil",2021,"allomyia",10.76426265,1,"glacier","CV","Cloudveil"
+"17","cloudveil",2021,"non-tanypodinae",1361.679225,759,"glacier","CV","Cloudveil"
+"18","cloudveil",2021,"chironomidae",43.05705059,4,"glacier","CV","Cloudveil"
+"19","delta",2017,"baetis",11,1,"glacier","DE","Delta"
+"20","delta",2017,"acari",11,1,"glacier","DE","Delta"
+"21","delta",2017,"lednia",23.8,11,"glacier","DE","Delta"
+"22","delta",2017,"megarcys",16.5,3,"glacier","DE","Delta"
+"23","delta",2017,"chironomidae",22,2,"glacier","DE","Delta"
+"24","delta",2017,"collembola",11,1,"glacier","DE","Delta"
+"25","delta",2017,"zapada",165.8,77,"glacier","DE","Delta"
+"26","delta",2017,"staphylinidae",22,2,"glacier","DE","Delta"
+"27","delta",2017,"suwallia",11,1,"glacier","DE","Delta"
+"28","delta",2017,"turbellaria",36,10,"glacier","DE","Delta"
+"29","delta",2017,"non-tanypodinae",3507.16666666667,1955,"glacier","DE","Delta"
+"30","delta",2017,"oligochaeta",79,22,"glacier","DE","Delta"
+"31","delta",2017,"prosimulium",16.5,3,"glacier","DE","Delta"
+"32","delta",2017,"rhyacophila",22,2,"glacier","DE","Delta"
+"33","delta",2018,"acari",60.25,23,"glacier","DE","Delta"
+"34","delta",2018,"baetis",18,7,"glacier","DE","Delta"
+"35","delta",2018,"chironomidae",53,23,"glacier","DE","Delta"
+"36","delta",2018,"prosimulium",21.5,4,"glacier","DE","Delta"
+"37","delta",2018,"rhyacophila",11,1,"glacier","DE","Delta"
+"38","delta",2018,"staphylinidae",11,1,"glacier","DE","Delta"
+"39","delta",2018,"sweltsa",9,3,"glacier","DE","Delta"
+"40","delta",2018,"turbellaria",40.4,22,"glacier","DE","Delta"
+"41","delta",2018,"zapada",655,379,"glacier","DE","Delta"
+"42","delta",2018,"lednia",21.5,4,"glacier","DE","Delta"
+"43","delta",2018,"megarcys",47,13,"glacier","DE","Delta"
+"44","delta",2018,"non-tanypodinae",4644.83333333333,2843,"glacier","DE","Delta"
+"45","delta",2018,"dicranota",11,3,"glacier","DE","Delta"
+"46","delta",2018,"oligochaeta",303.6,195,"glacier","DE","Delta"
+"47","delta",2019,"rhyacophila brunnea/vemna",11,1,"glacier","DE","Delta"
+"48","delta",2019,"oligochaeta",43,8,"glacier","DE","Delta"
+"49","delta",2019,"prosimulium",11,1,"glacier","DE","Delta"
+"50","delta",2019,"non-tanypodinae",1878.33333333333,1047,"glacier","DE","Delta"
+"51","delta",2019,"agathon",11,1,"glacier","DE","Delta"
+"52","delta",2019,"baetis",43,4,"glacier","DE","Delta"
+"53","delta",2019,"chironomidae",32.5,18,"glacier","DE","Delta"
+"54","delta",2019,"helodon",27,5,"glacier","DE","Delta"
+"55","delta",2019,"hirudinea",11,1,"glacier","DE","Delta"
+"56","delta",2019,"lednia",11,2,"glacier","DE","Delta"
+"57","delta",2019,"limonia",11,1,"glacier","DE","Delta"
+"58","delta",2019,"megarcys",11,3,"glacier","DE","Delta"
+"59","delta",2019,"tanypodinae",28.6666666666667,8,"glacier","DE","Delta"
+"60","delta",2019,"zapada",34.6,16,"glacier","DE","Delta"
+"61","delta",2020,"chironomidae",18,5,"glacier","DE","Delta"
+"62","delta",2020,"rhyacophila coloradensis",11,4,"glacier","DE","Delta"
+"63","delta",2020,"rhyacophila verrula",11,1,"glacier","DE","Delta"
+"64","delta",2020,"zapada",36,10,"glacier","DE","Delta"
+"65","delta",2020,"rhyacophila alberta",11,1,"glacier","DE","Delta"
+"66","delta",2020,"non-tanypodinae",1849.66666666667,1031,"glacier","DE","Delta"
+"67","delta",2020,"oligochaeta",43,4,"glacier","DE","Delta"
+"68","delta",2021,"megarcys",37.67491927,7,"glacier","DE","Delta"
+"69","delta",2021,"nematoda",10.76426265,1,"glacier","DE","Delta"
+"70","delta",2021,"non-tanypodinae",4106.56620033333,2289,"glacier","DE","Delta"
+"71","delta",2021,"lednia",34.983853605,13,"glacier","DE","Delta"
+"72","delta",2021,"prosimulium",14.3523502,4,"glacier","DE","Delta"
+"73","delta",2021,"rhyacophila alberta",10.76426265,1,"glacier","DE","Delta"
+"74","delta",2021,"zapada",71.76175099,40,"glacier","DE","Delta"
+"75","delta",2021,"oligochaeta",673.842841746,313,"glacier","DE","Delta"
+"76","delta",2021,"chironomidae",181.198421241667,101,"glacier","DE","Delta"
+"77","delta",2021,"homophylax",10.76426265,1,"glacier","DE","Delta"
+"78","delta",2021,"agathon",10.76426265,1,"glacier","DE","Delta"
+"79","delta",2021,"baetis",16.146393975,3,"glacier","DE","Delta"
+"80","grizzly",2017,"homophylax",65,12,"snowmelt","GR","Grizzly"
+"81","grizzly",2017,"turbellaria",82.5,46,"snowmelt","GR","Grizzly"
+"82","grizzly",2017,"non-tanypodinae",77.6,36,"snowmelt","GR","Grizzly"
+"83","grizzly",2017,"oligochaeta",18,5,"snowmelt","GR","Grizzly"
+"84","grizzly",2017,"prosimulium",102.333333333333,57,"snowmelt","GR","Grizzly"
+"85","grizzly",2017,"allomyia",11,1,"snowmelt","GR","Grizzly"
+"86","grizzly",2017,"clinocera",11,1,"snowmelt","GR","Grizzly"
+"87","grizzly",2017,"collembola",48.5,9,"snowmelt","GR","Grizzly"
+"88","grizzly",2017,"dicranota",11,1,"snowmelt","GR","Grizzly"
+"89","grizzly",2017,"acari",32,3,"snowmelt","GR","Grizzly"
+"90","grizzly",2018,"turbellaria",323.25,120,"snowmelt","GR","Grizzly"
+"91","grizzly",2018,"acari",43,8,"snowmelt","GR","Grizzly"
+"92","grizzly",2018,"collembola",11,2,"snowmelt","GR","Grizzly"
+"93","grizzly",2018,"non-tanypodinae",767.833333333333,428,"snowmelt","GR","Grizzly"
+"94","grizzly",2018,"oligochaeta",258.4,120,"snowmelt","GR","Grizzly"
+"95","grizzly",2018,"prosimulium",294,164,"snowmelt","GR","Grizzly"
+"96","grizzly",2019,"allomyia",11,1,"snowmelt","GR","Grizzly"
+"97","grizzly",2019,"chironomidae",16.5,3,"snowmelt","GR","Grizzly"
+"98","grizzly",2019,"clinocera",11,2,"snowmelt","GR","Grizzly"
+"99","grizzly",2019,"dicranota",11,3,"snowmelt","GR","Grizzly"
+"100","grizzly",2019,"helodon",1509,701,"snowmelt","GR","Grizzly"
+"101","grizzly",2019,"homophylax",11,3,"snowmelt","GR","Grizzly"
+"102","grizzly",2019,"non-tanypodinae",263.833333333333,147,"snowmelt","GR","Grizzly"
+"103","grizzly",2019,"oligochaeta",57.3333333333333,16,"snowmelt","GR","Grizzly"
+"104","grizzly",2019,"prosimulium",202.4,94,"snowmelt","GR","Grizzly"
+"105","grizzly",2019,"trichoptera homophylax or allomyia",11,1,"snowmelt","GR","Grizzly"
+"106","grizzly",2019,"simuliidae (unknown)",40.25,15,"snowmelt","GR","Grizzly"
+"107","grizzly",2020,"oligochaeta",199,37,"snowmelt","GR","Grizzly"
+"108","grizzly",2020,"non-tanypodinae",2762.66666666667,1540,"snowmelt","GR","Grizzly"
+"109","grizzly",2020,"prosimulium",314.166666666667,175,"snowmelt","GR","Grizzly"
+"110","grizzly",2020,"nematoda",11,1,"snowmelt","GR","Grizzly"
+"111","grizzly",2020,"sphaeridiinae",11,1,"snowmelt","GR","Grizzly"
+"112","grizzly",2020,"simuliidae",11,1,"snowmelt","GR","Grizzly"
+"113","grizzly",2020,"chironomidae",34.6,16,"snowmelt","GR","Grizzly"
+"114","grizzly",2020,"helodon",64.6,30,"snowmelt","GR","Grizzly"
+"115","grizzly",2020,"megarcys",11,1,"snowmelt","GR","Grizzly"
+"116","grizzly",2020,"acari",11,1,"snowmelt","GR","Grizzly"
+"117","grizzly",2020,"homophylax",21.5,4,"snowmelt","GR","Grizzly"
+"118","grizzly",2021,"non-tanypodinae",213.491209181667,119,"snowmelt","GR","Grizzly"
+"119","grizzly",2021,"oligochaeta",43.05705059,4,"snowmelt","GR","Grizzly"
+"120","grizzly",2021,"prosimulium",64.585575886,30,"snowmelt","GR","Grizzly"
+"121","grizzly",2021,"psychoglypha",21.5285252966667,6,"snowmelt","GR","Grizzly"
+"122","grizzly",2021,"simuliidae",111.23071403,62,"snowmelt","GR","Grizzly"
+"123","grizzly",2021,"acari",10.76426265,1,"snowmelt","GR","Grizzly"
+"124","grizzly",2021,"homophylax",10.76426265,1,"snowmelt","GR","Grizzly"
+"125","grizzly",2021,"nematoda",10.76426265,1,"snowmelt","GR","Grizzly"
+"126","gusher",2020,"acari",11,1,"sub_ice","GU","Gusher"
+"127","gusher",2020,"agathon",11,1,"sub_ice","GU","Gusher"
+"128","gusher",2020,"allomyia",11,1,"sub_ice","GU","Gusher"
+"129","gusher",2020,"baetis",11,1,"sub_ice","GU","Gusher"
+"130","gusher",2020,"chironomidae",79,44,"sub_ice","GU","Gusher"
+"131","gusher",2020,"non-tanypodinae",1433.5,799,"sub_ice","GU","Gusher"
+"132","gusher",2020,"oligochaeta",22,2,"sub_ice","GU","Gusher"
+"133","gusher",2020,"prosimulium",29.75,11,"sub_ice","GU","Gusher"
+"134","gusher",2020,"rhyacophila brunnea/vemna",11,1,"sub_ice","GU","Gusher"
+"135","gusher",2020,"zapada",653.166666666667,364,"sub_ice","GU","Gusher"
+"136","gusher",2020,"clinocera",11,1,"sub_ice","GU","Gusher"
+"137","gusher",2020,"dicranota",11,1,"sub_ice","GU","Gusher"
+"138","gusher",2020,"heterocloeon",18.3333333333333,5,"sub_ice","GU","Gusher"
+"139","gusher",2020,"lednia",62.6666666666667,35,"sub_ice","GU","Gusher"
+"140","gusher",2020,"megarcys",23.8,11,"sub_ice","GU","Gusher"
+"141","gusher",2021,"trichoptera",10.76426265,2,"sub_ice","GU","Gusher"
+"142","gusher",2021,"zapada",450.30498741,251,"sub_ice","GU","Gusher"
+"143","gusher",2021,"simuliidae",16.146393975,3,"sub_ice","GU","Gusher"
+"144","gusher",2021,"prosimulium",43.05705059,16,"sub_ice","GU","Gusher"
+"145","gusher",2021,"allomyia",16.146393975,3,"sub_ice","GU","Gusher"
+"146","gusher",2021,"baetis",17.9404377466667,5,"sub_ice","GU","Gusher"
+"147","gusher",2021,"baetis 2",32.292787945,12,"sub_ice","GU","Gusher"
+"148","gusher",2021,"lednia",69.96770721,26,"sub_ice","GU","Gusher"
+"149","gusher",2021,"megarcys",82.52601363,23,"sub_ice","GU","Gusher"
+"150","gusher",2021,"neothremma",10.76426265,1,"sub_ice","GU","Gusher"
+"151","gusher",2021,"non-tanypodinae",1284.53534268333,716,"sub_ice","GU","Gusher"
+"152","gusher",2021,"homophylax",10.76426265,1,"sub_ice","GU","Gusher"
+"153","gusher",2021,"chironomidae",25.834230356,12,"sub_ice","GU","Gusher"
+"154","mid_teton",2015,"rhyacophila",0.5,1,"glacier","MT","Middle Teton"
+"155","mid_teton",2015,"allomyia",1,1,"glacier","MT","Middle Teton"
+"156","mid_teton",2015,"baetidae",3.5,1,"glacier","MT","Middle Teton"
+"157","mid_teton",2015,"chironomidae",44,20,"glacier","MT","Middle Teton"
+"158","mid_teton",2015,"clinocera",2.75,4,"glacier","MT","Middle Teton"
+"159","mid_teton",2015,"collembola",1,1,"glacier","MT","Middle Teton"
+"160","mid_teton",2015,"dicranota",1,2,"glacier","MT","Middle Teton"
+"161","mid_teton",2015,"helodon",121,95,"glacier","MT","Middle Teton"
+"162","mid_teton",2015,"lednia",1,1,"glacier","MT","Middle Teton"
+"163","mid_teton",2015,"non-tanypodinae",5376.25,2578,"glacier","MT","Middle Teton"
+"164","mid_teton",2015,"perlodidae",2.25,1,"glacier","MT","Middle Teton"
+"165","mid_teton",2016,"dicranota",1,1,"glacier","MT","Middle Teton"
+"166","mid_teton",2016,"collembola",60.5,7,"glacier","MT","Middle Teton"
+"167","mid_teton",2016,"helodon",129,29,"glacier","MT","Middle Teton"
+"168","mid_teton",2016,"homophylax",1,1,"glacier","MT","Middle Teton"
+"169","mid_teton",2016,"prosimulium",2,2,"glacier","MT","Middle Teton"
+"170","mid_teton",2016,"non-tanypodinae",1916,996,"glacier","MT","Middle Teton"
+"171","mid_teton",2016,"oligochaeta",106.5,15,"glacier","MT","Middle Teton"
+"172","mid_teton",2016,"rhyacophila",1,1,"glacier","MT","Middle Teton"
+"173","mid_teton",2016,"clinocera",20,5,"glacier","MT","Middle Teton"
+"174","mid_teton",2016,"chironomidae",8.5,1,"glacier","MT","Middle Teton"
+"175","mid_teton",2017,"acari",11,1,"glacier","MT","Middle Teton"
+"176","mid_teton",2017,"chironomidae",11,2,"glacier","MT","Middle Teton"
+"177","mid_teton",2017,"non-tanypodinae",811,452,"glacier","MT","Middle Teton"
+"178","mid_teton",2017,"oligochaeta",11,3,"glacier","MT","Middle Teton"
+"179","mid_teton",2017,"clinocera",11,1,"glacier","MT","Middle Teton"
+"180","mid_teton",2017,"dicranota",22,2,"glacier","MT","Middle Teton"
+"181","mid_teton",2017,"helodon",34.3333333333333,19,"glacier","MT","Middle Teton"
+"182","mid_teton",2018,"allomyia",11,1,"glacier","MT","Middle Teton"
+"183","mid_teton",2018,"chironomidae",22,4,"glacier","MT","Middle Teton"
+"184","mid_teton",2018,"clinocera",11,3,"glacier","MT","Middle Teton"
+"185","mid_teton",2018,"collembola",11,1,"glacier","MT","Middle Teton"
+"186","mid_teton",2018,"helodon",21.6666666666667,6,"glacier","MT","Middle Teton"
+"187","mid_teton",2018,"lednia",11,1,"glacier","MT","Middle Teton"
+"188","mid_teton",2018,"non-tanypodinae",1563,726,"glacier","MT","Middle Teton"
+"189","mid_teton",2018,"oligochaeta",11,1,"glacier","MT","Middle Teton"
+"190","mid_teton",2018,"prosimulium",22,2,"glacier","MT","Middle Teton"
+"191","mid_teton",2018,"rhyacophila",11,1,"glacier","MT","Middle Teton"
+"192","mid_teton",2018,"staphylinidae",11,1,"glacier","MT","Middle Teton"
+"193","mid_teton",2019,"clinocera",11,1,"glacier","MT","Middle Teton"
+"194","mid_teton",2019,"collembola",11,1,"glacier","MT","Middle Teton"
+"195","mid_teton",2019,"non-tanypodinae",1399.5,780,"glacier","MT","Middle Teton"
+"196","mid_teton",2019,"oligochaeta",32.5,6,"glacier","MT","Middle Teton"
+"197","mid_teton",2019,"stenelmis",11,1,"glacier","MT","Middle Teton"
+"198","mid_teton",2019,"twinnia",11,1,"glacier","MT","Middle Teton"
+"199","mid_teton",2020,"chironomidae",19,7,"glacier","MT","Middle Teton"
+"200","mid_teton",2020,"clinocera",21.5,4,"glacier","MT","Middle Teton"
+"201","mid_teton",2020,"non-tanypodinae",1948.33333333333,1086,"glacier","MT","Middle Teton"
+"202","mid_teton",2020,"oligochaeta",22,2,"glacier","MT","Middle Teton"
+"203","mid_teton",2021,"lednia",10.76426265,1,"glacier","MT","Middle Teton"
+"204","mid_teton",2021,"non-tanypodinae",4659.13168283333,2597,"glacier","MT","Middle Teton"
+"205","mid_teton",2021,"oligochaeta",14.3523502,4,"glacier","MT","Middle Teton"
+"206","mid_teton",2021,"carabidae",10.76426265,1,"glacier","MT","Middle Teton"
+"207","mid_teton",2021,"chironomidae",50.23322569,14,"glacier","MT","Middle Teton"
+"208","mid_teton",2021,"dicranota",10.76426265,1,"glacier","MT","Middle Teton"
+"209","mid_teton",2021,"hemiptera",10.76426265,2,"glacier","MT","Middle Teton"
+"210","n_teton",2015,"collembola",14,1,"snowmelt","NT","North Teton"
+"211","n_teton",2015,"alloperla",57.5,8,"snowmelt","NT","North Teton"
+"212","n_teton",2015,"baetidae",72,5,"snowmelt","NT","North Teton"
+"213","n_teton",2015,"chironomidae",48.25,14,"snowmelt","NT","North Teton"
+"214","n_teton",2015,"leuctridae",35.5,5,"snowmelt","NT","North Teton"
+"215","n_teton",2015,"dicranota",7,1,"snowmelt","NT","North Teton"
+"216","n_teton",2015,"elmidae",14,1,"snowmelt","NT","North Teton"
+"217","n_teton",2015,"epeorus",14,1,"snowmelt","NT","North Teton"
+"218","n_teton",2015,"acari",21.5,3,"snowmelt","NT","North Teton"
+"219","n_teton",2015,"allomyia",5,3,"snowmelt","NT","North Teton"
+"220","n_teton",2015,"oreogeton",43,3,"snowmelt","NT","North Teton"
+"221","n_teton",2015,"ostracoda",72,5,"snowmelt","NT","North Teton"
+"222","n_teton",2015,"prosimulium",107.5,39,"snowmelt","NT","North Teton"
+"223","n_teton",2015,"rhyacophila",40,38,"snowmelt","NT","North Teton"
+"224","n_teton",2015,"simuliidae",14,1,"snowmelt","NT","North Teton"
+"225","n_teton",2015,"trichoptera",14,1,"snowmelt","NT","North Teton"
+"226","n_teton",2015,"turbellaria",229.666666666667,48,"snowmelt","NT","North Teton"
+"227","n_teton",2015,"zapada",105,75,"snowmelt","NT","North Teton"
+"228","n_teton",2015,"limnephilidae",5,3,"snowmelt","NT","North Teton"
+"229","n_teton",2015,"megarcys",45.6666666666667,14,"snowmelt","NT","North Teton"
+"230","n_teton",2015,"neothremma",790,166,"snowmelt","NT","North Teton"
+"231","n_teton",2015,"non-tanypodinae",642,220,"snowmelt","NT","North Teton"
+"232","n_teton",2015,"oligochaeta",14,1,"snowmelt","NT","North Teton"
+"233","n_teton",2016,"acari",7,2,"snowmelt","NT","North Teton"
+"234","n_teton",2016,"allomyia",9,4,"snowmelt","NT","North Teton"
+"235","n_teton",2016,"chironomidae",138,70,"snowmelt","NT","North Teton"
+"236","n_teton",2016,"dicranota",14,10,"snowmelt","NT","North Teton"
+"237","n_teton",2016,"helodon",49.5,28,"snowmelt","NT","North Teton"
+"238","n_teton",2016,"megarcys",7.5,14,"snowmelt","NT","North Teton"
+"239","n_teton",2016,"non-tanypodinae",3383,1224,"snowmelt","NT","North Teton"
+"240","n_teton",2016,"oreogeton",7,2,"snowmelt","NT","North Teton"
+"241","n_teton",2016,"pentacora",1,1,"snowmelt","NT","North Teton"
+"242","n_teton",2016,"psychoglypha",5.5,6,"snowmelt","NT","North Teton"
+"243","n_teton",2016,"rhyacophila",3.5,4,"snowmelt","NT","North Teton"
+"244","n_teton",2016,"simuliidae",6,4,"snowmelt","NT","North Teton"
+"245","n_teton",2016,"turbellaria",21.5,9,"snowmelt","NT","North Teton"
+"246","n_teton",2017,"rhyacophila",21.5,8,"snowmelt","NT","North Teton"
+"247","n_teton",2017,"turbellaria",22,2,"snowmelt","NT","North Teton"
+"248","n_teton",2017,"twinnia",15.2,7,"snowmelt","NT","North Teton"
+"249","n_teton",2017,"acari",21.5,4,"snowmelt","NT","North Teton"
+"250","n_teton",2017,"helodon",22,2,"snowmelt","NT","North Teton"
+"251","n_teton",2017,"homophylax",22,4,"snowmelt","NT","North Teton"
+"252","n_teton",2017,"hydrophilidae",11,1,"snowmelt","NT","North Teton"
+"253","n_teton",2017,"megarcys",89.6666666666667,50,"snowmelt","NT","North Teton"
+"254","n_teton",2017,"non-tanypodinae",46.6666666666667,26,"snowmelt","NT","North Teton"
+"255","n_teton",2017,"prosimulium",161.5,90,"snowmelt","NT","North Teton"
+"256","n_teton",2018,"acari",22,2,"snowmelt","NT","North Teton"
+"257","n_teton",2018,"collembola",11,1,"snowmelt","NT","North Teton"
+"258","n_teton",2018,"limonia",11,1,"snowmelt","NT","North Teton"
+"259","n_teton",2018,"megarcys",18,5,"snowmelt","NT","North Teton"
+"260","n_teton",2018,"non-tanypodinae",154,43,"snowmelt","NT","North Teton"
+"261","n_teton",2018,"prosimulium",416.333333333333,116,"snowmelt","NT","North Teton"
+"262","n_teton",2018,"rhyacophila",11,2,"snowmelt","NT","North Teton"
+"263","n_teton",2019,"allomyia",11,1,"snowmelt","NT","North Teton"
+"264","n_teton",2019,"chironomidae",11,3,"snowmelt","NT","North Teton"
+"265","n_teton",2019,"dicranota",13.2,6,"snowmelt","NT","North Teton"
+"266","n_teton",2019,"helodon",81,30,"snowmelt","NT","North Teton"
+"267","n_teton",2019,"homophylax",11,3,"snowmelt","NT","North Teton"
+"268","n_teton",2019,"molophilus",11,2,"snowmelt","NT","North Teton"
+"269","n_teton",2019,"non-tanypodinae",103.4,48,"snowmelt","NT","North Teton"
+"270","n_teton",2019,"oligochaeta",11,1,"snowmelt","NT","North Teton"
+"271","n_teton",2019,"prosimulium",43.1666666666667,24,"snowmelt","NT","North Teton"
+"272","n_teton",2019,"rhyacophila",11,1,"snowmelt","NT","North Teton"
+"273","n_teton",2019,"rhyacophila alberta",11,1,"snowmelt","NT","North Teton"
+"274","n_teton",2019,"suwallia",29.75,11,"snowmelt","NT","North Teton"
+"275","n_teton",2020,"rhyacophila coloradensis",11,1,"snowmelt","NT","North Teton"
+"276","n_teton",2020,"zapada",11,1,"snowmelt","NT","North Teton"
+"277","n_teton",2020,"prosimulium",24.5,9,"snowmelt","NT","North Teton"
+"278","n_teton",2020,"chironomidae",11,1,"snowmelt","NT","North Teton"
+"279","n_teton",2020,"dicranota",11,1,"snowmelt","NT","North Teton"
+"280","n_teton",2020,"megarcys",16.5,3,"snowmelt","NT","North Teton"
+"281","n_teton",2020,"non-tanypodinae",326.166666666667,182,"snowmelt","NT","North Teton"
+"282","n_teton",2021,"acari",10.76426265,1,"snowmelt","NT","North Teton"
+"283","n_teton",2021,"chironomidae",10.76426265,1,"snowmelt","NT","North Teton"
+"284","n_teton",2021,"dicranota",16.146393975,3,"snowmelt","NT","North Teton"
+"285","n_teton",2021,"hemiptera",17.22282024,8,"snowmelt","NT","North Teton"
+"286","n_teton",2021,"homophylax",10.76426265,1,"snowmelt","NT","North Teton"
+"287","n_teton",2021,"megarcys",26.9106566225,10,"snowmelt","NT","North Teton"
+"288","n_teton",2021,"non-tanypodinae",2086.47290998167,1163,"snowmelt","NT","North Teton"
+"289","n_teton",2021,"oligochaeta",21.5285253,2,"snowmelt","NT","North Teton"
+"290","n_teton",2021,"plecoptera",10.76426265,1,"snowmelt","NT","North Teton"
+"291","n_teton",2021,"prosimulium",21.528525295,4,"snowmelt","NT","North Teton"
+"292","n_teton",2021,"rhyacophila alberta",43.05705059,4,"snowmelt","NT","North Teton"
+"293","n_teton",2021,"simuliidae",21.5285253,2,"snowmelt","NT","North Teton"
+"294","paintbrush",2016,"chironomidae",230,165,"sub_ice","PB","Paintbrush"
+"295","paintbrush",2016,"clinocera",3.5,4,"sub_ice","PB","Paintbrush"
+"296","paintbrush",2016,"collembola",57.5,22,"sub_ice","PB","Paintbrush"
+"297","paintbrush",2016,"lednia",2.5,3,"sub_ice","PB","Paintbrush"
+"298","paintbrush",2016,"non-tanypodinae",3344,2601,"sub_ice","PB","Paintbrush"
+"299","paintbrush",2016,"oligochaeta",294,209,"sub_ice","PB","Paintbrush"
+"300","paintbrush",2016,"rhyacophila",4.5,5,"sub_ice","PB","Paintbrush"
+"301","paintbrush",2016,"paradelphomyia",3.5,4,"sub_ice","PB","Paintbrush"
+"302","paintbrush",2016,"prosimulium",125.5,98,"sub_ice","PB","Paintbrush"
+"303","paintbrush",2017,"allomyia",11,1,"sub_ice","PB","Paintbrush"
+"304","paintbrush",2017,"cinygmula",11,1,"sub_ice","PB","Paintbrush"
+"305","paintbrush",2017,"clinocera",16.5,3,"sub_ice","PB","Paintbrush"
+"306","paintbrush",2017,"dicranota",11,1,"sub_ice","PB","Paintbrush"
+"307","paintbrush",2017,"helodon",32.5,6,"sub_ice","PB","Paintbrush"
+"308","paintbrush",2017,"non-tanypodinae",32.5,18,"sub_ice","PB","Paintbrush"
+"309","paintbrush",2017,"oligochaeta",608.166666666667,339,"sub_ice","PB","Paintbrush"
+"310","paintbrush",2017,"rhyacophila",14.6666666666667,4,"sub_ice","PB","Paintbrush"
+"311","paintbrush",2018,"chironomidae",11,2,"sub_ice","PB","Paintbrush"
+"312","paintbrush",2018,"non-tanypodinae",5472,1525,"sub_ice","PB","Paintbrush"
+"313","paintbrush",2018,"oligochaeta",298,83,"sub_ice","PB","Paintbrush"
+"314","paintbrush",2018,"prosimulium",43,8,"sub_ice","PB","Paintbrush"
+"315","paintbrush",2019,"helodon",54,10,"sub_ice","PB","Paintbrush"
+"316","paintbrush",2019,"homophylax",27,5,"sub_ice","PB","Paintbrush"
+"317","paintbrush",2019,"non-tanypodinae",543.666666666667,303,"sub_ice","PB","Paintbrush"
+"318","paintbrush",2019,"oligochaeta",72,40,"sub_ice","PB","Paintbrush"
+"319","paintbrush",2019,"prosimulium",80.75,30,"sub_ice","PB","Paintbrush"
+"320","paintbrush",2019,"staphylinidae",11,1,"sub_ice","PB","Paintbrush"
+"321","paintbrush",2020,"chironomidae",11,2,"sub_ice","PB","Paintbrush"
+"322","paintbrush",2020,"helodon",11,1,"sub_ice","PB","Paintbrush"
+"323","paintbrush",2020,"homophylax",22,2,"sub_ice","PB","Paintbrush"
+"324","paintbrush",2020,"non-tanypodinae",2088.16666666667,1164,"sub_ice","PB","Paintbrush"
+"325","paintbrush",2020,"oligochaeta",24.25,9,"sub_ice","PB","Paintbrush"
+"326","paintbrush",2020,"prosimulium",48.5,9,"sub_ice","PB","Paintbrush"
+"327","s_ak_basin",2016,"acari",14.5,2,"sub_ice","AK","S. AK Basin"
+"328","s_ak_basin",2016,"allomyia",9,3,"sub_ice","AK","S. AK Basin"
+"329","s_ak_basin",2016,"alloperla",18,6,"sub_ice","AK","S. AK Basin"
+"330","s_ak_basin",2016,"baetis",28.5,11,"sub_ice","AK","S. AK Basin"
+"331","s_ak_basin",2016,"chironomidae",9,3,"sub_ice","AK","S. AK Basin"
+"332","s_ak_basin",2016,"cinygmula",43,27,"sub_ice","AK","S. AK Basin"
+"333","s_ak_basin",2016,"dicranota",1,1,"sub_ice","AK","S. AK Basin"
+"334","s_ak_basin",2016,"drunella",2,2,"sub_ice","AK","S. AK Basin"
+"335","s_ak_basin",2016,"epeorus",5.5,6,"sub_ice","AK","S. AK Basin"
+"336","s_ak_basin",2016,"macroveliidae",1,1,"sub_ice","AK","S. AK Basin"
+"337","s_ak_basin",2016,"megarcys",54.25,51,"sub_ice","AK","S. AK Basin"
+"338","s_ak_basin",2016,"non-tanypodinae",725.5,669,"sub_ice","AK","S. AK Basin"
+"339","s_ak_basin",2016,"oligochaeta",99,40,"sub_ice","AK","S. AK Basin"
+"340","s_ak_basin",2016,"oreogeton",18,13,"sub_ice","AK","S. AK Basin"
+"341","s_ak_basin",2016,"ostracoda",14.5,2,"sub_ice","AK","S. AK Basin"
+"342","s_ak_basin",2016,"probezzia",1,1,"sub_ice","AK","S. AK Basin"
+"343","s_ak_basin",2016,"psychoglypha",1,1,"sub_ice","AK","S. AK Basin"
+"344","s_ak_basin",2016,"rhithrogena",4.5,5,"sub_ice","AK","S. AK Basin"
+"345","s_ak_basin",2016,"rhyacophila",2,2,"sub_ice","AK","S. AK Basin"
+"346","s_ak_basin",2016,"trichoptera",1,1,"sub_ice","AK","S. AK Basin"
+"347","s_ak_basin",2016,"turbellaria",34,10,"sub_ice","AK","S. AK Basin"
+"348","s_ak_basin",2016,"zapada",104,39,"sub_ice","AK","S. AK Basin"
+"349","s_ak_basin",2017,"acari",255.75,95,"sub_ice","AK","S. AK Basin"
+"350","s_ak_basin",2017,"agathon",11,2,"sub_ice","AK","S. AK Basin"
+"351","s_ak_basin",2017,"allomyia",137,51,"sub_ice","AK","S. AK Basin"
+"352","s_ak_basin",2017,"baetis",37.8333333333333,21,"sub_ice","AK","S. AK Basin"
+"353","s_ak_basin",2017,"chironomidae",54,15,"sub_ice","AK","S. AK Basin"
+"354","s_ak_basin",2017,"cinygmula",89.8333333333333,50,"sub_ice","AK","S. AK Basin"
+"355","s_ak_basin",2017,"clinocera",46.6666666666667,13,"sub_ice","AK","S. AK Basin"
+"356","s_ak_basin",2017,"collembola",11,1,"sub_ice","AK","S. AK Basin"
+"357","s_ak_basin",2017,"dicranota",11,1,"sub_ice","AK","S. AK Basin"
+"358","s_ak_basin",2017,"drunella",70.25,26,"sub_ice","AK","S. AK Basin"
+"359","s_ak_basin",2017,"epeorus",22,2,"sub_ice","AK","S. AK Basin"
+"360","s_ak_basin",2017,"helodon",75,7,"sub_ice","AK","S. AK Basin"
+"361","s_ak_basin",2017,"heterocloeon",36,20,"sub_ice","AK","S. AK Basin"
+"362","s_ak_basin",2017,"lednia",11,1,"sub_ice","AK","S. AK Basin"
+"363","s_ak_basin",2017,"megarcys",74.125,55,"sub_ice","AK","S. AK Basin"
+"364","s_ak_basin",2017,"non-tanypodinae",2109.83333333333,1176,"sub_ice","AK","S. AK Basin"
+"365","s_ak_basin",2017,"oligochaeta",68,19,"sub_ice","AK","S. AK Basin"
+"366","s_ak_basin",2017,"rhyacophila",22,2,"sub_ice","AK","S. AK Basin"
+"367","s_ak_basin",2017,"suwallia",11,1,"sub_ice","AK","S. AK Basin"
+"368","s_ak_basin",2017,"sweltsa",43,12,"sub_ice","AK","S. AK Basin"
+"369","s_ak_basin",2017,"tipula",11,1,"sub_ice","AK","S. AK Basin"
+"370","s_ak_basin",2017,"turbellaria",39.6666666666667,11,"sub_ice","AK","S. AK Basin"
+"371","s_ak_basin",2017,"twinnia",11,1,"sub_ice","AK","S. AK Basin"
+"372","s_ak_basin",2017,"zapada",127.5,71,"sub_ice","AK","S. AK Basin"
+"373","s_ak_basin",2018,"acari",67.25,25,"sub_ice","AK","S. AK Basin"
+"374","s_ak_basin",2018,"allomyia",11,2,"sub_ice","AK","S. AK Basin"
+"375","s_ak_basin",2018,"baetis",26,12,"sub_ice","AK","S. AK Basin"
+"376","s_ak_basin",2018,"cinygmula",53.8,25,"sub_ice","AK","S. AK Basin"
+"377","s_ak_basin",2018,"clinocera",11,1,"sub_ice","AK","S. AK Basin"
+"378","s_ak_basin",2018,"heterocloeon",16.5,3,"sub_ice","AK","S. AK Basin"
+"379","s_ak_basin",2018,"megarcys",23.8,11,"sub_ice","AK","S. AK Basin"
+"380","s_ak_basin",2018,"non-tanypodinae",1698.6,789,"sub_ice","AK","S. AK Basin"
+"381","s_ak_basin",2018,"oligochaeta",75.3333333333333,21,"sub_ice","AK","S. AK Basin"
+"382","s_ak_basin",2018,"pomoleuctra",11,1,"sub_ice","AK","S. AK Basin"
+"383","s_ak_basin",2018,"rhyacophila",11,1,"sub_ice","AK","S. AK Basin"
+"384","s_ak_basin",2018,"sweltsa",11,2,"sub_ice","AK","S. AK Basin"
+"385","s_ak_basin",2018,"turbellaria",36.4,17,"sub_ice","AK","S. AK Basin"
+"386","s_ak_basin",2018,"zapada",49.6,23,"sub_ice","AK","S. AK Basin"
+"387","s_ak_basin",2019,"acari",11,3,"sub_ice","AK","S. AK Basin"
+"388","s_ak_basin",2019,"baetis",39.6666666666667,11,"sub_ice","AK","S. AK Basin"
+"389","s_ak_basin",2019,"chironomidae",11,3,"sub_ice","AK","S. AK Basin"
+"390","s_ak_basin",2019,"cinygmula",29,16,"sub_ice","AK","S. AK Basin"
+"391","s_ak_basin",2019,"clinocera",11,2,"sub_ice","AK","S. AK Basin"
+"392","s_ak_basin",2019,"drunella",32,3,"sub_ice","AK","S. AK Basin"
+"393","s_ak_basin",2019,"epeorus",51.8,24,"sub_ice","AK","S. AK Basin"
+"394","s_ak_basin",2019,"helodon",11,1,"sub_ice","AK","S. AK Basin"
+"395","s_ak_basin",2019,"heterocloeon",16.5,3,"sub_ice","AK","S. AK Basin"
+"396","s_ak_basin",2019,"lednia",11,1,"sub_ice","AK","S. AK Basin"
+"397","s_ak_basin",2019,"megarcys",39.6666666666667,11,"sub_ice","AK","S. AK Basin"
+"398","s_ak_basin",2019,"nematoda",43,4,"sub_ice","AK","S. AK Basin"
+"399","s_ak_basin",2019,"non-tanypodinae",753.5,420,"sub_ice","AK","S. AK Basin"
+"400","s_ak_basin",2019,"oligochaeta",116.4,54,"sub_ice","AK","S. AK Basin"
+"401","s_ak_basin",2019,"ostracoda",27,5,"sub_ice","AK","S. AK Basin"
+"402","s_ak_basin",2019,"rithrogena",16.5,3,"sub_ice","AK","S. AK Basin"
+"403","s_ak_basin",2019,"suwallia",55.6666666666667,31,"sub_ice","AK","S. AK Basin"
+"404","s_ak_basin",2019,"sweltsa",14.6666666666667,4,"sub_ice","AK","S. AK Basin"
+"405","s_ak_basin",2019,"tipula",11,2,"sub_ice","AK","S. AK Basin"
+"406","s_ak_basin",2019,"zapada",64.6,30,"sub_ice","AK","S. AK Basin"
+"407","s_ak_basin",2020,"allomyia",22,2,"sub_ice","AK","S. AK Basin"
+"408","s_ak_basin",2020,"baetis",39.3333333333333,11,"sub_ice","AK","S. AK Basin"
+"409","s_ak_basin",2020,"chironomidae",22,2,"sub_ice","AK","S. AK Basin"
+"410","s_ak_basin",2020,"cinygmula",24,11,"sub_ice","AK","S. AK Basin"
+"411","s_ak_basin",2020,"clinocera",11,1,"sub_ice","AK","S. AK Basin"
+"412","s_ak_basin",2020,"drunella",11,1,"sub_ice","AK","S. AK Basin"
+"413","s_ak_basin",2020,"epeorus",11,1,"sub_ice","AK","S. AK Basin"
+"414","s_ak_basin",2020,"megarcys",29.75,11,"sub_ice","AK","S. AK Basin"
+"415","s_ak_basin",2020,"non-tanypodinae",997.5,556,"sub_ice","AK","S. AK Basin"
+"416","s_ak_basin",2020,"oligochaeta",27.25,10,"sub_ice","AK","S. AK Basin"
+"417","s_ak_basin",2020,"sweltsa",11,3,"sub_ice","AK","S. AK Basin"
+"418","s_ak_basin",2020,"tipula",11,1,"sub_ice","AK","S. AK Basin"
+"419","s_ak_basin",2020,"zapada",43.4,20,"sub_ice","AK","S. AK Basin"
+"420","s_ak_basin",2021,"acari",28.7047003933333,8,"sub_ice","AK","S. AK Basin"
+"421","s_ak_basin",2021,"allomyia",21.5285252966667,6,"sub_ice","AK","S. AK Basin"
+"422","s_ak_basin",2021,"baetis",197.344815233333,55,"sub_ice","AK","S. AK Basin"
+"423","s_ak_basin",2021,"baetis 2",10.76426265,4,"sub_ice","AK","S. AK Basin"
+"424","s_ak_basin",2021,"chironomidae",10.76426265,2,"sub_ice","AK","S. AK Basin"
+"425","s_ak_basin",2021,"cinygmula",37.6749192683333,21,"sub_ice","AK","S. AK Basin"
+"426","s_ak_basin",2021,"clinocera",25.1166128466667,7,"sub_ice","AK","S. AK Basin"
+"427","s_ak_basin",2021,"diptera",10.76426265,1,"sub_ice","AK","S. AK Basin"
+"428","s_ak_basin",2021,"epeorus",28.7047003933333,8,"sub_ice","AK","S. AK Basin"
+"429","s_ak_basin",2021,"hemiptera",10.76426265,1,"sub_ice","AK","S. AK Basin"
+"430","s_ak_basin",2021,"megarcys",44.8510943683333,25,"sub_ice","AK","S. AK Basin"
+"431","s_ak_basin",2021,"non-tanypodinae",2783.33077047857,1810,"sub_ice","AK","S. AK Basin"
+"432","s_ak_basin",2021,"oligochaeta",75.3498385466667,21,"sub_ice","AK","S. AK Basin"
+"433","s_ak_basin",2021,"probezzia",10.76426265,1,"sub_ice","AK","S. AK Basin"
+"434","s_ak_basin",2021,"rhyacophila vobara subgroup",10.76426265,1,"sub_ice","AK","S. AK Basin"
+"435","s_ak_basin",2021,"rithrogena",10.76426265,1,"sub_ice","AK","S. AK Basin"
+"436","s_ak_basin",2021,"sweltsa",17.94043775,5,"sub_ice","AK","S. AK Basin"
+"437","s_ak_basin",2021,"zapada",30.4987441716667,17,"sub_ice","AK","S. AK Basin"
+"438","s_cascade",2015,"acari",7.25,1,"sub_ice","SC","South Cascade"
+"439","s_cascade",2015,"allomyia",4.5,10,"sub_ice","SC","South Cascade"
+"440","s_cascade",2015,"baetidae",14.5,5,"sub_ice","SC","South Cascade"
+"441","s_cascade",2015,"chironomidae",41.75,12,"sub_ice","SC","South Cascade"
+"442","s_cascade",2015,"clinocera",6.5,4,"sub_ice","SC","South Cascade"
+"443","s_cascade",2015,"collembola",8.75,3,"sub_ice","SC","South Cascade"
+"444","s_cascade",2015,"empididae",14.25,2,"sub_ice","SC","South Cascade"
+"445","s_cascade",2015,"epeorus",50.25,28,"sub_ice","SC","South Cascade"
+"446","s_cascade",2015,"helodon",3.25,6,"sub_ice","SC","South Cascade"
+"447","s_cascade",2015,"nematoda",380.25,53,"sub_ice","SC","South Cascade"
+"448","s_cascade",2015,"non-tanypodinae",2601.75,1330,"sub_ice","SC","South Cascade"
+"449","s_cascade",2015,"oligochaeta",5.5,8,"sub_ice","SC","South Cascade"
+"450","s_cascade",2015,"perlodidae",10.75,3,"sub_ice","SC","South Cascade"
+"451","s_cascade",2015,"prosimulium",16.25,9,"sub_ice","SC","South Cascade"
+"452","s_cascade",2015,"rhyacophila",0.5,1,"sub_ice","SC","South Cascade"
+"453","s_cascade",2015,"simuliidae",3.5,2,"sub_ice","SC","South Cascade"
+"454","s_cascade",2015,"tipula",0.5,1,"sub_ice","SC","South Cascade"
+"455","s_cascade",2015,"trichoptera",1,2,"sub_ice","SC","South Cascade"
+"456","s_cascade",2015,"zapada",14.75,26,"sub_ice","SC","South Cascade"
+"457","s_cascade",2016,"acari",16.25,9,"sub_ice","SC","South Cascade"
+"458","s_cascade",2016,"allomyia",47.75,79,"sub_ice","SC","South Cascade"
+"459","s_cascade",2016,"baetis",0.5,1,"sub_ice","SC","South Cascade"
+"460","s_cascade",2016,"chironomidae",1.75,1,"sub_ice","SC","South Cascade"
+"461","s_cascade",2016,"collembola",14.25,8,"sub_ice","SC","South Cascade"
+"462","s_cascade",2016,"drunella",1,2,"sub_ice","SC","South Cascade"
+"463","s_cascade",2016,"epeorus",5.5,12,"sub_ice","SC","South Cascade"
+"464","s_cascade",2016,"lednia",3,4,"sub_ice","SC","South Cascade"
+"465","s_cascade",2016,"megarcys",15.5,45,"sub_ice","SC","South Cascade"
+"466","s_cascade",2016,"non-tanypodinae",369.5,311,"sub_ice","SC","South Cascade"
+"467","s_cascade",2016,"oligochaeta",1,2,"sub_ice","SC","South Cascade"
+"468","s_cascade",2016,"ostracoda",88,49,"sub_ice","SC","South Cascade"
+"469","s_cascade",2016,"rhyacophila",0.5,1,"sub_ice","SC","South Cascade"
+"470","s_cascade",2016,"tipula",0.5,1,"sub_ice","SC","South Cascade"
+"471","s_cascade",2016,"turbellaria",90.75,106,"sub_ice","SC","South Cascade"
+"472","s_cascade",2016,"zapada",9.25,12,"sub_ice","SC","South Cascade"
+"473","s_cascade",2018,"chironomidae",5.5,3,"sub_ice","SC","South Cascade"
+"474","s_cascade",2018,"non-tanypodinae",502.5,280,"sub_ice","SC","South Cascade"
+"475","s_cascade",2019,"molophilus",11,1,"sub_ice","SC","South Cascade"
+"476","s_cascade",2019,"non-tanypodinae",202.833333333333,113,"sub_ice","SC","South Cascade"
+"477","s_cascade",2020,"lednia",11,1,"sub_ice","SC","South Cascade"
+"478","s_cascade",2020,"non-tanypodinae",136.5,76,"sub_ice","SC","South Cascade"
+"479","s_cascade",2021,"chironomidae",10.76426265,2,"sub_ice","SC","South Cascade"
+"480","s_cascade",2021,"hydrophilidae",10.76426265,1,"sub_ice","SC","South Cascade"
+"481","s_cascade",2021,"non-tanypodinae",491.567994333333,274,"sub_ice","SC","South Cascade"
+"482","s_cascade",2021,"oligochaeta",21.5285253,2,"sub_ice","SC","South Cascade"
+"483","s_teton",2015,"acari",14,24,"snowmelt","ST","South Teton"
+"484","s_teton",2015,"allomyia",6,11,"snowmelt","ST","South Teton"
+"485","s_teton",2015,"alloperla",6.75,8,"snowmelt","ST","South Teton"
+"486","s_teton",2015,"baetidae",29.5,39,"snowmelt","ST","South Teton"
+"487","s_teton",2015,"chironomidae",21,29,"snowmelt","ST","South Teton"
+"488","s_teton",2015,"clinocera",1,1,"snowmelt","ST","South Teton"
+"489","s_teton",2015,"collembola",4.5,6,"snowmelt","ST","South Teton"
+"490","s_teton",2015,"dicranota",3.75,6,"snowmelt","ST","South Teton"
+"491","s_teton",2015,"drunella",23.75,44,"snowmelt","ST","South Teton"
+"492","s_teton",2015,"empididae",1,2,"snowmelt","ST","South Teton"
+"493","s_teton",2015,"epeorus",295.5,249,"snowmelt","ST","South Teton"
+"494","s_teton",2015,"helodon",7.75,7,"snowmelt","ST","South Teton"
+"495","s_teton",2015,"hemiptera",1,1,"snowmelt","ST","South Teton"
+"496","s_teton",2015,"lipogomphus",1,1,"snowmelt","ST","South Teton"
+"497","s_teton",2015,"megarcys",21.5,30,"snowmelt","ST","South Teton"
+"498","s_teton",2015,"nematoda",1.5,2,"snowmelt","ST","South Teton"
+"499","s_teton",2015,"non-tanypodinae",829,975,"snowmelt","ST","South Teton"
+"500","s_teton",2015,"oligochaeta",1.5,3,"snowmelt","ST","South Teton"
+"501","s_teton",2015,"parapsyche",1,2,"snowmelt","ST","South Teton"
+"502","s_teton",2015,"perlodidae",43,80,"snowmelt","ST","South Teton"
+"503","s_teton",2015,"probezzia",7,10,"snowmelt","ST","South Teton"
+"504","s_teton",2015,"prosimulium",1,1,"snowmelt","ST","South Teton"
+"505","s_teton",2015,"rhithrogena",54.5,66,"snowmelt","ST","South Teton"
+"506","s_teton",2015,"rhyacophila",50.5,111,"snowmelt","ST","South Teton"
+"507","s_teton",2015,"sphaeriidae",0.5,1,"snowmelt","ST","South Teton"
+"508","s_teton",2015,"tipula",7.75,5,"snowmelt","ST","South Teton"
+"509","s_teton",2015,"trichoptera",27.5,16,"snowmelt","ST","South Teton"
+"510","s_teton",2015,"turbellaria",10.75,6,"snowmelt","ST","South Teton"
+"511","s_teton",2015,"zapada",78,138,"snowmelt","ST","South Teton"
+"512","s_teton",2016,"acari",7,1,"snowmelt","ST","South Teton"
+"513","s_teton",2016,"allomyia",9,3,"snowmelt","ST","South Teton"
+"514","s_teton",2016,"baetis",22.5,11,"snowmelt","ST","South Teton"
+"515","s_teton",2016,"chironomidae",9,3,"snowmelt","ST","South Teton"
+"516","s_teton",2016,"cinygmula",169,97,"snowmelt","ST","South Teton"
+"517","s_teton",2016,"epeorus",54,60,"snowmelt","ST","South Teton"
+"518","s_teton",2016,"helodon",5.5,6,"snowmelt","ST","South Teton"
+"519","s_teton",2016,"megarcys",15.25,20,"snowmelt","ST","South Teton"
+"520","s_teton",2016,"non-tanypodinae",207.5,77,"snowmelt","ST","South Teton"
+"521","s_teton",2016,"oligochaeta",7,1,"snowmelt","ST","South Teton"
+"522","s_teton",2016,"probezzia",15,17,"snowmelt","ST","South Teton"
+"523","s_teton",2016,"psychoglypha",1,1,"snowmelt","ST","South Teton"
+"524","s_teton",2016,"rhithrogena",2.5,3,"snowmelt","ST","South Teton"
+"525","s_teton",2016,"rhyacophila",11,12,"snowmelt","ST","South Teton"
+"526","s_teton",2016,"simuliidae",1,1,"snowmelt","ST","South Teton"
+"527","s_teton",2016,"staphylinidae",1,1,"snowmelt","ST","South Teton"
+"528","s_teton",2016,"suwallia",2,2,"snowmelt","ST","South Teton"
+"529","s_teton",2016,"sweltsa",78,24,"snowmelt","ST","South Teton"
+"530","s_teton",2016,"tipula",18,20,"snowmelt","ST","South Teton"
+"531","s_teton",2016,"turbellaria",136,68,"snowmelt","ST","South Teton"
+"532","s_teton",2016,"zapada",82.5,15,"snowmelt","ST","South Teton"
+"533","s_teton",2017,"acari",18.3333333333333,5,"snowmelt","ST","South Teton"
+"534","s_teton",2017,"allomyia",29,8,"snowmelt","ST","South Teton"
+"535","s_teton",2017,"baetis",22,2,"snowmelt","ST","South Teton"
+"536","s_teton",2017,"chironomidae",11,3,"snowmelt","ST","South Teton"
+"537","s_teton",2017,"cinygmula",107.5,60,"snowmelt","ST","South Teton"
+"538","s_teton",2017,"epeorus",35,13,"snowmelt","ST","South Teton"
+"539","s_teton",2017,"helodon",27,10,"snowmelt","ST","South Teton"
+"540","s_teton",2017,"heterocloeon",16.5,6,"snowmelt","ST","South Teton"
+"541","s_teton",2017,"megarcys",47.4,22,"snowmelt","ST","South Teton"
+"542","s_teton",2017,"non-tanypodinae",49.8,23,"snowmelt","ST","South Teton"
+"543","s_teton",2017,"probezzia",11,2,"snowmelt","ST","South Teton"
+"544","s_teton",2017,"rhyacophila",35.25,13,"snowmelt","ST","South Teton"
+"545","s_teton",2017,"rithrogena",11,1,"snowmelt","ST","South Teton"
+"546","s_teton",2017,"skwala",32.5,6,"snowmelt","ST","South Teton"
+"547","s_teton",2017,"sweltsa",54,20,"snowmelt","ST","South Teton"
+"548","s_teton",2017,"tipula",75.3333333333333,21,"snowmelt","ST","South Teton"
+"549","s_teton",2017,"turbellaria",21.8333333333333,12,"snowmelt","ST","South Teton"
+"550","s_teton",2017,"zapada",54,30,"snowmelt","ST","South Teton"
+"551","s_teton",2018,"acari",11,1,"snowmelt","ST","South Teton"
+"552","s_teton",2018,"allomyia",24.25,9,"snowmelt","ST","South Teton"
+"553","s_teton",2018,"baetis",11,4,"snowmelt","ST","South Teton"
+"554","s_teton",2018,"chironomidae",21.6666666666667,6,"snowmelt","ST","South Teton"
+"555","s_teton",2018,"cinygmula",79.8,37,"snowmelt","ST","South Teton"
+"556","s_teton",2018,"collembola",11,1,"snowmelt","ST","South Teton"
+"557","s_teton",2018,"epeorus",115.75,43,"snowmelt","ST","South Teton"
+"558","s_teton",2018,"heterocloeon",11,1,"snowmelt","ST","South Teton"
+"559","s_teton",2018,"megarcys",61.7142857142857,40,"snowmelt","ST","South Teton"
+"560","s_teton",2018,"non-tanypodinae",393.8,183,"snowmelt","ST","South Teton"
+"561","s_teton",2018,"oligochaeta",32,3,"snowmelt","ST","South Teton"
+"562","s_teton",2018,"ostracoda",11,1,"snowmelt","ST","South Teton"
+"563","s_teton",2018,"probezzia",21.5,4,"snowmelt","ST","South Teton"
+"564","s_teton",2018,"prosimulium",81.8,38,"snowmelt","ST","South Teton"
+"565","s_teton",2018,"rhyacophila",29.75,11,"snowmelt","ST","South Teton"
+"566","s_teton",2018,"rithrogena",18.3333333333333,5,"snowmelt","ST","South Teton"
+"567","s_teton",2018,"simuliidae",11,1,"snowmelt","ST","South Teton"
+"568","s_teton",2018,"suwallia",38,7,"snowmelt","ST","South Teton"
+"569","s_teton",2018,"sweltsa",84,39,"snowmelt","ST","South Teton"
+"570","s_teton",2018,"tipula",97,27,"snowmelt","ST","South Teton"
+"571","s_teton",2018,"turbellaria",75.25,28,"snowmelt","ST","South Teton"
+"572","s_teton",2018,"zapada",38,14,"snowmelt","ST","South Teton"
+"573","s_teton",2019,"allomyia",11,4,"snowmelt","ST","South Teton"
+"574","s_teton",2019,"baetis",25.3333333333333,7,"snowmelt","ST","South Teton"
+"575","s_teton",2019,"chironomidae",56,26,"snowmelt","ST","South Teton"
+"576","s_teton",2019,"cinygmula",91.5,34,"snowmelt","ST","South Teton"
+"577","s_teton",2019,"culicoides",11,1,"snowmelt","ST","South Teton"
+"578","s_teton",2019,"dicranota",25.3333333333333,7,"snowmelt","ST","South Teton"
+"579","s_teton",2019,"epeorus",80.75,30,"snowmelt","ST","South Teton"
+"580","s_teton",2019,"helodon",48.5,9,"snowmelt","ST","South Teton"
+"581","s_teton",2019,"heterocloeon",24.5,9,"snowmelt","ST","South Teton"
+"582","s_teton",2019,"homophylax",22,2,"snowmelt","ST","South Teton"
+"583","s_teton",2019,"megarcys",32.6666666666667,9,"snowmelt","ST","South Teton"
+"584","s_teton",2019,"molophilus",11,1,"snowmelt","ST","South Teton"
+"585","s_teton",2019,"molophilus did not fit well with key",11,1,"snowmelt","ST","South Teton"
+"586","s_teton",2019,"non-tanypodinae",278,155,"snowmelt","ST","South Teton"
+"587","s_teton",2019,"oligochaeta",22,2,"snowmelt","ST","South Teton"
+"588","s_teton",2019,"probezzia",86,8,"snowmelt","ST","South Teton"
+"589","s_teton",2019,"prosimulium",15.2,7,"snowmelt","ST","South Teton"
+"590","s_teton",2019,"rhyacophila verrula",11,2,"snowmelt","ST","South Teton"
+"591","s_teton",2019,"rhyacophila vofixa subgroup vobara subgroup",16.5,3,"snowmelt","ST","South Teton"
+"592","s_teton",2019,"rithrogena",27,5,"snowmelt","ST","South Teton"
+"593","s_teton",2019,"suwallia",29.75,11,"snowmelt","ST","South Teton"
+"594","s_teton",2019,"sweltsa",73.5,41,"snowmelt","ST","South Teton"
+"595","s_teton",2019,"tipula",18,5,"snowmelt","ST","South Teton"
+"596","s_teton",2019,"zapada",88.75,33,"snowmelt","ST","South Teton"
+"597","s_teton",2020,"allomyia",11,1,"snowmelt","ST","South Teton"
+"598","s_teton",2020,"chironomidae",22,2,"snowmelt","ST","South Teton"
+"599","s_teton",2020,"cinygmula",82.6666666666667,46,"snowmelt","ST","South Teton"
+"600","s_teton",2020,"epeorus",57.5,32,"snowmelt","ST","South Teton"
+"601","s_teton",2020,"heterocloeon",11,1,"snowmelt","ST","South Teton"
+"602","s_teton",2020,"non-tanypodinae",489.833333333333,273,"snowmelt","ST","South Teton"
+"603","s_teton",2020,"prosimulium",16.5,3,"snowmelt","ST","South Teton"
+"604","s_teton",2020,"rhyacophila blarina",11,5,"snowmelt","ST","South Teton"
+"605","s_teton",2020,"rhyacophila coloradensis",11,2,"snowmelt","ST","South Teton"
+"606","s_teton",2020,"simuliidae",11,1,"snowmelt","ST","South Teton"
+"607","s_teton",2020,"sweltsa",66.5,37,"snowmelt","ST","South Teton"
+"608","s_teton",2020,"tipula (arctotipula)",111.333333333333,31,"snowmelt","ST","South Teton"
+"609","s_teton",2020,"zapada",36.8,17,"snowmelt","ST","South Teton"
+"610","s_teton",2021,"allomyia",10.76426265,1,"snowmelt","ST","South Teton"
+"611","s_teton",2021,"baetis",202.726946523333,113,"snowmelt","ST","South Teton"
+"612","s_teton",2021,"baetis 2",24.21959096,9,"snowmelt","ST","South Teton"
+"613","s_teton",2021,"cinygmula",231.431646916667,129,"snowmelt","ST","South Teton"
+"614","s_teton",2021,"epeorus",147.111589546667,41,"snowmelt","ST","South Teton"
+"615","s_teton",2021,"homophylax",10.76426265,1,"snowmelt","ST","South Teton"
+"616","s_teton",2021,"megarcys",10.76426265,2,"snowmelt","ST","South Teton"
+"617","s_teton",2021,"non-tanypodinae",224.255471838333,125,"snowmelt","ST","South Teton"
+"618","s_teton",2021,"ostracoda",10.76426265,1,"snowmelt","ST","South Teton"
+"619","s_teton",2021,"probezzia",32.292787945,12,"snowmelt","ST","South Teton"
+"620","s_teton",2021,"prosimulium",10.76426265,1,"snowmelt","ST","South Teton"
+"621","s_teton",2021,"psychoglypha",10.76426265,2,"snowmelt","ST","South Teton"
+"622","s_teton",2021,"rhyacophila",10.76426265,1,"snowmelt","ST","South Teton"
+"623","s_teton",2021,"rhyacophila arnaudi",21.528525295,4,"snowmelt","ST","South Teton"
+"624","s_teton",2021,"rhyacophila vobara subgroup",28.7047003933333,8,"snowmelt","ST","South Teton"
+"625","s_teton",2021,"rithrogena",21.5285253,2,"snowmelt","ST","South Teton"
+"626","s_teton",2021,"sweltsa",121.994976675,68,"snowmelt","ST","South Teton"
+"627","s_teton",2021,"tipula",53.8213132466667,15,"snowmelt","ST","South Teton"
+"628","s_teton",2021,"zapada",21.528525295,4,"snowmelt","ST","South Teton"
+"629","silver_run",2017,"acari",256.5,143,"snowmelt","SR","Silver Run"
+"630","silver_run",2017,"allomyia",5.5,3,"snowmelt","SR","Silver Run"
+"631","silver_run",2017,"chironomidae",11,6,"snowmelt","SR","Silver Run"
+"632","silver_run",2017,"cinygmula",9,5,"snowmelt","SR","Silver Run"
+"633","silver_run",2017,"clinocera",9,5,"snowmelt","SR","Silver Run"
+"634","silver_run",2017,"drunella",5.5,3,"snowmelt","SR","Silver Run"
+"635","silver_run",2017,"gonomyodes",4,1,"snowmelt","SR","Silver Run"
+"636","silver_run",2017,"helodon",4,1,"snowmelt","SR","Silver Run"
+"637","silver_run",2017,"homophylax",7,2,"snowmelt","SR","Silver Run"
+"638","silver_run",2017,"megarcys",11,9,"snowmelt","SR","Silver Run"
+"639","silver_run",2017,"non-tanypodinae",845,471,"snowmelt","SR","Silver Run"
+"640","silver_run",2017,"oligochaeta",7,2,"snowmelt","SR","Silver Run"
+"641","silver_run",2017,"ostracoda",4,1,"snowmelt","SR","Silver Run"
+"642","silver_run",2017,"probezzia",11,3,"snowmelt","SR","Silver Run"
+"643","silver_run",2017,"rhyacophila",54,15,"snowmelt","SR","Silver Run"
+"644","silver_run",2017,"sweltsa",163.5,91,"snowmelt","SR","Silver Run"
+"645","silver_run",2017,"zapada",93,52,"snowmelt","SR","Silver Run"
+"646","silver_run",2021,"acari",32.29278794,3,"snowmelt","SR","Silver Run"
+"647","silver_run",2021,"allomyia",10.76426265,1,"snowmelt","SR","Silver Run"
+"648","silver_run",2021,"baetis",10.76426265,2,"snowmelt","SR","Silver Run"
+"649","silver_run",2021,"baetis 2",1097.9547903,204,"snowmelt","SR","Silver Run"
+"650","silver_run",2021,"chironomidae",53.82131324,10,"snowmelt","SR","Silver Run"
+"651","silver_run",2021,"cinygmula",37.67491927,7,"snowmelt","SR","Silver Run"
+"652","silver_run",2021,"clinocera",32.292787945,6,"snowmelt","SR","Silver Run"
+"653","silver_run",2021,"drunella",16.146393975,3,"snowmelt","SR","Silver Run"
+"654","silver_run",2021,"megarcys",43.05705059,8,"snowmelt","SR","Silver Run"
+"655","silver_run",2021,"non-tanypodinae",2163.6167923,402,"snowmelt","SR","Silver Run"
+"656","silver_run",2021,"ostracoda",43.05705059,4,"snowmelt","SR","Silver Run"
+"657","silver_run",2021,"pentacora",10.76426265,1,"snowmelt","SR","Silver Run"
+"658","silver_run",2021,"probezzia",21.528525295,4,"snowmelt","SR","Silver Run"
+"659","silver_run",2021,"prosimulium",10.76426265,2,"snowmelt","SR","Silver Run"
+"660","silver_run",2021,"rhyacophila",10.76426265,1,"snowmelt","SR","Silver Run"
+"661","silver_run",2021,"rhyacophila alberta",43.05705059,4,"snowmelt","SR","Silver Run"
+"662","silver_run",2021,"rhyacophila ventina complex",32.29278794,3,"snowmelt","SR","Silver Run"
+"663","silver_run",2021,"rhyacophila verrula",43.05705059,4,"snowmelt","SR","Silver Run"
+"664","silver_run",2021,"rhyacophila viquaea",10.76426265,1,"snowmelt","SR","Silver Run"
+"665","silver_run",2021,"sweltsa",403.65984929,75,"snowmelt","SR","Silver Run"
+"666","silver_run",2021,"zapada",522.06673865,97,"snowmelt","SR","Silver Run"
+"667","skillet",2017,"acari",11,1,"glacier","SK","Skillet"
+"668","skillet",2017,"agathon",123.833333333333,69,"glacier","SK","Skillet"
+"669","skillet",2017,"allomyia",37.75,14,"glacier","SK","Skillet"
+"670","skillet",2017,"chironomidae",32.5,6,"glacier","SK","Skillet"
+"671","skillet",2017,"dicranota",11,2,"glacier","SK","Skillet"
+"672","skillet",2017,"gonomyodes",64.75,24,"glacier","SK","Skillet"
+"673","skillet",2017,"helodon",11,1,"glacier","SK","Skillet"
+"674","skillet",2017,"heterocloeon",193.833333333333,108,"glacier","SK","Skillet"
+"675","skillet",2017,"lednia",51.25,19,"glacier","SK","Skillet"
+"676","skillet",2017,"limonia",11,1,"glacier","SK","Skillet"
+"677","skillet",2017,"non-tanypodinae",398.5,222,"glacier","SK","Skillet"
+"678","skillet",2017,"oligochaeta",16.5,3,"glacier","SK","Skillet"
+"679","skillet",2017,"prosimulium",138.166666666667,77,"glacier","SK","Skillet"
+"680","skillet",2017,"rhyacophila",26,12,"glacier","SK","Skillet"
+"681","skillet",2017,"simuliidae",11,1,"glacier","SK","Skillet"
+"682","skillet",2017,"turbellaria",11,1,"glacier","SK","Skillet"
+"683","skillet",2017,"twinnia",22,2,"glacier","SK","Skillet"
+"684","skillet",2018,"acari",4,2,"glacier","SK","Skillet"
+"685","skillet",2018,"allomyia",7,2,"glacier","SK","Skillet"
+"686","skillet",2018,"chironomidae",20.6666666666667,13,"glacier","SK","Skillet"
+"687","skillet",2018,"gonomyodes",13,11,"glacier","SK","Skillet"
+"688","skillet",2018,"lednia",18,5,"glacier","SK","Skillet"
+"689","skillet",2018,"non-tanypodinae",1346.66666666667,1126,"glacier","SK","Skillet"
+"690","skillet",2018,"oligochaeta",11,3,"glacier","SK","Skillet"
+"691","skillet",2018,"prosimulium",34.6666666666667,29,"glacier","SK","Skillet"
+"692","skillet",2018,"rhyacophila",9,3,"glacier","SK","Skillet"
+"693","skillet",2018,"turbellaria",10.5,6,"glacier","SK","Skillet"
+"694","skillet",2019,"allomyia",32.5,12,"glacier","SK","Skillet"
+"695","skillet",2019,"chironomidae",22,2,"glacier","SK","Skillet"
+"696","skillet",2019,"clinocera",11,2,"glacier","SK","Skillet"
+"697","skillet",2019,"dicranota",11,3,"glacier","SK","Skillet"
+"698","skillet",2019,"gonomyodes",21.6666666666667,6,"glacier","SK","Skillet"
+"699","skillet",2019,"helodon",11,4,"glacier","SK","Skillet"
+"700","skillet",2019,"lednia",11,2,"glacier","SK","Skillet"
+"701","skillet",2019,"non-tanypodinae",453.833333333333,253,"glacier","SK","Skillet"
+"702","skillet",2019,"prosimulium",22,4,"glacier","SK","Skillet"
+"703","skillet",2019,"rhyacophila arnaudi",32,3,"glacier","SK","Skillet"
+"704","skillet",2019,"rhyacophila blarina",11,1,"glacier","SK","Skillet"
+"705","skillet",2019,"rhyacophila hyalinata",11,1,"glacier","SK","Skillet"
+"706","skillet",2019,"rhyacophila vatina complex",11,1,"glacier","SK","Skillet"
+"707","skillet",2019,"rhyacophila verrula",16.5,3,"glacier","SK","Skillet"
+"708","skillet",2019,"rhyacophila vobara subgroup",11,1,"glacier","SK","Skillet"
+"709","skillet",2019,"rhyacophila vofixa",11,1,"glacier","SK","Skillet"
+"710","skillet",2019,"staphylinidae",11,1,"glacier","SK","Skillet"
+"711","skillet",2019,"sweltsa",11,1,"glacier","SK","Skillet"
+"712","skillet",2020,"agathon",11,1,"glacier","SK","Skillet"
+"713","skillet",2020,"allomyia",11,1,"glacier","SK","Skillet"
+"714","skillet",2020,"chironomidae",22,2,"glacier","SK","Skillet"
+"715","skillet",2020,"lednia",11,4,"glacier","SK","Skillet"
+"716","skillet",2020,"non-tanypodinae",455.5,254,"glacier","SK","Skillet"
+"717","skillet",2020,"prosimulium",18,5,"glacier","SK","Skillet"
+"718","skillet",2020,"rhyacophila blarina",11,1,"glacier","SK","Skillet"
+"719","skillet",2020,"rhyacophila brunnea/vemna",11,1,"glacier","SK","Skillet"
+"720","skillet",2020,"rhyacophila ecosa",11,1,"glacier","SK","Skillet"
+"721","skillet",2020,"rhyacophila hyalinata banks",32,3,"glacier","SK","Skillet"
+"722","skillet",2020,"rhyacophila verrula milne",32,3,"glacier","SK","Skillet"
+"723","skillet",2020,"tanypodinae",22,2,"glacier","SK","Skillet"
+"724","skillet",2021,"allomyia",21.528525295,4,"glacier","SK","Skillet"
+"725","skillet",2021,"baetis 2",10.76426265,1,"glacier","SK","Skillet"
+"726","skillet",2021,"chironomidae",48.4391819075,18,"glacier","SK","Skillet"
+"727","skillet",2021,"clinocera",10.76426265,1,"glacier","SK","Skillet"
+"728","skillet",2021,"dicranota",10.76426265,1,"glacier","SK","Skillet"
+"729","skillet",2021,"gonomyodes",26.91065662,10,"glacier","SK","Skillet"
+"730","skillet",2021,"hemiptera",21.528525295,4,"glacier","SK","Skillet"
+"731","skillet",2021,"heteroceridae",21.5285253,2,"glacier","SK","Skillet"
+"732","skillet",2021,"lednia",10.76426265,2,"glacier","SK","Skillet"
+"733","skillet",2021,"non-tanypodinae",4115.53641911667,2294,"glacier","SK","Skillet"
+"734","skillet",2021,"oligochaeta",17.9404377466667,5,"glacier","SK","Skillet"
+"735","skillet",2021,"plecoptera",21.5285253,2,"glacier","SK","Skillet"
+"736","skillet",2021,"prosimulium",30.139935418,14,"glacier","SK","Skillet"
+"737","skillet",2021,"rhyacophila alberta",10.76426265,1,"glacier","SK","Skillet"
+"738","skillet",2021,"rhyacophila arnaudi",16.146393975,6,"glacier","SK","Skillet"
+"739","skillet",2021,"staphylinidae",21.5285253,2,"glacier","SK","Skillet"
+"740","windcave",2015,"acari",6.33333333333333,3,"sub_ice","WC","Wind Cave"
+"741","windcave",2015,"allomyia",4.33333333333333,3,"sub_ice","WC","Wind Cave"
+"742","windcave",2015,"alloperla",5,2,"sub_ice","WC","Wind Cave"
+"743","windcave",2015,"baetidae",16,6,"sub_ice","WC","Wind Cave"
+"744","windcave",2015,"chironomidae",29,26,"sub_ice","WC","Wind Cave"
+"745","windcave",2015,"clinocera",1,1,"sub_ice","WC","Wind Cave"
+"746","windcave",2015,"megarcys",45.6666666666667,48,"sub_ice","WC","Wind Cave"
+"747","windcave",2015,"neothremma",1,1,"sub_ice","WC","Wind Cave"
+"748","windcave",2015,"non-tanypodinae",505.25,550,"sub_ice","WC","Wind Cave"
+"749","windcave",2015,"prosimulium",11,4,"sub_ice","WC","Wind Cave"
+"750","windcave",2015,"rhyacophila",1,2,"sub_ice","WC","Wind Cave"
+"751","windcave",2015,"turbellaria",45,52,"sub_ice","WC","Wind Cave"
+"752","windcave",2015,"zapada",80.25,118,"sub_ice","WC","Wind Cave"
+"753","windcave",2016,"acari",3.5,1,"sub_ice","WC","Wind Cave"
+"754","windcave",2016,"chironomidae",9.5,5,"sub_ice","WC","Wind Cave"
+"755","windcave",2016,"dixella",7,2,"sub_ice","WC","Wind Cave"
+"756","windcave",2016,"megarcys",50.75,77,"sub_ice","WC","Wind Cave"
+"757","windcave",2016,"non-tanypodinae",859,424,"sub_ice","WC","Wind Cave"
+"758","windcave",2016,"prosimulium",1,1,"sub_ice","WC","Wind Cave"
+"759","windcave",2016,"rhyacophila",2,2,"sub_ice","WC","Wind Cave"
+"760","windcave",2016,"turbellaria",6,4,"sub_ice","WC","Wind Cave"
+"761","windcave",2016,"zapada",483,205,"sub_ice","WC","Wind Cave"
+"762","windcave",2017,"acari",136.333333333333,38,"sub_ice","WC","Wind Cave"
+"763","windcave",2017,"allomyia",22,2,"sub_ice","WC","Wind Cave"
+"764","windcave",2017,"baetis",11,2,"sub_ice","WC","Wind Cave"
+"765","windcave",2017,"chironomidae",17.4,8,"sub_ice","WC","Wind Cave"
+"766","windcave",2017,"megarcys",122.166666666667,68,"sub_ice","WC","Wind Cave"
+"767","windcave",2017,"non-tanypodinae",1354.33333333333,755,"sub_ice","WC","Wind Cave"
+"768","windcave",2017,"prosimulium",11,1,"sub_ice","WC","Wind Cave"
+"769","windcave",2017,"rhyacophila",105.6,49,"sub_ice","WC","Wind Cave"
+"770","windcave",2017,"sweltsa",11,1,"sub_ice","WC","Wind Cave"
+"771","windcave",2017,"turbellaria",32.3333333333333,9,"sub_ice","WC","Wind Cave"
+"772","windcave",2017,"zapada",1266.33333333333,706,"sub_ice","WC","Wind Cave"
+"773","windcave",2018,"acari",83.5,31,"sub_ice","WC","Wind Cave"
+"774","windcave",2018,"chironomidae",32.5,12,"sub_ice","WC","Wind Cave"
+"775","windcave",2018,"collembola",11,1,"sub_ice","WC","Wind Cave"
+"776","windcave",2018,"megarcys",164.428571428571,107,"sub_ice","WC","Wind Cave"
+"777","windcave",2018,"non-tanypodinae",396.2,184,"sub_ice","WC","Wind Cave"
+"778","windcave",2018,"prosimulium",11,1,"sub_ice","WC","Wind Cave"
+"779","windcave",2018,"rhyacophila",94.25,35,"sub_ice","WC","Wind Cave"
+"780","windcave",2018,"staphylinidae",32,3,"sub_ice","WC","Wind Cave"
+"781","windcave",2018,"turbellaria",220.5,41,"sub_ice","WC","Wind Cave"
+"782","windcave",2018,"zapada",721.2,335,"sub_ice","WC","Wind Cave"
+"783","windcave",2019,"chironomidae",32.5,6,"sub_ice","WC","Wind Cave"
+"784","windcave",2019,"lednia",11,1,"sub_ice","WC","Wind Cave"
+"785","windcave",2019,"non-tanypodinae",409.166666666667,228,"sub_ice","WC","Wind Cave"
+"786","windcave",2019,"rhyacophila rotunda",22,2,"sub_ice","WC","Wind Cave"
+"787","windcave",2019,"suwallia",23.8,11,"sub_ice","WC","Wind Cave"
+"788","windcave",2019,"sweltsa",11,1,"sub_ice","WC","Wind Cave"
+"789","windcave",2019,"zapada",36,10,"sub_ice","WC","Wind Cave"
+"790","windcave",2020,"acari",11,1,"sub_ice","WC","Wind Cave"
+"791","windcave",2020,"chironomidae",21.6666666666667,6,"sub_ice","WC","Wind Cave"
+"792","windcave",2020,"megarcys",185.2,86,"sub_ice","WC","Wind Cave"
+"793","windcave",2020,"non-tanypodinae",651.166666666667,363,"sub_ice","WC","Wind Cave"
+"794","windcave",2020,"rhyacophila rotunda",14.6666666666667,4,"sub_ice","WC","Wind Cave"
+"795","windcave",2020,"zapada",151,84,"sub_ice","WC","Wind Cave"
+"796","windcave",2021,"acari",16.146393975,3,"sub_ice","WC","Wind Cave"
+"797","windcave",2021,"chironomidae",32.2927879433333,9,"sub_ice","WC","Wind Cave"
+"798","windcave",2021,"clinocera",10.76426265,1,"sub_ice","WC","Wind Cave"
+"799","windcave",2021,"hydrophilidae",10.76426265,1,"sub_ice","WC","Wind Cave"
+"800","windcave",2021,"megarcys",99.5694294925,37,"sub_ice","WC","Wind Cave"
+"801","windcave",2021,"non-tanypodinae",3013.99354153167,1680,"sub_ice","WC","Wind Cave"
+"802","windcave",2021,"prosimulium",25.1166128466667,7,"sub_ice","WC","Wind Cave"
+"803","windcave",2021,"rhyacophila rotunda",51.668460706,24,"sub_ice","WC","Wind Cave"
+"804","windcave",2021,"zapada",186.580552561667,104,"sub_ice","WC","Wind Cave"

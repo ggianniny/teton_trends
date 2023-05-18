@@ -1,14 +1,14 @@
-﻿stream,source,stream_code
-mid_teton,glacier,MT
-delta,glacier,DE
-cloudveil,glacier,CV
-skillet,glacier,SK
-n_teton,snowmelt,NT
-s_teton,snowmelt,ST
-grizzly,snowmelt,GR
-s_cascade,sub_ice,SC
-windcave,sub_ice,WC
-s_ak_basin,sub_ice,AK
-gusher,sub_ice,GU
-paintbrush,sub_ice,PB
-silver_run,snowmelt,SR
+﻿stream,source,stream_code,full_name
+mid_teton,glacier,MT,Middle Teton
+delta,glacier,DE,Delta
+cloudveil,glacier,CV,Cloudveil
+skillet,glacier,SK,Skillet
+n_teton,snowmelt,NT,North Teton
+s_teton,snowmelt,ST,South Teton
+grizzly,snowmelt,GR,Grizzly
+s_cascade,sub_ice,SC,South Cascade
+windcave,sub_ice,WC,Wind Cave
+s_ak_basin,sub_ice,AK,S. AK Basin
+gusher,sub_ice,GU,Gusher
+paintbrush,sub_ice,PB,Paintbrush
+silver_run,snowmelt,SR,Silver Run

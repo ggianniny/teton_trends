@@ -1,0 +1,679 @@
+---
+title: "TASR Analysis"
+author: "Gordon Gianniny"
+date: "2023-06-26"
+output: html_document
+---
+
+```{r, echo=FALSE}
+#Loading Packages
+library(tidyverse) #For data wrangling
+library(lubridate) #For working with dates
+library(ggplot2) #Plotting
+library(RColorBrewer)
+library(patchwork)
+library(corrplot)
+library(ggpp)
+library(broom)
+```
+
+## Overview
+
+This script reads in cleaned datafiles with stream temperature and invertebrate data produced by the invert_data_cleaning.Rmd and teton_data_cleaning.Rmd scripts and performs more involved analyses of stream temperature and invertebrate density/diversity over time. A few findings of interest from previous analyses are that: 
+
+    * Average summer (July-Aug) stream temperatures have not changed significantly over time
+    
+    * Average summer (July-Aug) air temperatures have increased over time
+    
+    * Overall, invetebrate richness has not changed over time
+    
+    * Invertebrate communities in snow-fed streams appear to be more variable than those in glacier-fed streams
+
+To build on these findings, the main sections of this script are: 
+
+**I. Temperature:**
+
+    1. Overall trends in stream temperature over time - Time series analysis: Site-by-site and grouped by source
+    
+    2. Trends in summer mean, max, min, and degree-days over time: Site-by-site and grouped by source
+    
+    4. Modeling stream temperature using SNOTEL data: Site-by-site and grouped by source
+    
+**II. Invertebrates:**
+
+    1. Trends in richness, abundance, and density over time: Site-by-site and grouped by source
+    
+    2. Modeling richness, abundance, and density using SNOTEL data: Site-by-site and grouped by source
+    
+**III. Temperature and Invertebrates**
+
+    1. Test for correlations between temperature metrics (mean/max/min summer; degree days): Site-by-site and grouped by source
+    
+Read in necessary files: 
+
+```{r}
+stream_temp <- read.csv("Temperature/cleaned_full_datasets/temps_hourly.csv") #hourly stream temp data
+invert_density <- read.csv("invert_data/cleaned_csv/full_invert_densities.csv") #invert density data
+invert_richness <- read.csv("invert_data/cleaned_csv/invert_richness.csv") #invert richness data
+snotel <- read.csv("teton_snotel.csv") #snotel data
+sources <- read.csv("source_info.csv")%>%
+  rename(site = stream) #source info, rename for merge
+
+### adding source info to stream temps and invert datasets: 
+
+stream_source <- merge(stream_temp, sources, all = T)%>%
+  mutate(date1 = ymd(date1)) #Add source info to hourly temperature data; re-code date as r date format
+stream_source_daily <- stream_source%>%
+  group_by(site, full_name, stream_code, date1, year)%>%
+  summarise(t_xbar = mean(temp_c, na.rm = T), 
+            t_max = max(temp_c, na.rm = T), 
+            t_min = min(temp_c, na.rm = T), 
+            source = unique(source)) #calculate daily mean, min, and max temps for each site
+density_source <- merge(invert_density, sources, all = T)
+richness_source <- merge(invert_richness, sources, all = T)
+```
+
+
+## I. Temperature:
+
+### 1. Overall trends in stream temperature over time - Time series analysis
+
+#### A. Site-by-site 
+
+#### B. Grouped by source
+    
+### 2. Trends in summer mean, max, min, and degree-days over time
+
+#### A. Site-by-site 
+
+First, calculate summer (july-aug) mean daily temp, avg daily max and min; plus degree days over **15c?** for each site:
+
+```{r}
+stream_summer <- stream_source_daily %>%
+  mutate(mo = month(date1))%>% #add month column
+  filter(mo == 7 | mo == 8)%>% #extract July and August
+  group_by(site, full_name, stream_code, year)%>% #group by site and year
+  summarise(summer_xbar = mean(t_xbar, na.rm = T), 
+            max_xbar = mean(t_max, na.rm = T), 
+            min_xbar = mean(t_min, na.rm= T), #calculate mean temperature, mean daily max and min
+            dd_2.5 = length(which(t_max >= 2.5)), 
+            dd_5 = length(which(t_max >= 5)),
+            dd_10 = length(which(t_max >= 10)), #calculate no. days with max temp >2.5, 5, and 10 deg
+            source = unique(source)) #retain source col
+```
+
+Next, extract sites with at least 3 years of data: 
+
+```{r}
+under3 <- stream_summer %>%
+  group_by(site)%>% #group by site
+  filter(!is.na(year))%>% #remove rows with no year
+  summarise(n_yrs = length(unique(year)))%>% #count num unique years for site
+  filter(n_yrs < 3) #extract sites with <3yrs data
+
+summer_3plus <- stream_summer %>%
+  filter(!site%in%under3$site)
+```
+
+
+**Trends in mean temp:**
+
+Nest data by site: 
+
+```{r}
+summer_nested <- summer_3plus %>%
+  filter(!is.na(year))%>%
+  nest(data = -site)
+```
+
+lm for each site: 
+
+```{r}
+summer.mean.lms <- summer_nested %>%
+  mutate(model = map(data, ~lm(summer_xbar~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "year")  #remove intercept term to just get info on year for each site
+summer.mean.lms
+```
+
+Nothing significant at 0.05 level; weakly significant increase in mean summer temp at S AK basin (p = 0.08)
+
+
+library(ggpp)
+p.vals <- ecoRichness_models %>%
+  select(ecoName, p.value)
+
+eco_r_pvals <- merge(eco_r_d, p.vals)
+
+eco.richness <- ggplot(eco_r_pvals, aes(x = yr, y = log10(richness_perSample), color = ecoName))+
+  geom_point()+
+  geom_smooth(method = "lm", se = F)+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")))+
+
+Visualization: 
+
+```{r}
+summer_mean_withps <- merge(summer_3plus, summer.mean.lms)
+
+pres.pal <- c("#C26ED6", "#F89225", "#76D96F")
+
+summer.mean <- ggplot(summer_mean_withps, aes(x = year, y = summer_xbar, color = source))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~full_name, scales = "free")+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")))+
+  labs(x = "Date", y = "Mean daily July-Aug. stream temp., C", color = "Stream Source")+
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))
+summer.mean
+```
+
+**Mean daily max temp**
+
+```{r}
+summer.max.lms <- summer_nested %>%
+  mutate(model = map(data, ~lm(max_xbar~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "year")  #remove intercept term to just get info on year for each site
+summer.max.lms
+```
+
+Significant increase at Skillet, non-significant increases at all but S cascade and mid teton
+
+Visualization: 
+
+```{r}
+summer_max_withps <- merge(summer_3plus, summer.max.lms)
+
+summer.max <- ggplot(summer_max_withps, aes(x = year, y = max_xbar, color = source))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~full_name, scales = "free")+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")))+
+  labs(x = "Date", y = "Mean daily max. July-Aug. stream temp., C", color = "Stream Source")+
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))
+summer.max
+```
+
+**Mean daily min temp**
+
+```{r}
+summer.min.lms <- summer_nested %>%
+  mutate(model = map(data, ~lm(min_xbar~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "year")  #remove intercept term to just get info on year for each site
+summer.min.lms
+```
+
+Non-significant increases at all sites except south cascade
+
+Visualization: 
+
+```{r}
+summer_min_withps <- merge(summer_3plus, summer.min.lms)
+
+summer.min <- ggplot(summer_min_withps, aes(x = year, y = min_xbar, color = source))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~full_name, scales = "free")+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")))+
+  labs(x = "Date", y = "Mean daily min. July-Aug. stream temp., C", color = "Stream Source")+
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))
+summer.min
+```
+
+**Degree Days**
+
+Days over 2.5 C: 
+
+```{r}
+summer.2.5.lms <- summer_nested %>%
+  mutate(model = map(data, ~lm(dd_2.5~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "year")  #remove intercept term to just get info on year for each site
+summer.2.5.lms
+```
+
+Non-significant increases at all sites except south cascade
+
+Visualization: 
+
+```{r}
+summer_2.5_withps <- merge(summer_3plus, summer.2.5.lms)
+
+summer.2.5 <- ggplot(summer_2.5_withps, aes(x = year, y = dd_2.5, color = source))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~full_name, scales = "free")+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")))+
+  labs(x = "Date", y = "No. summer (July-Aug.) days with max temp >2.5 C", color = "Stream Source")+
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))
+summer.2.5
+```
+
+Days over 5 C: 
+
+```{r}
+summer.5.lms <- summer_nested %>%
+  mutate(model = map(data, ~lm(dd_5~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "year")  #remove intercept term to just get info on year for each site
+summer.5.lms
+```
+
+Non-significant increases at all sites except south cascade, mid teton, and delta (0 all years)
+
+Visualization: 
+
+```{r}
+summer_5_withps <- merge(summer_3plus, summer.5.lms)
+
+summer.5 <- ggplot(summer_5_withps, aes(x = year, y = dd_5, color = source))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~full_name, scales = "free")+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")))+
+  labs(x = "Date", y = "No. summer (July-Aug.) days with max temp >5 C", color = "Stream Source")+
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))
+summer.5
+```
+
+Days over 10 C: 
+
+```{r}
+summer.10.lms <- summer_nested %>%
+  mutate(model = map(data, ~lm(dd_10~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "year")  #remove intercept term to just get info on year for each site
+summer.10.lms
+```
+
+Nothing significant. 
+
+Visualization: 
+
+```{r}
+summer_10_withps <- merge(summer_3plus, summer.10.lms)
+
+summer.10 <- ggplot(summer_10_withps, aes(x = year, y = dd_10, color = source))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~full_name, scales = "free")+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")))+
+  labs(x = "Date", y = "No. summer (July-Aug.) days with max temp >10 C", color = "Stream Source")+
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))
+summer.10
+```
+
+#### B. Grouped by source
+
+First, group by source and re-calculate max, mean, min, and degree days: 
+
+```{r}
+summer_source <- stream_summer %>%
+  group_by(source, year)%>% # group by source type and year
+  summarise(t_xbar = mean(summer_xbar), 
+            t_max = mean(max_xbar), 
+            t_min = mean(min_xbar), #calculate mean daily temp, mean daily min and max
+            dd2.5_xbar = mean(dd_2.5), 
+            dd5_xbar = mean(dd_5), 
+            dd10_xbar = mean(dd_10))%>% #calculate mean no. days with max temp >2.5, 5, and 10 C. 
+  filter(!is.na(year), !is.na(source))
+```
+
+##### i. Are there differences in min, max, avg temps between sources? 
+
+Visualization: 
+
+```{r}
+source.means <- ggplot(summer_source, aes(x = source, y = t_xbar, fill = source))+
+  geom_boxplot()+
+  theme_classic()+
+  scale_fill_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Subterranean Ice"))+
+  theme(legend.position = "none")+
+  labs(x = "", y = "Mean daily summer (July-Aug) temp., C")
+source.max <- ggplot(summer_source, aes(x = source, y = t_max, fill = source))+
+  geom_boxplot()+
+  theme_classic()+
+  scale_fill_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Subterranean Ice"))+
+  theme(legend.position = "none")+
+  labs(x = "Source", y = "Mean daily max. summer (July-Aug) temp., C")
+source.min <- ggplot(summer_source, aes(x = source, y = t_max, fill = source))+
+  geom_boxplot()+
+  theme_classic()+
+  scale_fill_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Subterranean Ice"))+
+  theme(legend.position = "none")+
+  labs(x = "", y = "Mean daily min. summer (July-Aug) temp., C")
+source.means|source.max|source.min
+```
+
+Snow melt streams look to be significantly warmer and have higher max and mins - no surprise there. Check significance of these differences: 
+
+```{r}
+max.aov <- aov(t_xbar~source, data = summer_source)
+summary(max.aov)
+TukeyHSD(max.aov)
+```
+
+Snowmelt significantly warmer than sub-ice or glacier, no difference between sub-ice and glacier fed. 
+
+##### ii. LMs of mean/min/max over time: 
+
+First, visualization - re-organize data for easier plotting: 
+
+```{r}
+source_plot <- summer_source %>%
+  select(source, year, t_xbar, t_max, t_min)%>%
+  pivot_longer(-c(source, year), names_to = "measure", values_to = "temp")
+```
+
+Plotting: 
+
+```{r}
+source.summer <- ggplot(source_plot, aes(x = year, y = temp, color = measure))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~source, scales = "free_x")+
+  scale_color_manual(values = c("darkred","darkblue", "darkgreen"), labels = c("Max. temp.", "Min. temp.", "Mean temp"))+
+  labs(x = "Date", y = "Stream temp, C.", color = "Measurement Type")+
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))
+source.summer
+```
+
+Test for significance: 
+
+Nest plot data by source and measurement type:
+
+```{r}
+source_nested <- source_plot%>%
+  nest(data = -c(source, measure))
+```
+
+Modeling:
+
+```{r}
+source.lms <- source_nested %>%
+  mutate(model = map(data, ~lm(temp~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "year")  #remove intercept term to just get info on year for each site
+source.lms
+```
+
+Significant increases in min, mean, and max summer temp in glacier-fed streams, no change in snowmelt fed streams, non-significant increases in sub_ice streams. 
+
+Adding these P-values to the plot: 
+
+```{r}
+source_pvals <- merge(source.lms, summer_source)%>% #add model info to source dataframe
+  mutate(ypos = case_when(measure == "t_max" ~ 0.95, measure == "t_xbar" ~ 0.9, measure == "t_min" ~ 0.85)) #create column for adjusting P-value label Y position
+
+source.summer.pv<- source.summer+
+  geom_text_npc(data = source_pvals, aes(npcx = 0.1, npcy = ypos, color = measure, label = paste( "P = ",round(p.value, 3), sep = ""))) # add p value labels to plot
+source.summer.pv
+```
+
+Save: 
+
+```{r}
+ggsave("Temperature/plots/source_summer.pdf", source.summer.pv, device = "pdf", units = "in", height = 5, width = 6.5, dpi = "retina")
+```
+
+
+##### ii. LMs of degree days over time: 
+
+Re-organize data for easier plotting and modeling: 
+
+```{r}
+sourcedd_plot <- summer_source %>%
+  select(source, year, dd2.5_xbar, dd5_xbar, dd10_xbar)%>%
+  pivot_longer(-c(source, year), names_to = "dd_type", values_to = "no_days")
+```
+
+Test for significance: 
+
+Nest plot data by source and measurement type:
+
+```{r}
+sourcedd_nested <- sourcedd_plot%>%
+  nest(data = -c(source, dd_type))
+```
+
+Modeling:
+
+```{r}
+sourcedd.lms <- sourcedd_nested %>%
+  mutate(model = map(data, ~lm(no_days~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "year")  #remove intercept term to just get info on year for each site
+sourcedd.lms
+```
+
+No significant changes in degree days in any group. 
+
+Plotting with these P-values: 
+
+```{r}
+sourcedd_pvals <- merge(sourcedd.lms, sourcedd_plot)%>% #add model info to source dataframe
+  mutate(ypos = case_when(dd_type == "dd2.5_xbar" ~ 0.85, dd_type == "dd5_xbar" ~ 0.9, dd_type == "dd10_xbar" ~ 0.95)) #create column for adjusting P-value label Y position
+
+sourcedd.summer<- ggplot(sourcedd_pvals, aes(x = year, y = no_days, color = dd_type))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~source, scales = "free_x")+
+  scale_color_manual(values = c("darkred","orange", "darkorange"), labels = c(">10 C", ">2.5 C", ">5 C"))+
+  labs(x = "Year", y = "Num. degree days", color = "Degree day threshold")+
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))+
+  geom_text_npc(aes(npcx = 0.9, npcy = ypos, color = dd_type, label = paste( "P = ",round(p.value, 3), sep = ""))) # add p value labels to plot
+sourcedd.summer
+```
+
+### 4. Modeling stream temperature using SNOTEL data
+
+First, calculate April 1 SWE and summer air temp from snotel data; add to mean temperature dataset: 
+
+```{r}
+#Calc means across both sites:
+snotel_means <- snotel %>%
+  mutate(date1 = as.Date(date, format = "%m/%d/%y"), #recode date column as R date
+         airtemp_c = as.numeric(airtemp_c))%>% #recode airtemp as numeric
+  group_by(date1)%>% #group by date
+  summarise(swe_xbar = mean(swe_cm), #calculate mean SWE and airtemp across both stations
+            airtemp_xbar = mean(airtemp_c, na.rm = T))%>%
+  mutate(mo = month(date1), yr = year(date1)) #Add month and year cols
+
+#Calculate max SWE and mean summer airtemp for each year:
+snotel_summary <- snotel_means %>% 
+  group_by(yr)%>% #group by year
+  mutate(swe_max = max(swe_xbar))%>% #extract max SWE and add to new col
+  ungroup()%>% #ungroup to get all columns back
+  filter(mo == 7 | mo == 8)%>% #extract summer months
+  group_by(yr)%>% #group by year
+  summarise(airtemp_summer = mean(airtemp_xbar), #calculate mean summer air temp
+            swe_max = unique(swe_max))%>% #keep max SWE
+  rename(year = yr)
+
+#Merge with long-term temperature averages: 
+stream_snotel <- merge(summer_3plus, snotel_summary)
+```
+
+#### A. Site-by-site 
+
+##### i. Correlations between SWE and Summer Temp: 
+
+LMs - first, nest by site: 
+
+```{r}
+stream_snotel_nested <- stream_snotel %>%
+  nest(data = - site)
+```
+
+lm for each site: 
+
+```{r}
+swe.temp.lms <- stream_snotel_nested %>%
+  mutate(model = map(data, ~lm(summer_xbar~swe_max, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "swe_max")  #remove intercept term to just get info on year for each site
+swe.temp.lms
+```
+
+```{r}
+swe_summer_ps <- merge(swe.temp.lms, stream_snotel)
+
+swe.summer.temp <- ggplot(swe_summer_ps, aes(x = swe_max, y = summer_xbar, color = source))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~full_name, scales = "free")+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.9, label = paste( "P = ",round(p.value, 2), sep = "")))+
+  labs(x = "Annual maxium SWE, cm", y = "Mean daily July-Aug. stream temp., C", color = "Stream Source")+
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))
+swe.summer.temp
+```
+
+##### ii. Summer stream temp ~ summer air temp:
+
+lm for each site: 
+
+```{r}
+air.temp.lms <- stream_snotel_nested %>%
+  mutate(model = map(data, ~lm(summer_xbar~airtemp_summer, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "airtemp_summer")  #remove intercept term to just get info on year for each site
+air.temp.lms
+```
+
+```{r}
+air_summer_ps <- merge(air.temp.lms, stream_snotel)
+
+swe.summer.temp <- ggplot(air_summer_ps, aes(x = airtemp_summer, y = summer_xbar, color = source))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~full_name, scales = "free")+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.9, label = paste( "P = ",round(p.value, 2), sep = "")))+
+  labs(x = "Mean daily July-Aug. air temp, C", y = "Mean daily July-Aug. stream temp., C", color = "Stream Source")+
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))
+swe.summer.temp
+```
+
+#### B. Grouped by source
+    
+## II. Invertebrates:
+
+### 1. Trends in richness, abundance, and density over time
+
+#### A. Site-by-site 
+
+#### B. Grouped by source
+    
+### 2. Modeling richness, abundance, and density using SNOTEL data
+
+#### A. Site-by-site 
+
+#### B. Grouped by source
+    
+## III. Temperature and Invertebrates
+
+### 1. Test for correlations between temperature metrics (mean/max/min summer; degree days)
+
+#### A. Site-by-site 
+
+#### B. Grouped by source
+    
+

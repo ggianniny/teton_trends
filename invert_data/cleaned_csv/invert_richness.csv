@@ -28,11 +28,11 @@
 "27","n_teton",2019,"snowmelt","North Teton",12
 "28","n_teton",2020,"snowmelt","North Teton",7
 "29","n_teton",2021,"snowmelt","North Teton",12
-"30","paintbrush",2016,"sub_ice","Paintbrush",9
-"31","paintbrush",2017,"sub_ice","Paintbrush",8
-"32","paintbrush",2018,"sub_ice","Paintbrush",4
-"33","paintbrush",2019,"sub_ice","Paintbrush",6
-"34","paintbrush",2020,"sub_ice","Paintbrush",6
+"30","paintbrush",2016,"snowmelt","Paintbrush",9
+"31","paintbrush",2017,"snowmelt","Paintbrush",8
+"32","paintbrush",2018,"snowmelt","Paintbrush",4
+"33","paintbrush",2019,"snowmelt","Paintbrush",6
+"34","paintbrush",2020,"snowmelt","Paintbrush",6
 "35","s_ak_basin",2016,"sub_ice","S. AK Basin",22
 "36","s_ak_basin",2017,"sub_ice","S. AK Basin",24
 "37","s_ak_basin",2018,"sub_ice","S. AK Basin",14

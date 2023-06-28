@@ -10,5 +10,5 @@ s_cascade,sub_ice,SC,South Cascade
 windcave,sub_ice,WC,Wind Cave
 s_ak_basin,sub_ice,AK,S. AK Basin
 gusher,sub_ice,GU,Gusher
-paintbrush,sub_ice,PB,Paintbrush
+paintbrush,snowmelt,PB,Paintbrush
 silver_run,snowmelt,SR,Silver Run

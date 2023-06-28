@@ -905,7 +905,7 @@ apperance.calc <- function(x){ #write a function to:
 }
 
 binary_lag <- binary_wide %>%
-  mutate(across(c(2:94), apperance.calc))#apply to all taxa cols
+  mutate(across(c(2:ncol(binary_wide)), apperance.calc))#apply to all taxa cols
 
 binary_lag[1,]<-binary_wide[1,] #replace first row (will be all NAs) with first row from original wide dataframe
 ```
@@ -914,7 +914,7 @@ binary_lag[1,]<-binary_wide[1,] #replace first row (will be all NAs) with first 
 Now, calculate new taxa observed in each year by calculating row sums for all taxa columns: 
 
 ```{r}
-new_taxa <- rowSums(binary_lag[,2:94])
+new_taxa <- rowSums(binary_lag[,2:ncol(binary_lag)])
 ```
 
 Add this to a new dataframe with year; calculate cumulative taxa observed each year: 
@@ -1144,7 +1144,7 @@ rswe_pb<- rswe_nested %>%
 rswe_pb
 ```
 
-Significant (-) relationship between SWE @ Phillips bench and richness at CLoudveil; close to significant at S cascade. 
+Significant (-) relationship between SWE @ Phillips bench and richness at Cloudveil; close to significant at S cascade. 
 
 ### 6. Temperature variability vs. richness? 
 

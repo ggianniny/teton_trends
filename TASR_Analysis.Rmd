@@ -487,7 +487,7 @@ ggsave("Temperature/plots/source_summer.pdf", source.summer.pv, device = "pdf", 
 ```
 
 
-##### ii. LMs of degree days over time: 
+##### iii. LMs of degree days over time: 
 
 Re-organize data for easier plotting and modeling: 
 
@@ -544,6 +544,68 @@ sourcedd.summer<- ggplot(sourcedd_pvals, aes(x = year, y = no_days, color = dd_t
 sourcedd.summer
 ```
 
+##### iv. Lumping glacier & snowmelt: 
+
+First, combine glacier and snowmelt streams and recalculate mean, min, and max summer temperatures: 
+
+```{r}
+lumped_source <- stream_summer %>%
+  mutate(source_lumped = ifelse(source == "sub_ice", "sub_ice", "other"))%>% #add new col with lumped sources
+  filter(!is.na(year), !is.na(source))%>% #remove rows with no year or source
+  group_by(source_lumped, year)%>% #group by lumped source and year
+  summarise(t_xbar = mean(summer_xbar), #calculate mean, min, and max summer temps
+            max_xbar = mean(max_xbar), 
+            min_xbar = mean(min_xbar))%>%
+  pivot_longer(!c(source_lumped, year), names_to = "measure", values_to = "temp") #pivot longer for plotting + analysis
+```
+
+Nest data by lumped source and measurement type: 
+
+```{r}
+lumped_nested <- lumped_source%>%
+  nest(data = -c(source_lumped, measure))
+```
+
+lm for each source + year combo: 
+
+```{r}
+lumped.lms <- lumped_nested %>%
+  mutate(model = map(data, ~lm(temp~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "year")  #remove intercept term to just get info on year for each site
+lumped.lms
+```
+
+Add p-values to data and plot: 
+
+```{r}
+lumped_pvals <- merge(lumped_source, lumped.lms)%>% #add model info to source dataframe
+  mutate(ypos = case_when(measure == "t_xbar" ~ 0.9, measure == "max_xbar" ~ 0.95, measure == "min_xbar" ~ 0.85)) #create column for adjusting P-value label Y position
+
+lumped.summer<- ggplot(lumped_pvals, aes(x = year, y = temp, color = measure))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~source_lumped, scales = "free_x")+
+   scale_color_manual(values = c("darkred","darkblue", "darkgreen"), labels = c("Max. temp.", "Min. temp.", "Mean temp"))+
+  labs(x = "Year", y = "Stream temperature, C", color = "Measurement Type")+
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))+
+  geom_text_npc(aes(npcx = 0.1, npcy = ypos, color = measure, label = paste( "P = ",round(p.value, 3), sep = ""))) # add p value labels to plot
+lumped.summer
+```
+
+```{r}
+ggsave("Temperature/plots/lumped_summer.pdf", lumped.summer, device = "pdf", units = "in", height = 4, width = 6.5, dpi = "retina")
+```
+
 ### 4. Modeling stream temperature using SNOTEL data
 
 First, calculate April 1 SWE and summer air temp from snotel data; add to mean temperature dataset: 
@@ -595,6 +657,8 @@ swe.temp.lms <- stream_snotel_nested %>%
 swe.temp.lms
 ```
 
+Add P values and merge:
+
 ```{r}
 swe_summer_ps <- merge(swe.temp.lms, stream_snotel)
 
@@ -630,6 +694,8 @@ air.temp.lms <- stream_snotel_nested %>%
 air.temp.lms
 ```
 
+Add P values and plot:
+
 ```{r}
 air_summer_ps <- merge(air.temp.lms, stream_snotel)
 
@@ -653,7 +719,131 @@ swe.summer.temp
 ```
 
 #### B. Grouped by source
-    
+
+First, add SNOTEL summary info to mean summer temps grouped by source: 
+
+```{r}
+source_snotel <- merge(summer_source, snotel_summary)
+```
+
+##### i. LMs of mean/min/max temp ~ SWE: 
+
+Re-organize data for analysis and plotting: 
+
+```{r}
+source_swe <- source_snotel %>%
+  select(source, swe_max, t_xbar, t_min, t_max)%>% #select temperature, source, and swe cols
+  pivot_longer(!c(source, swe_max), names_to = "measure", values_to = "temp") #pivot longer for plotting + analysis
+```
+
+Nest data by source and measure: 
+
+```{r}
+sourceSwe_nested <- source_swe %>%
+  nest(data = -c(source, measure))
+```
+
+LMs for each source and measure: 
+
+```{r}
+source.swe.lms <- sourceSwe_nested %>%
+  mutate(model = map(data, ~lm(temp~swe_max, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "swe_max")  #remove intercept term to just get info on year for each site
+source.swe.lms
+```
+
+Add p-values and plot: 
+
+```{r}
+sourceSwe_pval<-merge(source_swe, source.swe.lms)%>%
+  mutate(ypos = case_when(measure == "t_xbar" ~ 0.9, measure == "t_max" ~ 0.95, measure == "t_min" ~ 0.85)) #create column for adjusting P-value label Y position
+
+source.swe<- ggplot(sourceSwe_pval, aes(x = swe_max, y = temp, color = measure))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~source, scales = "free_x")+
+   scale_color_manual(values = c("darkred","darkblue", "darkgreen"), labels = c("Max. temp.", "Min. temp.", "Mean temp"))+
+  labs(x = "Annual maximum SWE, cm", y = "Stream temperature, C", color = "Measurement Type")+
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))+
+  geom_text_npc(aes(npcx = 0.9, npcy = ypos, color = measure, label = paste( "P = ",round(p.value, 3), sep = ""))) # add p value labels to plot
+source.swe
+```
+
+Save:
+
+```{r}
+ggsave("Temperature/plots/source_swe.pdf", source.swe, device = "pdf", units = "in", height = 4, width = 6.5, dpi = "retina")
+```
+
+##### ii. LMs of mean/min/max temp ~ Air temp: 
+
+Re-organize data for analysis and plotting: 
+
+```{r}
+source_air <- source_snotel %>%
+  select(source, airtemp_summer, t_xbar, t_min, t_max)%>% #select temperature, source, and swe cols
+  pivot_longer(!c(source, airtemp_summer), names_to = "measure", values_to = "temp") #pivot longer for plotting + analysis
+```
+
+Nest data by source and measure: 
+
+```{r}
+sourceAir_nested <- source_air %>%
+  nest(data = -c(source, measure))
+```
+
+LMs for each source and measure: 
+
+```{r}
+source.air.lms <- sourceAir_nested %>%
+  mutate(model = map(data, ~lm(temp~airtemp_summer, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "airtemp_summer")  #remove intercept term to just get info on year for each site
+source.air.lms
+```
+
+Add p-values and plot: 
+
+```{r}
+sourceAir_pval<-merge(source_air, source.air.lms)%>%
+  mutate(ypos = case_when(measure == "t_xbar" ~ 0.9, measure == "t_max" ~ 0.95, measure == "t_min" ~ 0.85)) #create column for adjusting P-value label Y position
+
+source.air<- ggplot(sourceAir_pval, aes(x = airtemp_summer, y = temp, color = measure))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~source, scales = "free_x")+
+   scale_color_manual(values = c("darkred","darkblue", "darkgreen"), labels = c("Max. temp.", "Min. temp.", "Mean temp"))+
+  labs(x = "Mean July-Aug. air temp., C", y = "Stream temperature, C", color = "Measurement Type")+
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))+
+  geom_text_npc(aes(npcx = 0.1, npcy = ypos, color = measure, label = paste( "P = ",round(p.value, 3), sep = ""))) # add p value labels to plot
+source.air
+```
+
+Save:
+
+```{r}
+ggsave("Temperature/plots/source_air.pdf", source.air, device = "pdf", units = "in", height = 4, width = 6.5, dpi = "retina")
+```
+
 ## II. Invertebrates:
 
 ### 1. Trends in richness, abundance, and density over time

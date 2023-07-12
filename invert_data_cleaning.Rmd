@@ -942,7 +942,14 @@ Save:
 ggsave("invert_data/plots/cumulative_taxa.pdf", cum.taxa, width = 6.5, height = 4, units = "in", device = "pdf", dpi = "retina")
 ```
 
-Appears to be a steady increase in cumulative richness, but that could be a side effect of having data from more sites in later years. 
+LM:
+
+```{r}
+cum.taxa.lm <- lm(cumulative_taxa~yr, data = cumulative_richness)
+summary(cum.taxa.lm)
+```
+
+Significant increase in cumulative richness over time, but that could be a side effect of having data from more sites in later years. 
 
 ### 5. Relationships between Temp/SWE/Etc and richness at a given site? 
 

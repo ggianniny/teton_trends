@@ -791,22 +791,40 @@ cleaned.lines
 ggsave("Temperature/plots/cleaned_line.pdf", plot = cleaned.lines, device = "pdf", dpi = "retina", width = 10, height = 10, units = "in")
 ```
 
+**Adding site coordinates for all sites with 3+ years of data:**
+
+Read in coordinates (source = field sheet PDFs):
+
+```{r}
+coords <- read.csv("site_coordinates.csv")
+```
+
+Merge with temperature dataset:
+
+```{r}
+temps_final1 <- merge(temps_final, coords, all.x = T)%>%
+  arrange(site, date1)
+```
+
+
 **Data Export - both full hourly data and daily mean/min/max data**:
 
 Hourly data:
 
 ```{r}
-write.csv(temps_final, "Temperature/cleaned_full_datasets/temps_hourly.csv")
+write.csv(temps_final1, "Temperature/cleaned_full_datasets/temps_hourly.csv")
 ```
 
 Daily mean, min, and max temps: 
 
 ```{r}
-temp_avgs <- temps_final%>%
+temp_avgs <- temps_final1%>%
   group_by(site, date1)%>%
   summarise(temp_xbar = mean(temp_c), 
          temp_max = max(temp_c), 
-         temp_min = min(temp_c))
+         temp_min = min(temp_c), 
+         lat = unique(lat), 
+         long = unique(long))
 
 write.csv(temp_avgs, "Temperature/cleaned_full_datasets/temps_daily.csv")
 ```

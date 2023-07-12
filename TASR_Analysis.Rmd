@@ -15,6 +15,19 @@ library(patchwork)
 library(corrplot)
 library(ggpp)
 library(broom)
+library(flextable)
+library(maps) #mapping with ggplot2
+library(ggmap) #for mapping w/google map basemaps
+library(scales)
+library(maptools)
+library(raster)   ## To convert an "Extent" object to a "SpatialPolygons" object.
+library(rgeos)
+
+#Setting up ggmap API key: NOTE - for the map figures to work, you'll need to set up a Google Maps Platform Console Account at
+#https://cloud.google.com/maps-platform/, create an API key, and store it in your .Renviron file as "GOOGLEMAPS_API_KEY". 
+
+maps_api_key <- Sys.getenv("GOOGLEMAPS_API_KEY")
+register_google(key = maps_api_key)
 ```
 
 ## Overview
@@ -53,7 +66,8 @@ Read in necessary files:
 
 ```{r}
 stream_temp <- read.csv("Temperature/cleaned_full_datasets/temps_hourly.csv") #hourly stream temp data
-invert_density <- read.csv("invert_data/cleaned_csv/full_invert_densities.csv") #invert density data
+invert_density <- read.csv("invert_data/cleaned_csv/full_invert_densities.csv")%>%
+  rename(site = Stream)#invert density data
 invert_richness <- read.csv("invert_data/cleaned_csv/invert_richness.csv") #invert richness data
 snotel <- read.csv("teton_snotel.csv") #snotel data
 sources <- read.csv("source_info.csv")%>%
@@ -64,7 +78,7 @@ sources <- read.csv("source_info.csv")%>%
 stream_source <- merge(stream_temp, sources, all = T)%>%
   mutate(date1 = ymd(date1)) #Add source info to hourly temperature data; re-code date as r date format
 stream_source_daily <- stream_source%>%
-  group_by(site, full_name, stream_code, date1, year)%>%
+  group_by(site, full_name, stream_code, date1, year, lat, long)%>%
   summarise(t_xbar = mean(temp_c, na.rm = T), 
             t_max = max(temp_c, na.rm = T), 
             t_min = min(temp_c, na.rm = T), 
@@ -75,14 +89,8 @@ richness_source <- merge(invert_richness, sources, all = T)
 
 
 ## I. Temperature:
-
-### 1. Overall trends in stream temperature over time - Time series analysis
-
-#### A. Site-by-site 
-
-#### B. Grouped by source
     
-### 2. Trends in summer mean, max, min, and degree-days over time
+### 1. Trends in summer mean, max, min, and degree-days over time
 
 #### A. Site-by-site 
 
@@ -92,7 +100,7 @@ First, calculate summer (july-aug) mean daily temp, avg daily max and min; plus 
 stream_summer <- stream_source_daily %>%
   mutate(mo = month(date1))%>% #add month column
   filter(mo == 7 | mo == 8)%>% #extract July and August
-  group_by(site, full_name, stream_code, year)%>% #group by site and year
+  group_by(site, full_name, stream_code, year, lat, long)%>% #group by site and year
   summarise(summer_xbar = mean(t_xbar, na.rm = T), 
             max_xbar = mean(t_max, na.rm = T), 
             min_xbar = mean(t_min, na.rm= T), #calculate mean temperature, mean daily max and min
@@ -130,7 +138,7 @@ lm for each site:
 
 ```{r}
 summer.mean.lms <- summer_nested %>%
-  mutate(model = map(data, ~lm(summer_xbar~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+  mutate(model = purrr::map(data, ~lm(summer_xbar~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
                      tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
   unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
   filter(term == "year")  #remove intercept term to just get info on year for each site
@@ -139,17 +147,6 @@ summer.mean.lms
 
 Nothing significant at 0.05 level; weakly significant increase in mean summer temp at S AK basin (p = 0.08)
 
-
-library(ggpp)
-p.vals <- ecoRichness_models %>%
-  select(ecoName, p.value)
-
-eco_r_pvals <- merge(eco_r_d, p.vals)
-
-eco.richness <- ggplot(eco_r_pvals, aes(x = yr, y = log10(richness_perSample), color = ecoName))+
-  geom_point()+
-  geom_smooth(method = "lm", se = F)+
-  geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")))+
 
 Visualization: 
 
@@ -181,7 +178,7 @@ summer.mean
 
 ```{r}
 summer.max.lms <- summer_nested %>%
-  mutate(model = map(data, ~lm(max_xbar~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+  mutate(model = purrr::map(data, ~lm(max_xbar~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
                      tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
   unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
   filter(term == "year")  #remove intercept term to just get info on year for each site
@@ -218,7 +215,7 @@ summer.max
 
 ```{r}
 summer.min.lms <- summer_nested %>%
-  mutate(model = map(data, ~lm(min_xbar~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+  mutate(model = purrr::map(data, ~lm(min_xbar~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
                      tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
   unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
   filter(term == "year")  #remove intercept term to just get info on year for each site
@@ -257,7 +254,7 @@ Days over 2.5 C:
 
 ```{r}
 summer.2.5.lms <- summer_nested %>%
-  mutate(model = map(data, ~lm(dd_2.5~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+  mutate(model = purrr::map(data, ~lm(dd_2.5~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
                      tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
   unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
   filter(term == "year")  #remove intercept term to just get info on year for each site
@@ -294,7 +291,7 @@ Days over 5 C:
 
 ```{r}
 summer.5.lms <- summer_nested %>%
-  mutate(model = map(data, ~lm(dd_5~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+  mutate(model = purrr::map(data, ~lm(dd_5~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
                      tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
   unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
   filter(term == "year")  #remove intercept term to just get info on year for each site
@@ -331,7 +328,7 @@ Days over 10 C:
 
 ```{r}
 summer.10.lms <- summer_nested %>%
-  mutate(model = map(data, ~lm(dd_10~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+  mutate(model = purrr::map(data, ~lm(dd_10~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
                      tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
   unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
   filter(term == "year")  #remove intercept term to just get info on year for each site
@@ -364,6 +361,84 @@ summer.10 <- ggplot(summer_10_withps, aes(x = year, y = dd_10, color = source))+
 summer.10
 ```
 
+#### TABLE 1: Stream info
+
+Make and save a table with stream names, years of data available for each, and stream source: 
+
+First, table set-up:
+
+```{r}
+stream_info <- summer_3plus %>%
+  select(full_name, year, source)%>% #select full name, year, and source columns
+  group_by(full_name, source)%>% #group by full name and source
+  summarise(range = paste(min(year, na.rm = T), max(year, na.rm = T), sep = "-"))%>% #add date range column for each stream
+  arrange(source, full_name)%>% #sort by source then stream name
+  mutate(source = case_when(source == "glacier"~"Glacier", source == "snowmelt"~"Snow melt", source == "sub_ice"~"Subterranean ice"))
+```
+
+Convert to FlexTable and export:
+
+```{r}
+tbl1 <- flextable(stream_info)%>%
+  theme_vanilla()%>%
+  align(part = "all", align = "left")%>%
+  set_header_labels(full_name = "Stream Name", source = "Hydrologic Source", range = "Date Range")%>%
+  set_table_properties(layout = "autofit")
+tbl1
+save_as_docx(tbl1,path = "manuscript/tables/table1_streaminfo.docx", align = "center")
+save_as_image(tbl1,path = "manuscript/tables/table1_streaminfo.png", res = 300)
+```
+
+#### FIGURE 1: Map of sites used: 
+
+```{r}
+#Data set-up:
+mean.long <- mean(summer_3plus$long) 
+mean.lat <- mean(summer_3plus$lat) #calculate mean lat/long of all sites
+
+map_dat <- as.data.frame(summer_3plus)%>%
+  select(full_name, source, lat, long)%>%
+  distinct()%>%
+  filter(!row_number(.)==10)
+
+# Basemap: use get_map to pull map from google API:
+basemap <- get_map(c(mean.long,mean.lat), #center map on mean lat and long of all sites
+                   source = "stamen", zoom = 11, maptype = "terrain-background") #set map type and zoom
+
+bb <- attr(basemap, "bb") #extract  max/min lat and long of the basemap for clipping
+
+##GTNP boundary:
+gtnp <- rgdal::readOGR("gis_data/gnp_gtnp")%>% #read in stored shapefile of GTNP and GNP polygons
+  spTransform(crs("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")) #Update CRS to lat/long (comes in as UTM)
+
+gtnp_clip <- crop(gtnp, extent(bb[1,2], bb[1,4], bb[1,1], bb[1,3]))%>% #Clip GTNP shapefile to the extent of the basemap
+  fortify() #fortify to convert from SpatialPolygon to dataframe for plotting
+
+
+```
+
+Mapping:
+
+
+```{r, warning=F}
+site.map <- ggmap(basemap)+ #basemap: terrain background (no labels) from google maps platform console, centered on avg lat/long of all sites
+  geom_polygon(data = gtnp_clip, aes(x = long, y = lat, group = group), color = "black", linetype = "dashed", fill = "darkgreen", alpha = 0.25, size = 0.6)+ #Adding clipped polygon of GTNP
+  geom_point(data = map_dat, aes(x = long, y = lat, fill = source, group = NULL), color = "black", size = 3, pch = 21)+ #add  sites, color code by source 
+  labs(color = "Hydrologic Source", fill = "Hydrologic Source")+ #updating legend title
+  scale_fill_manual(values = pres.pal, labels = c("Glacier", "Snow melt", "Subterranean ice"))+
+  theme_void()+ #removing lat/long from x and y axes 
+  theme(legend.title = element_text(size = 9, face = "bold"), #adjusting legend title/text/plot title size, face, and position
+        legend.text = element_text(size = 9), 
+        legend.position = c(0.84, 0.12), #Moving legend into the plot area
+        legend.background = element_rect(fill = "white", color = "black", size = 0.5), #adding box behind legend
+        legend.margin = margin(t=5, r=5, b=5, l = 5, unit = "pt") #Increasing margins on legend box
+        )+
+  ggrepel::geom_label_repel(data=map_dat, aes(x=long, y = lat, label=full_name, fill = source), size =3.25, position = position_dodge(width = 1), fontface = "bold", show.legend = FALSE)+ #adding labels for each stream, color-coded by source
+  geom_text_npc(aes(npcx = 0.84, npcy = 0.65, label = "Grand Teton \n National Park"), size = 4.5, fontface = 4, color = "black", hjust = 0.5, alpha = 0.25)+ #add label for Grand Teton NP
+  geom_text_npc(aes(npcx = 0.2, npcy = 0.8, label = "Targhee \n National Forest"), size = 4.5, fontface = 4, color = "black", hjust = 0.5, alpha = 0.25) #add lable for Targhee NF
+site.map
+```
+
 #### B. Grouped by source
 
 First, group by source and re-calculate max, mean, min, and degree days: 
@@ -376,8 +451,12 @@ summer_source <- stream_summer %>%
             t_min = mean(min_xbar), #calculate mean daily temp, mean daily min and max
             dd2.5_xbar = mean(dd_2.5), 
             dd5_xbar = mean(dd_5), 
-            dd10_xbar = mean(dd_10))%>% #calculate mean no. days with max temp >2.5, 5, and 10 C. 
-  filter(!is.na(year), !is.na(source))
+            dd10_xbar = mean(dd_10),#calculate mean no. days with max temp >2.5, 5, and 10 C.
+            n_sites = length(unique(site)))%>%  #calculate no sites for each year
+  filter(!is.na(year), !is.na(source)
+         #, !n_sites < 2
+         )%>%
+    mutate(source = case_when(source == "glacier"~"Glacier", source == "snowmelt"~"Snow melt", source == "sub_ice"~"Subterranean ice"))
 ```
 
 ##### i. Are there differences in min, max, avg temps between sources? 
@@ -429,6 +508,8 @@ source_plot <- summer_source %>%
 Plotting: 
 
 ```{r}
+ylab <- expression(bold("Stream Temperature " (degree*C)))
+
 source.summer <- ggplot(source_plot, aes(x = year, y = temp, color = measure))+
   geom_point()+
   geom_line()+
@@ -436,7 +517,7 @@ source.summer <- ggplot(source_plot, aes(x = year, y = temp, color = measure))+
   theme_classic()+
   facet_wrap(~source, scales = "free_x")+
   scale_color_manual(values = c("darkred","darkblue", "darkgreen"), labels = c("Max. temp.", "Min. temp.", "Mean temp"))+
-  labs(x = "Date", y = "Stream temp, C.", color = "Measurement Type")+
+  labs(x = "Date", y = ylab, color = "Measurement Type")+
   theme(legend.position = "bottom", 
         axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
         axis.title = element_text(size = 11, face = "bold"), 
@@ -467,13 +548,48 @@ source.lms <- source_nested %>%
 source.lms
 ```
 
-Significant increases in min, mean, and max summer temp in glacier-fed streams, no change in snowmelt fed streams, non-significant increases in sub_ice streams. 
+Significant increases in min, mean, and max summer temp in glacier-fed streams, no change in snowmelt fed streams, non-significant increases in sub_ice streams.
+
+Calculate degrees of warming per decade for each: 
+
+```{r}
+warming_amounts <- source.lms %>%
+  mutate(deg_decade = 10*estimate)%>%
+  select(source, measure, deg_decade, p.value)%>%
+  rename(Source = source, Measure = measure, Degrees.Warming = deg_decade, P = p.value)%>%
+  mutate(Measure = case_when(Measure == "t_xbar"~"Mean", Measure == "t_min"~"Minimum", Measure == "t_max"~"Maximum"))
+warming_amounts
+```
+
+#### TABLE 2: Deg. warming per decade
+
+Convert to FlexTable and export: 
+
+```{r}
+tbl2<-flextable(warming_amounts)%>% #convert to flextable
+  theme_vanilla()%>% #update theme to "vanilla"
+  set_table_properties(align = "center", layout = "autofit")%>% #center align the table on the screen, autofit columns
+  align(part = "all", align = "left")%>%#left align all text
+  set_header_labels(Source = "Hydrologic Source", 
+                    Measure = "Temperature Type", 
+                    Degrees.Warming = "Change per decade, C", 
+                    P = "P-value")
+tbl2
+
+save_as_image(tbl2, path = "manuscript/tables/degrees_warming.png", res = 300) #save as .png @ 300dpi
+save_as_docx(tbl2, path ="manuscript/tables/degrees_warming.docx", align = "center") #save as .png @ 300dpi
+
+```
 
 Adding these P-values to the plot: 
+
+#### FIGURE 2: Temp trends by source
 
 ```{r}
 source_pvals <- merge(source.lms, summer_source)%>% #add model info to source dataframe
   mutate(ypos = case_when(measure == "t_max" ~ 0.95, measure == "t_xbar" ~ 0.9, measure == "t_min" ~ 0.85)) #create column for adjusting P-value label Y position
+  
+
 
 source.summer.pv<- source.summer+
   geom_text_npc(data = source_pvals, aes(npcx = 0.1, npcy = ypos, color = measure, label = paste( "P = ",round(p.value, 3), sep = ""))) # add p value labels to plot
@@ -606,7 +722,7 @@ lumped.summer
 ggsave("Temperature/plots/lumped_summer.pdf", lumped.summer, device = "pdf", units = "in", height = 4, width = 6.5, dpi = "retina")
 ```
 
-### 4. Modeling stream temperature using SNOTEL data
+### 2. Modeling stream temperature using SNOTEL data
 
 First, calculate April 1 SWE and summer air temp from snotel data; add to mean temperature dataset: 
 
@@ -844,14 +960,348 @@ Save:
 ggsave("Temperature/plots/source_air.pdf", source.air, device = "pdf", units = "in", height = 4, width = 6.5, dpi = "retina")
 ```
 
+### 3. Overall trends in stream temperature over time - Time series analysis
+
+#### A. Site-by-site 
+
+#### B. Grouped by source
+
 ## II. Invertebrates:
 
 ### 1. Trends in richness, abundance, and density over time
 
 #### A. Site-by-site 
 
+First, calculate richness, mean density, and total abundance for each site for each year; remove sites with only 1 year of data: 
+
+```{r}
+oneYr <- density_source%>%
+  group_by(site)%>% #group by site
+  summarise(nYrs = length(unique(Year)))%>% #count no. years
+  filter(nYrs <3) #extract sites w/ only 1-2 yrs data
+
+
+invert_means <- density_source %>%
+  group_by(stream_code, full_name, site, Year)%>% #group by stream and year
+  summarise(richness = length(unique(taxa_lwr)),  #calculate yearly richness, density, and total abundance
+            density_xbar = mean(density_xbar), 
+            tot_abund = sum(abundance_total), 
+            source = unique(source))%>%
+  filter(!site%in%oneYr$site) #drop sites with 1-2yrs of data
+```
+
+##### i. LM's of Richness ~ year at each site: 
+
+First, nest data by site: 
+
+```{r}
+invert_nested <- invert_means %>%
+  nest(data = -site)
+```
+
+LM's of Richness ~ year for each site: 
+
+```{r}
+richness.yr.lm <- invert_nested %>%
+  mutate(model = map(data, ~lm(richness~Year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "Year")  #remove intercept term to just get info on year for each site
+richness.yr.lm
+```
+
+Add p-values and plot: 
+
+```{r}
+richness_withps <- merge(invert_means, richness.yr.lm)
+
+pres.pal <- c("#C26ED6", "#F89225", "#76D96F")
+
+richness.yr <- ggplot(richness_withps, aes(x = Year, y = richness, color = source))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~full_name, scales = "free")+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.9, label = paste( "P = ",round(p.value, 2), sep = "")))+
+  labs(x = "Date", y = "Taxonomic richness", color = "Stream Source")+
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))
+richness.yr
+```
+
+Significant decline in richness at S Cascade, non-significant declines at most other sites 
+
+Save:
+
+```{r}
+ggsave("invert_data/plots/richness_year.pdf", richness.yr, device = "pdf", dpi = "retina", units = "in", height = 5, width = 6.5)
+```
+
+##### ii. LM's of Density ~ year at each site: 
+
+
+LM's of Density ~ year for each site: 
+
+```{r}
+dens.yr.lm <- invert_nested %>%
+  mutate(model = map(data, ~lm(density_xbar~Year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "Year")  #remove intercept term to just get info on year for each site
+dens.yr.lm
+```
+
+Add p-values and plot: 
+
+```{r}
+density_withps <- merge(invert_means, dens.yr.lm)
+
+pres.pal <- c("#C26ED6", "#F89225", "#76D96F")
+
+dens.yr <- ggplot(density_withps, aes(x = Year, y = density_xbar, color = source))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~full_name, scales = "free")+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.9, label = paste( "P = ",round(p.value, 2), sep = "")))+
+  labs(x = "Date", y = "Mean density, individuals/m2", color = "Stream Source")+
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))
+dens.yr
+```
+
+No significant trends in average density at any site
+
+Save:
+
+```{r}
+ggsave("invert_data/plots/density_year.pdf", dens.yr, device = "pdf", dpi = "retina", units = "in", height = 5, width = 6.5)
+```
+
+##### iii. LM's of total abundance ~ year at each site: 
+
+
+LM's of Density ~ year for each site: 
+
+```{r}
+abund.yr.lm <- invert_nested %>%
+  mutate(model = map(data, ~lm(tot_abund~Year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "Year")  #remove intercept term to just get info on year for each site
+abund.yr.lm
+```
+
+Add p-values and plot: 
+
+```{r}
+abund_withps <- merge(invert_means, abund.yr.lm)
+
+pres.pal <- c("#C26ED6", "#F89225", "#76D96F")
+
+abund.yr <- ggplot(density_withps, aes(x = Year, y = tot_abund, color = source))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~full_name, scales = "free")+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.9, label = paste( "P = ",round(p.value, 2), sep = "")))+
+  labs(x = "Date", y = "Total abundance", color = "Stream Source")+
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))
+abund.yr
+```
+
+No significant trends in total abundance at any site. 
+
+Save:
+
+```{r}
+ggsave("invert_data/plots/abundance_year.pdf", abund.yr, device = "pdf", dpi = "retina", units = "in", height = 5, width = 6.5)
+```
+
 #### B. Grouped by source
-    
+
+First, group by source and calculate mean richness, density, and abundance: 
+
+```{r}
+source_inverts <- invert_means %>%
+  group_by(source, Year)%>%
+  summarise(richness_xbar = mean(richness), 
+            density_xbar = mean(density_xbar),
+            abund_xbar = mean(tot_abund))
+```
+
+##### i. LMs of richness ~ year for each source:
+
+First, nest data by source:
+
+```{r}
+source_inverts_nested <- source_inverts %>%
+  nest(data = -source)
+```
+
+LMs of richness ~ year for each source:
+
+```{r}
+ricness.source.lm <- source_inverts_nested %>%
+  mutate(model = map(data, ~lm(richness_xbar~Year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "Year")  #remove intercept term to just get info on year for each site
+ricness.source.lm
+```
+
+Add p-values and plot: 
+
+```{r}
+richnessSource_pv <- merge(source_inverts, ricness.source.lm)
+
+pres.pal <- c("#C26ED6", "#F89225", "#76D96F")
+
+richness.source <- ggplot(richnessSource_pv, aes(x = Year, y = richness_xbar, color = source))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~source)+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.95, label = paste( "P = ",round(p.value, 2), sep = "")))+
+  labs(x = "Year", y = "Mean taxonomic richness", color = "Stream Source")+
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))
+richness.source
+```
+
+Significant decline in richness at subterranean ice sites
+
+Save:
+
+```{r}
+ggsave("invert_data/plots/richness_source.pdf", richness.source, device = "pdf", dpi = "retina", units = "in", height = 5, width = 6.5)
+```
+
+
+##### ii. LMs of density ~ year for each source:
+
+LMs of density ~ year for each source:
+
+```{r}
+dens.source.lm <- source_inverts_nested %>%
+  mutate(model = map(data, ~lm(density_xbar~Year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "Year")  #remove intercept term to just get info on year for each site
+dens.source.lm
+```
+
+Add p-values and plot: 
+
+```{r}
+densSource_pv <- merge(source_inverts, dens.source.lm)
+
+pres.pal <- c("#C26ED6", "#F89225", "#76D96F")
+
+dens.source <- ggplot(densSource_pv, aes(x = Year, y = density_xbar, color = source))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~source)+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.95, label = paste( "P = ",round(p.value, 2), sep = "")))+
+  labs(x = "Year", y = "Mean density, individuals/m2", color = "Stream Source")+
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))
+dens.source
+```
+
+No significant trends in average density in any source. 
+
+Save:
+
+```{r}
+ggsave("invert_data/plots/density_source.pdf", dens.source, device = "pdf", dpi = "retina", units = "in", height = 5, width = 6.5)
+```
+
+##### iii. LMs of abundance ~ year for each source:
+
+LMs of abundance ~ year for each source:
+
+```{r}
+abund.source.lm <- source_inverts_nested %>%
+  mutate(model = map(data, ~lm(abund_xbar~Year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "Year")  #remove intercept term to just get info on year for each site
+abund.source.lm
+```
+
+Add p-values and plot: 
+
+```{r}
+abundSource_pv <- merge(source_inverts, abund.source.lm)
+
+pres.pal <- c("#C26ED6", "#F89225", "#76D96F")
+
+abund.source <- ggplot(abundSource_pv, aes(x = Year, y = abund_xbar, color = source))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~source)+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.95, label = paste( "P = ",round(p.value, 2), sep = "")))+
+  labs(x = "Year", y = "Mean density, individuals/m2", color = "Stream Source")+
+  theme(legend.position = "none", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))
+abund.source
+```
+
+No significant trends in average abundance in any source. 
+
+Save:
+
+```{r}
+ggsave("invert_data/plots/abundance_source.pdf", abund.source, device = "pdf", dpi = "retina", units = "in", height = 5, width = 6.5)
+```
+
+
 ### 2. Modeling richness, abundance, and density using SNOTEL data
 
 #### A. Site-by-site 

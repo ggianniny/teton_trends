@@ -23,8 +23,9 @@ This script goes contains different analyses testing for trends in stream temper
 
   1. Using previously cleaned (by Scott) data - basic lm's testing the effects of year, air temp, snow pack on average summer (July-August) temperature (designed after the "real time warming..." paper from the Alps). 
   
-
-
+  2. Comparing Temperature and invert data
+  
+  3. Re-running initital analyses (lm's with year, air temp, etc) using full datasets
 
 ## 1. lm's using previously cleaned data:
 

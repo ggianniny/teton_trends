@@ -667,6 +667,9 @@ richness <- invert_avgs %>%
   filter(!Stream%in%one.yr$Stream)%>%
   group_by(Stream, Year, source, full_name)%>% #group by stream/year
   summarise(richness = length(unique(taxa_lwr))) #calculate # of unique values of taxa_lwr for each stream + year combo
+
+head(richness
+     )
 ```
 
 Save file for future analysis:

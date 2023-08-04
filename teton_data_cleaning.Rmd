@@ -824,7 +824,8 @@ temp_avgs <- temps_final1%>%
          temp_max = max(temp_c), 
          temp_min = min(temp_c), 
          lat = unique(lat), 
-         long = unique(long))
+         long = unique(long), 
+         temp_change =temp_max-temp_min) #adding diel temperature fluctuation
 
 write.csv(temp_avgs, "Temperature/cleaned_full_datasets/temps_daily.csv")
 ```

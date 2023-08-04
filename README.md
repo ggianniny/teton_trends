@@ -1,6 +1,6 @@
 ## README
 ### Gordon Gianniny
-### Updated 04/21/2023
+### Updated 08/04/2023
 
 This project contains code for cleaning and analyzing stream temperature data and invertebrate data from Grand Teton National Park. The general project structure is as follows: 
 

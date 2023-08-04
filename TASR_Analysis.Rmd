@@ -36,33 +36,33 @@ summarise<-dplyr::summarise
 
 This script reads in cleaned datafiles with stream temperature and invertebrate data produced by the invert_data_cleaning.Rmd and teton_data_cleaning.Rmd scripts and performs more involved analyses of stream temperature and invertebrate density/diversity over time. A few findings of interest from previous analyses are that: 
 
-    * Average summer (July-Aug) stream temperatures have not changed significantly over time
+  * Average summer (July-Aug) stream temperatures have not changed significantly over time
     
-    * Average summer (July-Aug) air temperatures have increased over time
+  * Average summer (July-Aug) air temperatures have increased over time
     
-    * Overall, invetebrate richness has not changed over time
+  * Overall, invetebrate richness has not changed over time
     
-    * Invertebrate communities in snow-fed streams appear to be more variable than those in glacier-fed streams
+  * Invertebrate communities in snow-fed streams appear to be more variable than those in glacier-fed streams
 
 To build on these findings, the main sections of this script are: 
 
 **I. Temperature:**
     
-    1. Trends in summer mean, max, min, and degree-days over time: Site-by-site and grouped by source
+  1. Trends in summer mean, max, min, and degree-days over time: Site-by-site and grouped by source
     
-    2. Modeling stream temperature using SNOTEL data: Site-by-site and grouped by source
+  2. Modeling stream temperature using SNOTEL data: Site-by-site and grouped by source
     
-    3. Linear mixed models of temperature over time
+  3. Linear mixed models of temperature over time
     
 **II. Invertebrates:**
 
-    1. Trends in richness, abundance, and density over time: Site-by-site and grouped by source
+  1. Trends in richness, abundance, and density over time: Site-by-site and grouped by source
     
-    2. Modeling richness, abundance, and density using SNOTEL data: Site-by-site and grouped by source
+  2. Modeling richness, abundance, and density using SNOTEL data: Site-by-site and grouped by source
     
 **III. Temperature and Invertebrates**
 
-    1. Test for correlations between temperature metrics (mean/max/min summer; degree days): Site-by-site and grouped by source
+  1. Test for correlations between temperature metrics (mean/max/min summer; degree days): Site-by-site and grouped by source
     
 Read in necessary files: 
 
@@ -442,13 +442,13 @@ save_as_image(tbl1,path = "manuscript/tables/table1_streaminfo.png", res = 300)
 
 ```{r}
 #Data set-up:
-mean.long <- mean(summer_3plus$long) 
-mean.lat <- mean(summer_3plus$lat) #calculate mean lat/long of all sites
+mean.long <- mean(summer_3plus$long, na.rm=T) 
+mean.lat <- mean(summer_3plus$lat, na.rm =T) #calculate mean lat/long of all sites
 
 map_dat <- as.data.frame(summer_3plus)%>%
   dplyr::select(full_name, source, lat, long)%>%
   distinct()%>%
-  filter(!row_number(.)==10)
+  filter(!is.na(lat))
 
 # Basemap: use get_map to pull map from google API:
 basemap <- get_map(c(mean.long,mean.lat), #center map on mean lat and long of all sites
@@ -609,7 +609,7 @@ warming_amounts <- source.lms %>%
   mutate(deg_decade = 10*estimate)%>%
   dplyr::select(source, measure, deg_decade, p.value)%>%
   rename(Source = source, Measure = measure, Degrees.Warming = deg_decade, P = p.value)%>%
-  mutate(Measure = case_when(Measure == "t_xbar"~"Mean", Measure == "t_min"~"Minimum", Measure == "t_max"~"Maximum"))
+  mutate(Measure = case_when(Measure == "t_xbar"~"Mean", Measure == "t_min"~"Minimum", Measure == "t_max"~"Maximum", Measure == "t_range"~"Diel Temp Change"))
 warming_amounts
 ```
 
@@ -1271,7 +1271,7 @@ max_temps <- filter(lmm_nested, measure == "max_xbar")
 
 max.lmm <- max_temps %>%
   mutate(model = purrr::map(data, ~lmerTest::lmer(temp_c~melt_days+airtemp_summer+swe_max+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
-                     tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
   unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
   mutate(p.value = round(p.value, 4))%>%
   filter(!term == "(Intercept)")%>%
@@ -1318,7 +1318,7 @@ min_temps <- filter(lmm_nested, measure == "min_xbar")
 
 min.lmm <- min_temps %>%
   mutate(model = purrr::map(data, ~lmerTest::lmer(temp_c~melt_days+airtemp_summer+swe_max+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
-                     tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
   unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
   mutate(p.value = round(p.value, 4))%>%
   filter(!term == "(Intercept)")%>%
@@ -1365,7 +1365,7 @@ mean_temps <- filter(lmm_nested, measure == "summer_xbar")
 
 mean.lmm <- mean_temps %>%
   mutate(model = purrr::map(data, ~lmerTest::lmer(temp_c~melt_days+airtemp_summer+swe_max+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
-                     tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
   unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
   mutate(p.value = round(p.value, 4))%>%
   filter(!term == "(Intercept)")%>%
@@ -1412,7 +1412,7 @@ temp_ranges <- filter(lmm_nested, measure == "range_xbar")
 
 range.lmm <- temp_ranges %>%
   mutate(model = purrr::map(data, ~lmerTest::lmer(temp_c~melt_days+airtemp_summer+swe_max+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
-                     tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
   unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
   mutate(p.value = round(p.value, 4))%>%
   filter(!term == "(Intercept)")%>%

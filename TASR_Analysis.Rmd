@@ -28,6 +28,8 @@ library(rgeos)
 
 maps_api_key <- Sys.getenv("GOOGLEMAPS_API_KEY")
 register_google(key = maps_api_key)
+
+summarise<-dplyr::summarise
 ```
 
 ## Overview

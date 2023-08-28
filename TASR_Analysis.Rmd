@@ -776,6 +776,8 @@ ggsave("Temperature/plots/lumped_summer.pdf", lumped.summer, device = "pdf", uni
 
 ### 2. Modeling stream temperature using SNOTEL data
 
+## STOPPING HERE 8/28 - NEED UPDATED SNOTEL DATA
+
 First, calculate April 1 SWE and summer air temp from snotel data; add to mean temperature dataset: 
 
 ```{r}

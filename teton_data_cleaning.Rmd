@@ -124,6 +124,8 @@ tail(full_rbind)
 **2. Read in a .csv files with the deployment and retrevial dates for each site for each year with columns "year", "site", "deployment_plus1", and "retrevial_minus1".** 
  (Export from the "Deployment dates" google sheet: https://docs.google.com/spreadsheets/d/1yvyq_zOSwhUTm2_yDDuofD2SFVrExWLZfKlJ-aubgs8/edit?usp=sharing)
  
+ NOTE - for adding the 2022-23 data, I removed rows without a corresponding data file (skillet and Grizzly) and got rid of the deployment dates for the 2023-24 data for easier data cleaining. 
+ 
 ```{r}
 dep_dates <- read.csv("Temperature/deployment_dates.csv")%>% #read datafile - this is the "Deployment dates" tab of the Deployment dates google sheet updated for the current year and saved as a .csv file
   mutate(deployment_plus1 = mdy(deployment_plus1), #re-code deployment_plus1 as a date
@@ -356,6 +358,33 @@ wc.cleaned <- ggplot(filter(fully_cleaned3, site == "windcave"), aes(x = date_tm
 wc.cleaned
 ```
 
+Additional exposure or error in beginning of 2022-23 data - check this period: 
+
+```{r}
+wc.exposure2 <- ggplot(filter(clean_zero, site == "windcave" & date_tm < "2022-08-25"&date_tm > "2022-08-01") , aes(x = date_tm, y = temp_c)
+                                    )+
+  geom_point()
+wc.exposure2
+```
+
+Error appears to go from the beginning of Aug through Aug 25th - removing everything from 8/1-8/25/23: 
+
+```{r}
+fully_cleaned4 <- fully_cleaned3 %>%
+  filter(!(site == "windcave" & date_tm < "2022-08-25"&date_tm > "2022-08-01"))
+```
+
+
+Check full wind cave plot to see if successful: 
+
+```{r}
+wc.cleaned2 <- ggplot(filter(fully_cleaned4, site == "windcave"), aes(x = date_tm, y = temp_c))+
+  geom_point()
+wc.cleaned2
+```
+
+Success.
+
 #### III. Paintbrush: 
 
 
@@ -373,7 +402,7 @@ airtemp <- read.csv("snotel_airtemps.csv")%>% #read in CSV with air temps for Ph
 Combine air temp and stream temp data: 
 
 ```{r}
-pb <- filter(fully_cleaned3, site == "paintbrush")%>% #select data for paintbrush
+pb <- filter(fully_cleaned4, site == "paintbrush")%>% #select data for paintbrush
   mutate(Date = ymd(date1))%>% #extract just date w/out time from date_tm col
   group_by(Date, year)%>% #group by day
   summarise(stream_temp = mean(temp_c, na.rm = T), 
@@ -444,15 +473,25 @@ pb.20
 pb.21 <- ggplot(filter(pb.air, year == 2021 ),  aes(x = Date, y = temp_c, color = measure))+
   geom_line()+
   theme_classic()+
-  theme(legend.position = "bottom")
+  theme(legend.position = "none")
 pb.21
+```
+
+2022: 
+
+```{r}
+pb.22 <- ggplot(filter(pb.air, year == 2022 ),  aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  theme(legend.position = "bottom")
+pb.22
 ```
 
 
 Stack all years and save: 
 
 ```{r}
-pb.stack <- pb.17/pb.18/pb.19/pb.20/pb.21
+pb.stack <- pb.17/pb.18/pb.19/pb.20/pb.21/pb.22
 pb.stack
 ```
 
@@ -470,7 +509,7 @@ Substantial periods of overlap between and air temperatures each summer - could 
 First, need to calculate daily temperature range for each day within each site:
 
 ```{r}
-diel_tc <- fully_cleaned3 %>%
+diel_tc <- fully_cleaned4 %>%
   group_by(site, date1)%>%
   summarise(t_xbar = mean(temp_c, na.rm = T), 
             t_min = min(temp_c, na.rm = T), 
@@ -511,7 +550,7 @@ Check plot w/out flagged data:
 pb.cleaned <- ggplot(pb_diel_air, aes(x = Date, y = temp_c, color = type))+
   geom_line()+
   theme_classic()+
-  facet_wrap(~year, nrow = 6, ncol =1, scales = "free")+
+  facet_wrap(~year, nrow = length(unique(pb.air$year)), ncol =1, scales = "free")+
   theme(strip.text = element_blank())+
   labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
   scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
@@ -530,7 +569,7 @@ Comparison to uncleaned:
 pb.uncleaned <- ggplot(pb.air, aes(x = Date, y = temp_c, color = measure))+
   geom_line()+
   theme_classic()+
-  facet_wrap(~year, nrow = 6, ncol =1, scales = "free")+
+  facet_wrap(~year, nrow = length(unique(pb.air$year)), ncol =1, scales = "free")+
   theme(strip.text = element_blank())+
   labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
   scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
@@ -556,7 +595,7 @@ pb_10 <- pb.air%>%
 pb.10 <- ggplot(pb_10, aes(x = Date, y = temp_c, color = measure))+
   geom_line()+
   theme_classic()+
-  facet_wrap(~year, nrow = 6, ncol =1, scales = "free")+
+  facet_wrap(~year, nrow = length(unique(pb.air$year)), ncol =1, scales = "free")+
   theme(strip.text = element_blank())+
   labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
   scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
@@ -574,7 +613,7 @@ pb_13 <- pb.air%>%
 pb.13 <- ggplot(pb_13, aes(x = Date, y = temp_c, color = measure))+
   geom_line()+
   theme_classic()+
-  facet_wrap(~year, nrow = 6, ncol =1, scales = "free")+
+  facet_wrap(~year, nrow = length(unique(pb.air$year)), ncol =1, scales = "free")+
   theme(strip.text = element_blank())+
   labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
   scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
@@ -591,7 +630,7 @@ pb_15 <- pb.air%>%
 pb.15 <- ggplot(pb_15, aes(x = Date, y = temp_c, color = measure))+
   geom_line()+
   theme_classic()+
-  facet_wrap(~year, nrow = 6, ncol =1, scales = "free")+
+  facet_wrap(~year, nrow = length(unique(pb.air$year)), ncol =1, scales = "free")+
   theme(strip.text = element_blank())+
   labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
   scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
@@ -622,6 +661,7 @@ Based on this plot, problem areas appear to be:
   - Sep-Oct 2019
   - Aug-Oct 2020
   - Aug-Oct 2021
+  - Aug-Oct 2022
   
 (2017 & 2022 look ok)
 
@@ -705,14 +745,33 @@ Problem period is **08-05 to 10-09**. Save these dates for later:
 exposure.21 <- seq.Date(from = as.Date("2021-08-05"), to = as.Date("2021-10-09"), by = "day")
 ```
 
+**2022**
+
+Plot:
+
+```{r}
+ggplot(filter(pb.air, Date >= "2022-08-19" & Date <= "2022-10-15"), aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
+  scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
+```
+
+Problem period is **08-19 to 10-15**. Save these dates for later: 
+
+```{r}
+exposure.22 <- seq.Date(from = as.Date("2022-08-19"), to = as.Date("2022-10-15"), by = "day")
+```
+
 **Removing these date ranges from the paintbrush data in the complete dataset:**
 
 ```{r}
-fully_cleaned4 <- fully_cleaned3 %>%
+fully_cleaned5 <- fully_cleaned4 %>%
   filter(!(site == "paintbrush"&date1>=min(exposure.18)&date1<=max(exposure.18)), 
          !(site == "paintbrush"&date1>=min(exposure.19)&date1<=max(exposure.19)),
          !(site == "paintbrush"&date1>=min(exposure.20)&date1<=max(exposure.20)),
-         !(site == "paintbrush"&date1>=min(exposure.21)&date1<=max(exposure.21))
+         !(site == "paintbrush"&date1>=min(exposure.21)&date1<=max(exposure.21)), 
+         !(site == "paintbrush"&date1>=min(exposure.22)&date1<=max(exposure.22))
          )
 ```
 
@@ -720,7 +779,7 @@ fully_cleaned4 <- fully_cleaned3 %>%
 Make dataframe with exposure dates for future reference:
 
 ```{r}
-exposure_dates <- as.data.frame(c(exposure.18, exposure.19, exposure.20, exposure.21))%>%
+exposure_dates <- as.data.frame(c(exposure.18, exposure.19, exposure.20, exposure.21, exposure.22))%>%
   rename(exposed_dates = 1)%>%
   mutate(yr = year(exposed_dates)) 
 
@@ -731,20 +790,20 @@ write.csv(exposure_dates, "Temperature/pb_exposure.csv")
 Check resulting plot: 
 
 ```{r}
-ggplot(filter(fully_cleaned4, site == "paintbrush"), aes(x = date1, y = temp_c))+
+ggplot(filter(fully_cleaned5, site == "paintbrush"), aes(x = date1, y = temp_c))+
   geom_point()+
   theme_classic()
 
 ```
 
-Appears to have successfully removed the desired sections from each year - use this file (fully_cleaned4) for future calculations and analysis.
+Appears to have successfully removed the desired sections from each year - use this file (fully_cleaned5) for future calculations and analysis.
 
 ### D. Some Final Cleaning/organizing for optimal plotting: 
 
 Re-filling missing date ranges after cleaning:
 
 ```{r}
-full_clean_split <- split(fully_cleaned4, fully_cleaned4$site) # split into 17 df's, one for each site
+full_clean_split <- split(fully_cleaned5, fully_cleaned5$site) # split into 17 df's, one for each site
 ```
 
 Apply previously constructed function to this list to re-fill dates: 
@@ -911,7 +970,7 @@ ggsave("pres_figures/tasr_2021.pdf", tasr.20, width = 12, height = 5, units = "i
 **Two years in one plot**:
 
 ```{r}
-tasr.20.21 <- ggplot(filter(tasr_daily, date1>"2020-01-01" & date1 < "2021-12-31"), aes(x = date1, y = temp_xbar, group = full_name, color = full_name))+
+tasr.21.22 <- ggplot(filter(tasr_daily, date1>"2021-01-01" & date1 < "2022-12-31"), aes(x = date1, y = temp_xbar, group = full_name, color = full_name))+
   geom_line()+
   theme_classic()+
   labs(x = "Date", y = "Stream Temperature, C", color = "Stream Name")+
@@ -921,13 +980,13 @@ tasr.20.21 <- ggplot(filter(tasr_daily, date1>"2020-01-01" & date1 < "2021-12-31
         legend.text = element_text(size = 10), 
         legend.title = element_text(size = 11, face = "bold"), 
         strip.text = element_text(size = 10, face = "bold"))
-tasr.20.21
+tasr.21.22
 ```
 
 Save:
 
 ```{r}
-ggsave("pres_figures/tasr_20_21.pdf", tasr.20.21, width = 12, height = 5, units = "in", device = "pdf", dpi = "retina")
+ggsave("pres_figures/tasr_21_22.pdf", tasr.21.22, width = 12, height = 5, units = "in", device = "pdf", dpi = "retina")
 ```
 
 

@@ -71,7 +71,7 @@ stream_temp <- read.csv("Temperature/cleaned_full_datasets/temps_hourly.csv") #h
 invert_density <- read.csv("invert_data/cleaned_csv/full_invert_densities.csv")%>%
   rename(site = Stream)#invert density data
 invert_richness <- read.csv("invert_data/cleaned_csv/invert_richness.csv") #invert richness data
-snotel <- read.csv("teton_snotel.csv") #snotel data
+snotel <- read.csv("teton_snotel_23.csv") #snotel data
 sources <- read.csv("source_info.csv")%>%
   rename(site = stream) #source info, rename for merge
 
@@ -1277,7 +1277,8 @@ max.lmm <- max_temps %>%
   unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
   mutate(p.value = round(p.value, 4))%>%
   filter(!term == "(Intercept)")%>%
-  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)
+  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)
 max.lmm
 ```
 
@@ -1285,11 +1286,11 @@ Results:
 
 *Subterranean ice:*
 
-Significant negative correlation between summer air temp and max stream temp (maybe more ice melting?)
+No significant effects
 
 *Snowmelt:* 
 
-Significant negative correlation between melt length and max temp; same with summer air temp and max temp (??)
+Significant negative correlation between melt length and max temp; same with max swe and max temp (??)
 
 *Glacier:*
 
@@ -1297,14 +1298,25 @@ No significant effects.
 
 Visualization: 
 
+add p-values:
+
 ```{r}
-ggplot(filter(lmm_plot, measure == "max_xbar"), aes(x = predictor_value, y = temp_c, color = source, group = site))+
+max_pv <- lmm_plot %>%
+  filter(measure == "max_xbar")%>%
+  merge(max.lmm)
+```
+
+plot:
+
+```{r}
+ggplot(max_pv, aes(x = predictor_value, y = temp_c, color = source, group = site))+
   geom_point(size = 0.5)+
   geom_line(size = 0.5)+
   geom_smooth(aes(group = NULL), method = "lm", se = T, linetype = "dashed", color = "black", size = 0.5)+
   theme_classic()+
   scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
   facet_grid(source~predictor_name, scales = "free")+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")), stat = "unique")+
   theme(legend.position = "none")+
   labs(x = "Predictor Value", y = "Mean maximum July-Aug stream temp, C")
 ```
@@ -1324,7 +1336,8 @@ min.lmm <- min_temps %>%
   unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
   mutate(p.value = round(p.value, 4))%>%
   filter(!term == "(Intercept)")%>%
-  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)
+  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)
 min.lmm
 ```
 
@@ -1332,26 +1345,36 @@ Results:
 
 *Subterranean ice:*
 
-Significant negative correlation between maximum SWE and min summer stream temp (Maybe less ice melting bc of snow insulation?)
+Significant negative correlation between maximum SWE and min summer stream temp (higher SWE = lower minimum temps)
 
 *Snowmelt:* 
 
-Significant negative correlation between melt length, summer air temp, and swe max and summer stream temp. Melt length makes sense, others don't really...
+Significant negative correlation between melt length, max SWE, and summer stream temp. (longer melt and higher max SWE = lower tream temps)
 
 *Glacier:*
 
-No significant effects. 
+Significant negative correlation between max SWE and minimum temps
 
 Visualization: 
+add p-values:
 
 ```{r}
-ggplot(filter(lmm_plot, measure == "min_xbar"), aes(x = predictor_value, y = temp_c, color = source, group = site))+
+min_pv <- lmm_plot %>%
+  filter(measure == "min_xbar")%>%
+  merge(min.lmm)
+```
+
+plot:
+
+```{r}
+ggplot(min_pv, aes(x = predictor_value, y = temp_c, color = source, group = site))+
   geom_point(size = 0.5)+
   geom_line(size = 0.5)+
   geom_smooth(aes(group = NULL), method = "lm", se = T, linetype = "dashed", color = "black", size = 0.5)+
   theme_classic()+
   scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
   facet_grid(source~predictor_name, scales = "free")+
+    geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")), stat = "unique")+
   theme(legend.position = "none")+
   labs(x = "Predictor Value", y = "Mean minimum July-Aug stream temp, C")
 ```
@@ -1371,7 +1394,8 @@ mean.lmm <- mean_temps %>%
   unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
   mutate(p.value = round(p.value, 4))%>%
   filter(!term == "(Intercept)")%>%
-  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)
+  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)
 mean.lmm
 ```
 
@@ -1379,11 +1403,11 @@ Results:
 
 *Subterranean ice:*
 
-Significant negative correlation between summer air temp and mean summer stream temp (Maybe less ice melting bc of snow insulation?)
+No significant correlations - closest is negative correlation between max SWE and avg stream temp. 
 
 *Snowmelt:* 
 
-Significant negative correlation between melt length, summer air temp, and swe max and summer stream temp. Melt length makes sense, others don't really...
+Significant negative correlation Melt length, max SWE, and avg stream temp. 
 
 *Glacier:*
 
@@ -1392,13 +1416,20 @@ No significant effects.
 Visualization: 
 
 ```{r}
-ggplot(filter(lmm_plot, measure == "summer_xbar"), aes(x = predictor_value, y = temp_c, color = source, group = site))+
+mean_pv <- lmm_plot %>%
+  filter(measure == "summer_xbar")%>%
+  merge(mean.lmm)
+```
+
+```{r}
+ggplot(mean_pv, aes(x = predictor_value, y = temp_c, color = source, group = site))+
   geom_point(size = 0.5)+
   geom_line(size = 0.5)+
   geom_smooth(aes(group = NULL), method = "lm", se = T, linetype = "dashed", color = "black", size = 0.5)+
   theme_classic()+
   scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
   facet_grid(source~predictor_name, scales = "free")+
+    geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")), stat = "unique")+
   theme(legend.position = "none")+
   labs(x = "Predictor Value", y = "Mean daily July-Aug stream temp, C")
 ```
@@ -1418,7 +1449,8 @@ range.lmm <- temp_ranges %>%
   unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
   mutate(p.value = round(p.value, 4))%>%
   filter(!term == "(Intercept)")%>%
-  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)
+  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)
 range.lmm
 ```
 
@@ -1426,11 +1458,11 @@ Results:
 
 *Subterranean ice:*
 
-Marginally significant negative correlation between summer air temp and temperature variability (warmer summers = less variability)
+No significant effects
 
 *Snowmelt:* 
 
-Significant negative correlation of melt length and summer air temp with temperature variability (longer melt and warmer summers = less variability). Seems a bit contradictory.
+No significant effects
 
 *Glacier:*
 
@@ -1439,7 +1471,14 @@ No significant effects.
 Visualization: 
 
 ```{r}
-ggplot(filter(lmm_plot, measure == "range_xbar"), aes(x = predictor_value, y = temp_c, color = source, group = site))+
+range_pv <- lmm_plot %>%
+  filter(measure == "range_xbar")%>%
+  merge(range.lmm)
+```
+
+
+```{r}
+ggplot(range_pv, aes(x = predictor_value, y = temp_c, color = source, group = site))+
   geom_point(size = 0.5)+
   geom_line(size = 0.5)+
   geom_smooth(aes(group = NULL), method = "lm", se = T, linetype = "dashed", color = "black", size = 0.5)+
@@ -1447,6 +1486,7 @@ ggplot(filter(lmm_plot, measure == "range_xbar"), aes(x = predictor_value, y = t
   scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
   facet_grid(source~predictor_name, scales = "free")+
   theme(legend.position = "none")+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")), stat = "unique")+
   labs(x = "Predictor Value", y = "Mean July-Aug daily stream temp. change, C")
 ```
 

@@ -12,6 +12,9 @@ library(lubridate) #For working with dates
 library(ggplot2) #Plotting
 library(RColorBrewer)
 library(patchwork)
+select<-dplyr::select
+mutate<-dplyr::mutate
+rename<-dplyr::rename
 ```
 
 ## Overview
@@ -244,7 +247,8 @@ ggsave("Temperature/plots/site_scatter.pdf", plot = site.scatter, device = "pdf"
 
 ```{r}
 clean_zero <- clean_rbind %>%
-  mutate(temp_c = if_else(temp_c < 0, 0, temp_c))
+  mutate(temp_raw = temp_c, 
+         temp_c = if_else(temp_c < 0, 0, temp_c)) #adding column with raw/uncorrected temps to include temps <0
 ```
 
 Check resulting plot to confirm results: 
@@ -892,7 +896,7 @@ write.csv(temp_avgs, "Temperature/cleaned_full_datasets/temps_daily.csv")
 ---
 ---
 
-### 5. Updated plots for TASR Presentation:
+## 5. Updated plots for TASR Presentation:
 
 **TASR temperature plot, faceted by site, color coded by source:** 
 
@@ -1010,3 +1014,86 @@ tasr.source
 ```{r}
 ggsave("pres_figures/tasr_source.pdf", tasr.source, width = 12, height = 5, units = "in", device = "pdf", dpi = "retina")
 ```
+
+---
+
+## 6. Combine plot with full period of record for all sites; individual plots for each site (including below zero)
+
+Combined plot - full period of record for all TASR sites in one graph: 
+
+```{r}
+tasr.full <- ggplot(tasr_dat, aes(x = date1, y = temp_raw, group = full_name, color = source))+
+  geom_line()+
+  theme_classic()+
+  labs(x = "Date", y = "Stream Temperature, C", color = "Stream Source")+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  theme(legend.position = "right", 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 10), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))
+tasr.full
+```
+
+```{r}
+ggsave("Temperature/plots/tasr_fullrecord.pdf", tasr.full, width = 9, height = 6.5, units = "in", device = "pdf", dpi = "retina")
+```
+
+Individual plots for each stream: 
+
+Add columns with HTML color codes and print-friendly source names:
+
+```{r}
+tasr_dat1 <- tasr_dat%>%
+  mutate(colorcode = case_when(
+    source == "glacier"~pres.pal[1], 
+    source == "snowmelt"~pres.pal[2],
+    source == "sub_ice"~pres.pal[3]
+  ), 
+  source_print = case_when(
+    source == "glacier"~"Glacier", 
+    source == "snowmelt"~"Snow Melt", 
+    source == "sub_ice"~"Icy Seep"
+  ))
+```
+
+Create vector with all tasr site names; initate empty list to recieve plots:
+
+```{r}
+stream.names <- unique(tasr_dat1$site)
+plot.list<-list()
+```
+
+Create plot for each site in stream.names vector using a for loop; store in plot.list and save a pdf: 
+
+```{r}
+for(i in 1:length(stream.names)){
+  dat<-tasr_dat1%>%
+    filter(site == stream.names[i])
+  p<-ggplot(dat, aes(x = date1, y = temp_raw, group = full_name))+
+  geom_line(color = dat$colorcode)+
+  theme_classic()+
+  labs(x = "Date", y = "Stream Temperature, C", title = paste(dat$full_name, dat$source_print, sep = " - "))+
+  theme(legend.position = "none", 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 10), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"), 
+        plot.title = element_text(size =12, face = "bold", hjust = 0.5))
+  plot.list[[i]]<-p
+  fp<- paste("Temperature/plots/tasr_sites/", unique(dat$site), ".pdf", sep = "")
+  ggsave(fp, p, device = "pdf", dpi = "retina", units = "in", height = 6.5, width = 9)
+}
+```
+
+Save output .csv file: 
+
+```{r}
+write.csv(tasr_dat1, "Temperature/cleaned_full_datasets/tasr_inclNeg.csv")
+```
+
+
+
+

@@ -24,6 +24,8 @@ library(scales)
 library(maptools)
 library(raster)   ## To convert an "Extent" object to a "SpatialPolygons" object.
 library(rgeos)
+library(mgcv)
+library(itsadug)
 
 #Setting up ggmap API key: NOTE - for the map figures to work, you'll need to set up a Google Maps Platform Console Account at
 #https://cloud.google.com/maps-platform/, create an API key, and store it in your .Renviron file as "GOOGLEMAPS_API_KEY". 
@@ -263,6 +265,7 @@ predictor.grid <- p1/p2/p3/p4
 
 ggsave("Temperature/plots/model_figs/predictor_grid.jpg", predictor.grid, device = "jpeg", units = "in", dpi = "retina", height = 16, width = 8.5)
 
+predictor.grid
 ```
 
 
@@ -333,7 +336,7 @@ Variables with correlation between 0.5 & 0.6
 * airtemp_summer+swe_zero_doy+swe_max+melt_days
 
 
-## III. Model testing and selection
+## III. Linear Model testing and selection
 
 ### A. Linear Mixed Model - Change in overall stream temperature over time:
 
@@ -675,7 +678,7 @@ Marginally significant (P<0.1) are:
 * Higher summer airtemp = higher t_min in sub_ice streams
 * Higher swe_max = lower t_max in smowmelt streams
 
-## IV. Model visualizations
+### E. Model visualizations
 
 Data Prep:
 
@@ -768,9 +771,62 @@ st.all <- st.min/st.xb/st.max/st.range
 ggsave("Temperature/plots/model_figs/snotel_comb.jpg", st.all, device = "jpeg", units = "in", dpi = "retina", height = 16, width = 8.5)
 ```
 
+## V. GAMM testing
+
+### A. GAMM for change in temperature over time, varying by source: 
+
+Testing individual: 
+
+```{r}
+gamDat <- temps_snotel %>%
+  mutate(source = factor(source), 
+         site = factor(site), 
+         year = as.numeric(year))
+
+gammTest <- mgcv::gamm(t_xbar~s(year, by = source, k=8)+source, random = (list(site = ~1)),
+                 data = gamDat)
+
+class(gammTest)
+summary(gammTest)
+
+summary(gammTest$gam)
+```
+
+For loop to fit models for each term:
+
+```{r}
+gamm.list <- list()
+gamm.plots <- list()
+
+for(i in 1:length(temp.types)){
+  d<-temp_pivot%>%
+    filter(temp_type == temp.types[i])%>%
+    mutate(source = as.factor(source))
+  
+  m<- gamm(stream_temp~s(year, by = source, k = 8)+source, #Fixed effect formula: interaction of year and souce+source
+                data = d, #data source
+                random = list(site = ~1)) #random effects - random intercept for site
+  
+  gamm.list[[i]]<-m$gam
+  
+
+}
+
+```
 
 
-## V. Overall Summary: 
+
+```{r}
+summary(gamm.list[[1]])
+
+par(mfrow = c(2, 2))
+plot(gamm.list[[1]])
+gam.check(gamm.list[[1]])
+```
+
+
+
+## VI. Overall Summary: 
 
 1. Across all sites and sources, stream temperatures have increased significantly over time. 
 2. These increases become more nuanced when modeling each source separately. Snowmelt fed streams have undergone the most change, followed by glacier fed streams and then subterranan ice streams. Minimum temperatures have increased significantly in all three source types. 

@@ -68,13 +68,14 @@ temp_data <- read.csv("Temperature/cleaned_full_datasets/temps_hourly.csv")%>%
          year = year(date1))%>%
   filter(!is.na(temp_c), !year == 2023)%>% #Drop missing data, 2023 data (no August data for 2023 yet). 
   merge(source, all = T)%>% #Add in source data
-  group_by(site, full_name, stream_code, date1, year, lat, long)%>%
-  summarise(t_xbar = mean(temp_c, na.rm = T), 
-            t_max = max(temp_c, na.rm = T), 
-            t_min = min(temp_c, na.rm = T), 
-            t_range = t_max-t_min, 
-            source = unique(source))%>% #calculate daily mean, min, and max temps for each site along with temp range
   filter(month(date1)==8)%>% #extract data for August only
+  mutate(temp_center = scale(temp_c, center = T, scale = T))%>% #add centered/scaled temperature variable
+  group_by(site, full_name, stream_code, date1, year, lat, long)%>%
+  summarise(t_xbar = mean(temp_center, na.rm = T), #calculate daily mean temperature using centered/scaled temp
+            t_max = max(temp_center, na.rm = T), #calculate daily max temp  using centered/scaled temp
+            t_min = min(temp_center, na.rm = T), #calculate daily min temp using centered/scaled temp
+            t_range = t_max-t_min, #calculate daily temp range
+            source = unique(source))%>% #calculate daily mean, min, and max temps for each site along with temp range
   group_by(site)%>% #group by stream
   mutate(n_yrs = length(unique(year)))%>%
   ungroup()%>%
@@ -136,8 +137,8 @@ ggplot(temp_pivot,aes(x = stream_temp, fill = factor(source)))+ # variable = str
   facet_wrap(~temp_type, scales = "free_x")+ #facet by temperature type
   theme_classic() #get rid of extra formatting
 
-which(temp_pivot$stream_temp<=0)
-temp_pivot[which(temp_pivot$stream_temp<=0),]
+#which(temp_pivot$stream_temp<=0)
+#temp_pivot[which(temp_pivot$stream_temp<=0),]
 ```
 
 Minimum and range are left-skewed (especially range); mean and max look bimodal, especially for snowmelt. Same patterns within years. 
@@ -153,7 +154,7 @@ ggplot(temp_pivot,aes(x = transform, fill = factor(source)))+ # variable = strea
   theme_classic() #get rid of extra formatting
 ```
 
-Log transform doesn't really help - just makes t_min and t_range right-skewed, still have weird stuff going on with max and mean. 
+Log transform doesn't work when using centered/scaled temperatures - too many negative values. 
 
 Checking change in temperature over time: 
 
@@ -176,7 +177,7 @@ ggplot(temp_pivot, aes(x = year, y = stream_temp, color = source))+
 ```
 
 
-### B. Predictor variable selection
+### B. Predictor variable selection (for SNOTEL modeling)
 
 Possible predictor variables are: 
 
@@ -379,11 +380,14 @@ No change in daily temperature change.
 
 **Model including year x source interaction:**
 
-Overall model: temp(mean, min, max, or range) = year + year*source + (1|source) + (1|ite)
+Overall model: temp(mean, min, max, or range) = year + year*source + (1|site)
+
+**NOTE - update as of 3/28:** Models weren't converging when including year*source interaction and (1|source) random intercept - not enough degrees of freedom. Removing the random intercept for source fixes this problem, but could also cause problems since we're no longer accounting for the fact that data from different sources are likely to be correlated. 
+
 
 ```{r}
 yr.lmms <- temp_nest %>%
-  mutate(model = purrr::map(data, ~lmerTest::lmer(stream_temp~year+year*source+(1|source)+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+  mutate(model = purrr::map(data, ~lmerTest::lmer(stream_temp~year+year*source+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
                      broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
   unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
   mutate(p.value = round(p.value, 4))%>%
@@ -397,33 +401,34 @@ yr.lmms
 
 **t_xbar:**
 
-* Significant change (+0.07 deg/year) in mean august temps for glacier-fed streams
-* intercept for august stream temperatures were not significantly different between glacier-fed, snowmelt-fed, and subterranean ice-fed streams. 
-* Rate of temp change for snowmelt-fed streams was significantly higher (+0.56 deg/year) than for glacier-fed streams.
-* Rate of temp change for subterranean-ice fed streams was significantly lower (-0.023 deg/year) than for glacier-fed streams
-* **Overall:** Glacier-fed and snowmelt-fed streams have significantly higher mean august temperatures; subterranean ice-fed streams have significantly lower august temperatures. 
+* Significant change (+0.023 deg/year) in mean august temps for glacier-fed streams
+* Intercept for snowmelt streams was significantly lower than glacier-fed streams
+* Intercept for subterranean ice streams was significantly higher than for glacier-fed streams
+* Rate of temp change for snowmelt-fed streams was significantly lower (+0.024 deg/year) than for glacier-fed streams.
+* Rate of temp change for subterranean-ice fed streams was significantly lower (-0.006 deg/year) than for glacier-fed streams
+* **Overall:** Glacier-fed and snowmelt-fed streams have warmed significantly; subterranean ice fed streams have not.
 
 **t_max:** 
 
 * No significant change in maxiumum temperatures for glacier-fed or subterranean ice-fed streams. 
-* Significant increase in maxiumum temperatures (+0.63 deg/year) for snowmelt-fed streams. 
-* No significant differences in intercepts for max temp for different source types. 
+* Significant increase in maxiumum temperatures (+0.18 deg/year) for snowmelt-fed streams. 
+* Intercept for snowmelt fed streams is significantly lower than glacier or sub-ice fed
 * **Overall:** maximum temperatures are significantly higher in snowmelt-fed streams, but haven't changed in glacier or sub-ice streams. 
 
 **t_min:** 
 
-* Significant increase in min august temps for glacier fed streams (+0.12 deg/year)
+* Significant increase in min august temps for glacier fed streams (+0.034 deg/year)
 * Intercept for minimum snowmelt-fed august temp is significantly lower than glacier-fed
 * Intercept for minimum sub ice-fed august temp is significantly higher than glacier-fed
-* Minimum temps have increased more in Snowmelt-fed streams (+0.5 deg/year) than in glacier-fed streams
-* Minimum temps have increased less in subterranean ice-fed streams (+0.02 deg/year)
+* Minimum temps have increased more in Snowmelt-fed streams (+0.14 deg/year) than in glacier-fed streams
+* Minimum temps have increased less in subterranean ice-fed streams (+0.005 deg/year)
 * **Overall:** Minimum temperatures have increased in all three source types, with by far the largest increases in snowmelt and glacier-fed streams. Minimum temp increases are an order of magnitude smaller in sub-ice streams than in glacier or snowmelt streams.
 
 **t_range:** 
 
-* Significant decrease in t_range in glacier-fed streams (-0.13 deg/year)
-* No differences in intercept for t_rage between source types
-* Slope for t_range for snowmelt-fed streams is significantly different from glacier-fed streams (+0.11 deg/year)
+* Significant decrease in t_range in glacier-fed streams (-0. deg/year)
+* intercept for snowmelt-fed streams is significantly lower than glacier or sub-ice
+* t_range for snowmelt-fed streams has increased signficantly (+0.03 deg/year)
 * Slope for t_range for sub-ice streams is not significantly different from glacier-fed streams (i.e. also a decrease of -0.13 deg/yr)
 * **Overall:** Daily temperature fluctuations have decreased in glacier and sub-ice streams over time; increased in snowmelt-fed streams over time. 
 
@@ -432,7 +437,9 @@ yr.lmms
 
 For loop to create model objects for each temperature type and draw residual histograms, qq plots, and residual vs fitted plots for each temperature type. Overall model is: 
 
-Overall model: temp(mean, min, max, or range) = year + year*source + (1|source) + (1|ite)
+Overall model: temp(mean, min, max, or range) = year + year*source + (1|site)
+
+**NOTE - update as of 3/28:** Models weren't converging when including year*source interaction and (1|source) random intercept - not enough degrees of freedom. Removing the random intercept for source fixes this problem, but could also cause problems since we're no longer accounting for the fact that data from different sources are likely to be correlated. 
 
 
 ```{r}
@@ -446,7 +453,7 @@ for(i in 1:length(temp.types)){
   
   mod <- lmer(stream_temp~ #response variable
                 year+(year*source)+ #fixed effects (including year x source interaction)
-                (1|source)+(1|site), #random effects
+                +(1|site), #random effects
               data = d) #data source
   
   models[[i]]<-mod #save model object in model list
@@ -478,10 +485,10 @@ for(i in 1:length(temp.types)){
 Individual model summaries: 
 
 ```{r}
-models[[1]]
-models[[2]]
-models[[3]]
-models[[4]]
+summary(models[[1]])
+summary(models[[2]])
+summary(models[[3]])
+summary(models[[4]])
 ```
 
 Check diagnostic plots: 
@@ -783,7 +790,7 @@ gamDat <- temps_snotel %>%
          site = factor(site), 
          year = as.numeric(year))
 
-gammTest <- mgcv::gamm(t_xbar~s(year, by = source, k=8)+source, random = (list(site = ~1)),
+gammTest <- mgcv::gamm(t_xbar~s(year, by = source, k=3)+source, random = (list(site = ~1)),
                  data = gamDat)
 
 class(gammTest)

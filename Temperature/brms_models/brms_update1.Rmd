@@ -7,6 +7,9 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(brms)
+library(tidybayes)
 ```
 
 # Abstract  
@@ -17,19 +20,22 @@ This file summarizes the results of a Bayesian Hierarchichal model of stream tem
 
 Load packages and data. 
 
-The data includes the `source_info.csv` and the cleaned hourly tempertures produced by previously by Gordon Gianniny 
-
-```{r}
+```{r, eval=FALSE}
 library(tidyverse)
 library(brms)
 library(tidybayes)
+```
 
+
+The data includes the `source_info.csv` and the cleaned hourly tempertures produced by previously by Gordon Gianniny 
+
+```{r}
 # source info
-source_info <- read.csv("source_info.csv")%>%
+source_info <- read.csv(here::here("source_info.csv"))%>%
   rename(site = stream) #rename for merge
 
 #Temperature data:
-temp_clean <- read_csv("Temperature/cleaned_full_datasets/temps_hourly.csv")
+temp_clean <- read_csv(here::here("Temperature/cleaned_full_datasets/temps_hourly.csv"))
 
 # merge and wrangle data
 temp_clean <- left_join(temp_clean,
@@ -98,8 +104,179 @@ brm1 <- update(brm1,
 ### Load the saved model fit  
 
 ```{r}
-brm1 <- readRDS("Temperature/brms_models/fit_temp_yearXsource_rand_site_year.rds")
-
-
+brm1 <- readRDS(here::here("Temperature/brms_models/fit_temp_yearXsource_rand_site_year.rds"))
+brm1
 ```
 
+### Model Diagnostics  
+
+```{r}
+plot(brm1, ask = FALSE)
+```
+
+**Note** Depending on the size of your screen you may not be able to see these very well but the take home message is that they look really good. 
+
+* Reasonable posterior distribution of coefficient estimates  
+* Chains look like "fuzzy caterpillars"  
+  * i.e., full coverage of the parameter space and well mixed chains.  
+
+### Posterior predictive checks   
+
+```{r, message=FALSE}
+pp_check(brm1,
+         type = "stat_grouped",
+         group = "source")
+```
+
+This looks about as good as it gets. Basically, the dark line `T(y)` represents the median temperature for each source across all years and sites. The `T(y_rep)` are the temperatures that the model predicts for each source, averaged across years and sites. 
+* Dark line is at the high point of the predictions (light blue)  
+* range of values (x-axis) is small  
+
+
+### Bayesian R-squared  
+
+This can effectively be interpreted as a frequentist R^2. Basically, this models explains a mean ($\pm$ SE) of 55% $\pm$ 0.2% of the variation in the data.  
+```{r}
+bayes_R2(object = brm1)
+```
+
+## Conditional Effects  
+
+These plots show the over all effect of the main (fixed) predictors. 
+
+## Effect of source on intercept  
+
+```{r}
+conditional_effects(brm1, effects = "source")
+```
+
+This shows that Glacier and sub_ice streams have intercepts which are lower than the global intercept (and very similar to one another), while the snow melt stream has an intercept higher than the global intercept.  
+
+### Effect of year on Glacier streams
+
+```{r}
+c_plot <- conditional_effects(brm1)
+plot(c_plot, plot = FALSE)[[1]]
+```
+
+Here, we have a line for the overall effect of year on temperature in glacier streams averaged across sites. This actually looks like a slight decrease in temperature, but if we look at the spaghetti plot, we can see that many of the lines are flat or even positive and there's only a slighty higher than 50:50 chance of being positive or negative (in the Bayesian world we would say there's no effect/relationship here). 
+
+```{r}
+c_plot_spag <- conditional_effects(brm1, spaghetti = TRUE, ndraws = 500)
+plot(c_plot_spag, plot = FALSE)[[1]]
+```
+
+Spaghetti Plot. Each blue line is a regression estimate from the posterior distribution (note positive, flat, negative lines) and the white line is the overall mean effect of year on temperature.  
+
+```{r}
+brm1 %>%
+  spread_draws(b_year_s) %>%
+  mutate(year_pos = b_year_s > 0) %>%
+  summarize(mean(year_pos))
+```
+
+This code means that there is a 37% chance of the slopes in Glacier streams being positive, and a subsequent 67% chance that they are negative
+
+
+
+
+## Effect of source on beta_year (Interaction)  
+
+```{r}
+conditional_effects(brm1, effects = "year_s:source")
+```
+
+This shows the interactive effect of source on year. The glacier and sub_ice streams maybe get slightly colder across time, but this is a minimal effect and stream temps are ~ equal. 
+
+The most striking result though is the increase in temperatures in snowmelt streams. 
+
+### Probability of other slopes  
+
+#### Sub_ice streams  
+```{r}
+brm1 %>%
+  spread_draws(b_Intercept, 
+               b_sourcesub_ice,
+               b_year_s,
+               `b_year_s:sourcesub_ice`) %>%
+  rename(year_sub = `b_year_s:sourcesub_ice`) %>%
+  mutate(sub = b_year_s + year_sub, 
+         sub_pos = sub > 0) %>%
+  summarize(mean(sub_pos))
+```
+Sub ice streams have a 42% probability of being positive and 58% chance of being negative. 
+
+#### Snowmelt streams  
+```{r}
+brm1 %>%
+  spread_draws(b_year_s,
+               `b_year_s:sourcesnowmelt`) %>%
+  rename(year_snow = `b_year_s:sourcesnowmelt`) %>%
+  mutate(snow = b_year_s + year_snow,
+         snow_pos = snow > 0) %>%
+  summarize(mean(snow_pos))
+```
+Snowmelt streams have a >99% chance of being positive. 
+
+### Interpretation  
+
+My first go at interpreting these results are that the glacier and sub_ice streams have a consistent source of snow/ice that is melting all year and keeping the temperatures low. It may even be that the increased melting across years results in deliviering more cold water to streams than "normal" and could be driving the slight decrease in stream temps. 
+
+My guess for the snowmelt streams are that later in the year (August) all the snow has melted (true or nah?) and the input of cold, recently melted ice water is lost and the streams heat up in the summer sun. 
+
+
+## One more plot for now  
+
+```{r}
+# calculate mean and sd of original data 
+mean_year <- mean(unique(temp_aug$year))
+sd_year <- sd(unique(temp_aug$year))
+mean_temp <- mean(unique(temp_aug$temp_c))
+sd_temp <- sd(unique(temp_aug$temp_c))
+
+c_eff$`year_s:source` %>%
+  as_tibble() %>%
+  mutate(year = (year_s*sd_year)+mean_year,
+         est_temp = (estimate__*sd_temp)+mean_temp,
+         est_lo = (lower__*sd_temp)+mean_temp,
+         est_high = (upper__*sd_temp)+mean_temp) %>%
+  ggplot(aes(x = year,
+             y = est_temp,
+             color = source,
+             fill = source)) +
+  geom_ribbon(aes(ymin = est_lo,
+                  ymax = est_high), 
+              alpha = 0.25,
+              color = NA) +
+  geom_line() +
+  geom_pointrange(data = c_eff$source %>%
+                    mutate(
+                      year = (year_s*sd_year)+mean_year,
+                      est_temp = (estimate__*sd_temp)+mean_temp,
+                      est_lo = (lower__*sd_temp)+mean_temp,
+                      est_high = (upper__*sd_temp)+mean_temp),
+                  aes(x = year,
+                      y = est_temp,
+                      ymin = est_lo,
+                      ymax = est_high)) +
+  facet_grid(~source) +
+  ggthemes::scale_fill_colorblind()+
+  ggthemes::scale_color_colorblind() +
+  theme_bw() +
+  scale_x_continuous(labels = round) +
+  labs(y = "Temperature")
+```
+
+This plot shows the overall effects and is rescaled to the original units. The middle line is the median of the posterior ditribution of the effect of year, and the shaded ribbons show the 95% credible intervals. The point and error bar is added to highlight the y-intercept at each site. 
+
+
+## Still to do  
+
+* rescale beta coefficients to be on original scale  
+  * i.e., right now it is estimated that for every 1 sd increase in year, there is a decrease in temperature of -0.018 sd's for the Glacier streams  
+  * For every 1 sd increase in year, there is an increase of (-0.018 +0.28) sds in temperature for the snowmelt streams  
+  * I *think* it's: $\beta_{temp:source} * (\sigma_{temp} / \sigma_{year})$
+  
+* Quantile regressions  
+
+  * This will be in lieu of the min/max_t regressions done previously.  

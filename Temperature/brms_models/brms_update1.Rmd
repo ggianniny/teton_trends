@@ -1,0 +1,105 @@
+---
+title: "BRMS model for mean temperature"
+author: "Justin Pomeranz"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Abstract  
+
+This file summarizes the results of a Bayesian Hierarchichal model of stream temperatures in the TASR data set. 
+
+## Preliminaries  
+
+Load packages and data. 
+
+The data includes the `source_info.csv` and the cleaned hourly tempertures produced by previously by Gordon Gianniny 
+
+```{r}
+library(tidyverse)
+library(brms)
+library(tidybayes)
+
+# source info
+source_info <- read.csv("source_info.csv")%>%
+  rename(site = stream) #rename for merge
+
+#Temperature data:
+temp_clean <- read_csv("Temperature/cleaned_full_datasets/temps_hourly.csv")
+
+# merge and wrangle data
+temp_clean <- left_join(temp_clean,
+                        source_info)
+
+temp_aug <- temp_clean %>% 
+  mutate(month = month(date1),
+         year = year(date1))%>%
+  select(temp_c, year, month, source, site) %>%
+  filter(!is.na(temp_c),
+         !is.na(source),
+         !year == 2023,
+         month == 8) %>%
+  mutate(year_s = (year - mean(year)) / sd(year),
+         temp_s = (temp_c - mean(temp_c)) / sd(temp_c))
+```
+
+`temp_aug` is a data object with data only from August and not including year 2023. `year_s` and `temp_s` are standardized as z-scores with a distribution of Normal(mean = 0, sd = 1). 
+
+### Plot the raw data  
+
+```{r}
+temp_aug %>%
+  ggplot(aes(x = year_s,
+             y = temp_s, 
+             color = site)) +
+  geom_point(alpha = 0.25,
+             position = 
+               position_dodge(
+                 width = 0.3
+               )) +
+  facet_wrap(~source) +
+  theme_bw() +
+  theme(legend.position = "none") +
+  labs(x = "Year, standardized",
+       y = "Temperature, Standardized",
+       caption = "All temperature data from August separated by source and colored based on site.")
+```
+
+# Fit BRMS model  
+
+Note, the following code takes a while to run. It is pasted here for the record but is not run in this markdown file. Instead, I ran this model in a separate session and saved the model output and load that saved object in the next code chiunk immediately below. 
+
+```{r, eval=FALSE}
+# use loosely informative priors to speed up model fitting  
+# prior distributions were simulated and plotted according to Wesner and Pomeranz 2021 
+my_prior <- c(prior(normal(0,0.5), class = b),
+              prior(exponential(2), class = sd))
+
+# fit a small, "dummy" model to compile STAN code
+brm1 <- brm(temp_s ~ year_s * source +
+              (1 |site) + (1|year_s),
+            data = temp_aug,
+            prior = my_prior,
+            iter = 10,
+            chains = 1)
+
+# update the model with 2000 iterations on 4 independent chains.  
+brm1 <- update(brm1,
+               chains = 4,
+               cores = 4,
+               iter = 2000)
+
+```
+
+### Load the saved model fit  
+
+```{r}
+brm1 <- readRDS("Temperature/brms_models/fit_temp_yearXsource_rand_site_year.rds")
+
+
+```
+

@@ -27,7 +27,7 @@ library(tidybayes)
 ```
 
 
-The data includes the `source_info.csv` and the cleaned hourly tempertures produced by previously by Gordon Gianniny 
+The data includes the `source_info.csv` and the cleaned hourly temperatures produced by previously by Gordon Gianniny 
 
 ```{r}
 # source info
@@ -220,7 +220,7 @@ Snowmelt streams have a >99% chance of being positive.
 
 ### Interpretation  
 
-My first go at interpreting these results are that the glacier and sub_ice streams have a consistent source of snow/ice that is melting all year and keeping the temperatures low. It may even be that the increased melting across years results in deliviering more cold water to streams than "normal" and could be driving the slight decrease in stream temps. 
+My first go at interpreting these results are that the glacier and sub_ice streams have a consistent source of snow/ice that is melting all year and keeping the temperatures low. It may even be that the increased melting across years results in delivering more cold water to streams than "normal" and could be driving the slight decrease in stream temps. 
 
 My guess for the snowmelt streams are that later in the year (August) all the snow has melted (true or nah?) and the input of cold, recently melted ice water is lost and the streams heat up in the summer sun. 
 

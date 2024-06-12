@@ -1,0 +1,408 @@
+---
+title: "TASR temps brms models"
+author: "Justin Pomeranz"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Temperature models updte  
+
+```{r}
+library(tidyverse)
+library(brms)
+library(tidybayes)
+```
+
+
+## Overview  
+
+I fit three models. 
+1. Mean temperature.  
+2. Maximum Temperature.  
+3. Minimum temperature.  
+
+Model 1 used every temperature observation for the month of August from all streams. 
+Models 2 and 3 filtered out the daily maximum and minimum temperatures, respectively, for all streams in all years. 
+
+All three models had the same structure:  
+
+$ \large temperature = year * source + (1 + year |site) + (1|year)$
+
+This includes random intercepts for site and year. This model also allows the slopes across $year$ to vary by site. I think this is justified as some sites within a source category may vary i.e., one site might be in a narrow canyon and receive less light, or have more south-facing hilslopes in the drainage that melt faster, etc. 
+
+# Take Home messages  
+
+### Snowmelt  
+Snowmelt streams are experiencing strong increases in mean, max, and minimum temperatures. 
+
+### Sub_ice  
+Sub_ice streams are experiencing weak increases in mean, and minimum temperatures. There is weak evidence that maximum temperatures are declining. 
+
+### Glacier  
+Glacier streams appear to be thermally stable. There is weak evidence that maximum temperatures may be declining. 
+
+
+## Details  
+
+Load the brms model fits  
+
+```{r}
+mean_mod <- readRDS("Temperature/brms_models/fit_rand_slopes.rds")
+min_mod <- readRDS("Temperature/brms_models/fit_rand_slopes_daily_max.rds")
+min_mod <- readRDS("Temperature/brms_models/fit_rand_slopes_daily_min.rds")
+```
+
+Inspect the models. The following is a posterior-predictice check. Basically what we are looking for is that the model (light blue) is able to recreate observations which look similar to the original data (dark blue). 
+
+```{r, message=FALSE}
+pp_mean <- pp_check(mean_mod, type = "stat_grouped", group = "source")
+pp_mean +
+  ggtitle("Mean Temperature")
+
+pp_max <- pp_check(min_mod, type = "stat_grouped", group = "source")
+pp_max +
+  ggtitle("Maximum Temperature")
+
+pp_min <- pp_check(min_mod, type = "stat_grouped", group = "source")
+pp_min +
+  ggtitle("Minimum Temperature")
+```
+
+These look basically perfect. 
+
+# Mean Temperatures  
+
+## Conditional Effects  
+
+Here is a plot showing how the model estimates temperature change across years for each `source` category. 
+
+```{r, echo=FALSE}
+# calculate mean and sd of original data 
+c_eff <- conditional_effects(mean_mod)
+mean_year <- 2018.5
+sd_year <- 2.44949
+mean_temp <- 8.857484
+sd_temp <- 5.457679
+
+c_eff$`year_s:source` %>%
+  as_tibble() %>%
+  mutate(year = (year_s*sd_year)+mean_year,
+         est_temp = (estimate__*sd_temp)+mean_temp,
+         est_lo = (lower__*sd_temp)+mean_temp,
+         est_high = (upper__*sd_temp)+mean_temp) %>%
+  ggplot(aes(x = year,
+             y = est_temp,
+             color = source,
+             fill = source)) +
+  geom_ribbon(aes(ymin = est_lo,
+                  ymax = est_high), 
+              alpha = 0.25,
+              color = NA) +
+  geom_line() +
+  geom_pointrange(data = c_eff$source %>%
+                    mutate(
+                      year = (year_s*sd_year)+mean_year,
+                      est_temp = (estimate__*sd_temp)+mean_temp,
+                      est_lo = (lower__*sd_temp)+mean_temp,
+                      est_high = (upper__*sd_temp)+mean_temp),
+                  aes(x = year,
+                      y = est_temp,
+                      ymin = est_lo,
+                      ymax = est_high)) +
+  facet_grid(~source) +
+  ggthemes::scale_fill_colorblind()+
+  ggthemes::scale_color_colorblind() +
+  theme_bw() +
+  scale_x_continuous(labels = round,
+                     #breaks = seq(2014, 2022, by = 1)
+                     ) +
+  scale_y_continuous(#breaks = seq(2.5, 18, by = 0.6)
+    ) +
+  labs(y = "Temperature")
+```
+
+We can see a clear positive relationship for the snowmelt (yellow) streams, but less clear for the glacier and sub_ice.  
+
+## Probability that slopes are positive  
+
+```{r}
+# Snow
+mean_mod %>%
+  spread_draws(b_year_s,
+               `b_year_s:sourcesnowmelt`) %>%
+  rename(year_snow = `b_year_s:sourcesnowmelt`) %>%
+  mutate(snow = b_year_s + year_snow,
+         snow_pos = snow > 0) %>%
+  summarize(mean(snow_pos))
+# 98.5% +
+
+# sub ice
+mean_mod %>%
+  spread_draws(b_Intercept, 
+               b_sourcesub_ice,
+               b_year_s,
+               `b_year_s:sourcesub_ice`) %>%
+  rename(year_sub = `b_year_s:sourcesub_ice`) %>%
+  mutate(sub = b_year_s + year_sub, 
+         sub_pos = sub > 0) %>%
+  summarize(mean(sub_pos))
+# 63% +
+
+# glacier
+mean_mod %>%
+  spread_draws(b_year_s) %>%
+  mutate(year_pos = b_year_s > 0) %>%
+  summarize(mean(year_pos))
+# 52%  +
+
+```
+
+The snowmelt streams have a 98.5% probability of a positive relationship. 
+Sub_ice has a 63.3% probability of a positive relationship. 
+Glacier streams only have a 52.6% probability of a positive relationship. 
+
+We would basically say there is overwhelming, weak, and no evidence for these three categories increasing temperature through time, respectively. 
+
+## Rate of change across time  
+
+We can also put a "slope" estimate on these to quantify the rate of temperature change through time. 
+
+```{r}
+# snowmelt
+(fixef(mean_mod)[2,1]+fixef(mean_mod)[5,1]) * (sd_temp / sd_year)
+# increase of 0.413C per year
+# Sub
+(fixef(mean_mod)[2,1]+fixef(mean_mod)[6,1]) * (sd_temp / sd_year)
+# decrease: -0.02C per year
+# glacier
+fixef(mean_mod)[2,1] * (sd_temp / sd_year)
+# decrease: -0.06C per year
+
+```
+The snowmelt streams have experienced an increase of 0.625 degrees C per year. 
+The sub_ice streams have experienced an increase of 0.090 degrees C per year. 
+The glacier streams have experienced an increase of 0.023 degrees C per year. 
+
+
+## Predicted temperature change next year  
+
+Just for fun, we can use these models to predict the probabilities of temperature increases next year. This is averaging across all sites and showing the overall prediction. Not sure if we want to do this for the paper, but I was having fun. We could also look at site-specific forecasts as well. 
+
+```{r, echo=FALSE}
+pred_data <- expand_grid(source = unique(mean_mod$data$source),
+                         year_s = c(1.722, 2.251))
+
+preds <-add_epred_draws(
+  mean_mod,
+  newdata = pred_data,
+  allow_new_levels = TRUE)
+
+preds %>%
+  filter(year_s == 2.251) %>%
+  mutate(fill = .epred > 0) %>%
+  mutate(.epred = (.epred/sd_temp)) %>%
+  ggplot(aes(x = .epred,
+             y = source,
+         fill = after_stat(x > 0),
+         color = source)) +
+  scale_fill_manual(
+    values = alpha(c("cadetblue3", "tomato2"), 0.35),
+    labels = c("Decrease", "Increase")) +
+  scale_color_manual(
+    values= NatParksPalettes::natparks.pals("Triglav")
+      ) +
+  stat_halfeye() +
+  theme_bw() +
+  labs(x = "Temperature change, Celsius",
+       title = "Predicted Temperature Change in 2024") +
+  guides(fill=guide_legend(title="Prediction"))
+```
+
+
+## Maximum Temperature  
+
+I include the same information as above with less text for simplicity. 
+
+```{r, echo=FALSE}
+# calculate mean and sd of original data 
+c_eff <- conditional_effects(max_mod)
+mean_max_temp <- 9.231813
+sd_max_temp <- 5.033566
+
+c_eff2 <- conditional_effects(min_mod)
+mean_min_temp <- 4.105244
+sd_min_temp <- 2.549624
+
+c_eff$`year_s:source` %>%
+  as_tibble() %>%
+  mutate(year = (year_s*sd_year)+mean_year,
+         est_temp = (estimate__*sd_max_temp)+mean_max_temp,
+         est_lo = (lower__*sd_max_temp)+mean_max_temp,
+         est_high = (upper__*sd_max_temp)+mean_max_temp) %>%
+  ggplot(aes(x = year,
+             y = est_temp,
+             color = source,
+             fill = source)) +
+  geom_ribbon(aes(ymin = est_lo,
+                  ymax = est_high), 
+              alpha = 0.25,
+              color = NA) +
+  geom_line() +
+  facet_grid(~source) +
+  ggthemes::scale_fill_colorblind()+
+  ggthemes::scale_color_colorblind() +
+  theme_bw() +
+  scale_x_continuous(labels = round,
+                     #breaks = seq(2014, 2022, by = 1)
+                     ) +
+  scale_y_continuous(#breaks = seq(2.5, 18, by = 0.6)
+    ) +
+  labs(y = "Daily Maximum Temperature")
+```
+
+Similar as above, maximum temperature looks to be strongly increasing in snowmelt streams, and looks to be slightly decreasing or staying the same in the other two categories. 
+
+## Probability that slopes are positive  
+
+```{r}
+# Snow
+max_mod %>%
+  spread_draws(b_year_s,
+               `b_year_s:sourcesnowmelt`) %>%
+  rename(year_snow = `b_year_s:sourcesnowmelt`) %>%
+  mutate(snow = b_year_s + year_snow,
+         snow_pos = snow > 0) %>%
+  summarize(mean(snow_pos))
+# 95% +
+# sub ice
+max_mod %>%
+  spread_draws(b_Intercept, 
+               b_sourcesub_ice,
+               b_year_s,
+               `b_year_s:sourcesub_ice`) %>%
+  rename(year_sub = `b_year_s:sourcesub_ice`) %>%
+  mutate(sub = b_year_s + year_sub, 
+         sub_pos = sub > 0) %>%
+  summarize(mean(sub_pos))
+# 47% +
+# glacier
+max_mod %>%
+  spread_draws(b_year_s) %>%
+  mutate(year_pos = b_year_s > 0) %>%
+  summarize(mean(year_pos))
+# 40%  +
+```
+Maximum temperatures for Snowmelt has a 94.6% probability of increasing. 
+Maximum temperatures for Sub_ice has a 46.8% probability of increasing. 
+Maximum temperatures for Glacier has a 39.6% probability of increasing. 
+
+
+
+## Magnitude of change  
+```{r}
+# snowmelt
+(fixef(max_mod)[2,1]+fixef(max_mod)[5,1]) * (sd_max_temp / sd_year)
+# increase of 0.413C per year
+# Sub
+(fixef(max_mod)[2,1]+fixef(max_mod)[6,1]) * (sd_max_temp / sd_year)
+# decrease: -0.02C per year
+# glacier
+fixef(max_mod)[2,1] * (sd_max_temp / sd_year)
+# decrease: -0.06C per year
+
+```
+Maximum temperatures for Snowmelt increasing by 0.413C per year
+Maximum temperatures for Sub_ice changing by -0.020C per year
+Maximum temperatures for Glacier changing by -0.066C per year
+
+## Minimum Temperature  
+
+
+```{r, echo=FALSE}
+c_eff2$`year_s:source` %>%
+  as_tibble() %>%
+  mutate(year = (year_s*sd_year)+mean_year,
+         est_temp = (estimate__*sd_min_temp)+mean_min_temp,
+         est_lo = (lower__*sd_min_temp)+mean_min_temp,
+         est_high = (upper__*sd_min_temp)+mean_min_temp) %>%
+  select(year, est_temp, est_lo, est_high, source) %>%
+  ggplot(aes(x = year,
+             y = est_temp,
+             color = source,
+             fill = source)) +
+  geom_ribbon(aes(ymin = est_lo,
+                  ymax = est_high), 
+              alpha = 0.25,
+              color = NA) +
+  geom_line() +
+  facet_grid(~source) +
+  ggthemes::scale_fill_colorblind()+
+  ggthemes::scale_color_colorblind() +
+  theme_bw() +
+  scale_x_continuous(labels = round,
+                     #breaks = seq(2014, 2022, by = 1)
+  ) +
+  scale_y_continuous(#breaks = seq(2.5, 18, by = 0.6)
+  ) +
+  labs(y = "Daily Minimum Temperature")
+```
+Minimum temperatures in August all seem to be increasing (although only slightly for sub and glacial streams). 
+
+## Probability that slopes are positive  
+
+```{r}
+# Snow
+min_mod %>%
+  spread_draws(b_year_s,
+               `b_year_s:sourcesnowmelt`) %>%
+  rename(year_snow = `b_year_s:sourcesnowmelt`) %>%
+  mutate(snow = b_year_s + year_snow,
+         snow_pos = snow > 0) %>%
+  summarize(mean(snow_pos))
+# 99% +
+# sub ice
+min_mod %>%
+  spread_draws(b_Intercept, 
+               b_sourcesub_ice,
+               b_year_s,
+               `b_year_s:sourcesub_ice`) %>%
+  rename(year_sub = `b_year_s:sourcesub_ice`) %>%
+  mutate(sub = b_year_s + year_sub, 
+         sub_pos = sub > 0) %>%
+  summarize(mean(sub_pos))
+# 58% +
+# glacier
+min_mod %>%
+  spread_draws(b_year_s) %>%
+  mutate(year_pos = b_year_s > 0) %>%
+  summarize(mean(year_pos))
+# 55%  +
+```
+
+Minimum temperatures for Snowmelt has a 99.7% probability of increasing. 
+Minimum temperatures for Sub_ice has a 57.6% probability of increasing. 
+Minimum temperatures for Glacier has a 55.0% probability of increasing. 
+
+## Magnitude of change  
+
+```{r}
+# snowmelt
+(fixef(min_mod)[2,1]+fixef(min_mod)[5,1]) * (sd_max_temp / sd_year)
+# increase of 0.82C per year
+# Sub
+(fixef(min_mod)[2,1]+fixef(min_mod)[6,1]) * (sd_max_temp / sd_year)
+# 0.05C per year
+# glacier
+fixef(min_mod)[2,1] * (sd_max_temp / sd_year)
+# 0.03C per year
+```
+
+Minimum temperatures for Snowmelt increasing by 0.815C per year
+Minimum temperatures for Sub_ice increasing by 0.048C per year
+Minimum temperatures for Glacier increasing by 0.029C per year

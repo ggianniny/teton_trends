@@ -12,6 +12,8 @@ source_info <- read.csv("source_info.csv")%>%
 
 temp_clean <- read_csv("Temperature/cleaned_full_datasets/temps_hourly.csv")
 
+unique(temp_clean$site)
+
 temp_clean <- left_join(temp_clean,
                         source_info)
 temp_aug <- temp_clean %>% 
@@ -21,7 +23,8 @@ temp_aug <- temp_clean %>%
   filter(!is.na(temp_c),
          !is.na(source),
          !year == 2023,
-         month == 8) %>%
+         month == 8,
+         site != "silver_run") %>%
   mutate(year_s = (year - mean(year)) / sd(year),
          temp_s = (temp_c - mean(temp_c)) / sd(temp_c))
 
@@ -37,7 +40,7 @@ temp_aug %>%
               aes(x = year_s, y = temp_s)) +
   facet_wrap(~source, scales = "free_y")
 
-get_prior(temp_s ~ year_s * source + (1 + year |site) + (1|year_s),
+get_prior(temp_s ~ year_s * source + (1 + year_s |site) + (1|year_s),
           data = temp_aug)
 
 
@@ -45,7 +48,8 @@ my_prior <- c(prior(normal(0,0.5), class = b),
               prior(normal(0,0.5), class = Intercept),
               prior(exponential(2), class = sd))
 
-
+# fit "quick" model
+# make sure it works, and avoid need to compile each time. 
 brm1 <- brm(temp_s ~ year_s * source +
               (1 + year_s |site) + (1|year_s),
             data = temp_aug,
@@ -53,11 +57,13 @@ brm1 <- brm(temp_s ~ year_s * source +
             iter = 10,
             chains = 1)
 
+# update the above model with more chains, cores, and iterations
 brm1 <- update(brm1,
                chains = 4,
                cores = 4,
                iter = 2000)
 
+# save the output
 saveRDS(brm1, "Temperature/brms_models/fit_rand_slopes.rds")
 plot(brm1)
 
@@ -82,14 +88,16 @@ bayes_R2(object = brm1)
 
 conditional_effects(brm1)
 
-brm0 <- readRDS(("Temperature/brms_models/fit_temp_yearXsource_rand_site_year.rds"))
-
-brm0$criteria
-
-brm0 <- add_criterion(brm0, "waic")
-brm1 <- add_criterion(brm1, "waic")
-comp <- loo_compare(brm0, brm1, criterion = "waic")
-print(comp)
+# model comparison without random slopes
+# pretty sure this didn't work becasue of a difference in model structure or somethins?
+# brm0 <- readRDS(("Temperature/brms_models/fit_temp_yearXsource_rand_site_year.rds"))
+# 
+# brm0$criteria
+# 
+# brm0 <- add_criterion(brm0, "waic")
+# brm1 <- add_criterion(brm1, "waic")
+# comp <- loo_compare(brm0, brm1, criterion = "waic")
+# print(comp)
 
 
 get_variables(brm1)

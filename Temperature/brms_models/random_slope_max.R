@@ -22,7 +22,8 @@ temp_aug <- temp_clean %>%
   filter(!is.na(temp_c),
          !is.na(source),
          !year == 2023,
-         month == 8) %>%
+         month == 8,
+         site != "silver_run") %>%
   mutate(year_s = (year - mean(year)) / sd(year))
 
 temp_aug <- temp_aug %>%

@@ -65,6 +65,7 @@ brm1 <- update(brm1,
 
 # save the output
 saveRDS(brm1, "Temperature/brms_models/fit_rand_slopes.rds")
+brm1 <- readRDS("Temperature/brms_models/fit_rand_slopes.rds")
 plot(brm1)
 
 pp_check(brm1,
@@ -106,7 +107,7 @@ brm1 %>%
   spread_draws(b_year_s) %>%
   mutate(year_pos = b_year_s > 0) %>%
   summarize(mean(year_pos))
-# 52%  +
+# 52.7%  +
 # sub ice
 brm1 %>%
   spread_draws(b_Intercept, 
@@ -117,7 +118,7 @@ brm1 %>%
   mutate(sub = b_year_s + year_sub, 
          sub_pos = sub > 0) %>%
   summarize(mean(sub_pos))
-# 63% +
+# 62% +
 
 # Snow
 brm1 %>%
@@ -127,7 +128,7 @@ brm1 %>%
   mutate(snow = b_year_s + year_snow,
          snow_pos = snow > 0) %>%
   summarize(mean(snow_pos))
-# 98.5% +
+# 99.6% +
 
 
 # calculate mean and sd of original data 
@@ -173,15 +174,17 @@ c_eff$`year_s:source` %>%
     ) +
   labs(y = "Temperature")
 
+coef(brm1)
+fixef(brm1)
 # glacier
-0.0103 * (sd_temp / sd_year)
-# increase of 0.02C per year
+fixef(brm1)[2,1] * (sd_temp / sd_year)
+# increase of 0.017C per year
 # snowmelt
-(0.0103+0.27) * (sd_temp / sd_year)
-# increase of 0.625C per year
+(fixef(brm1)[2,1]+fixef(brm1)[5,1]) * (sd_temp / sd_year)
+# increase of 0.806C per year
 # Sub
-(0.0103+0.0299) * (sd_temp / sd_year)
-# increase of 0.090C per year
+(fixef(brm1)[2,1]+fixef(brm1)[6,1]) * (sd_temp / sd_year)
+# increase of 0.088C per year
 
 brm1$data
 # new year = 1.722[max year_s] + 0.529 [difference between year_s] = 2.251

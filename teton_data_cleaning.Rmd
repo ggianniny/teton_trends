@@ -137,7 +137,7 @@ dep_dates <- read.csv("Temperature/deployment_dates.csv")%>% #read datafile - th
            )
 ```
 
-**3. Merge these two dataframes by "site" and "year" to get a new dataframe with columns "site", "year", "temp_c", "date_tm", "deployment_plus1", and "retreviall_minus1"**
+**3. Merge these two dataframes by "site" and "year" to get a new dataframe with columns "site", "year", "temp_c", "date_tm", "deployment_plus1", and "retrevial_minus1"**
 
 ```{r}
 full_dep <- merge(full_rbind, dep_dates, all.x = T) #merge, keep all rows in full_rbind
@@ -395,7 +395,7 @@ Success.
 ##### IIIa. Comparison with air temps: 
 
 ```{r}
-airtemp <- read.csv("snotel_airtemps.csv")%>% #read in CSV with air temps for Phillips Bench & Grand Targhee
+airtemp <- read.csv("snotel_airtemps2024.csv")%>% #read in CSV with air temps for Phillips Bench & Grand Targhee
   mutate(Date = mdy(Date))%>% #re-code date column as date
   rename(targhee_f = 2, phillips_f = 3)%>% #rename temperature cols
   mutate(targhee_c = (targhee_f-32)*(5/9), 
@@ -490,12 +490,30 @@ pb.22 <- ggplot(filter(pb.air, year == 2022 ),  aes(x = Date, y = temp_c, color 
   theme(legend.position = "bottom")
 pb.22
 ```
+2023: 
 
+```{r}
+pb.23 <- ggplot(filter(pb.air, year == 2023 ),  aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  theme(legend.position = "bottom")
+pb.23
+```
+
+2024: 
+
+```{r}
+pb.24 <- ggplot(filter(pb.air, year == 2024 ),  aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  theme(legend.position = "bottom")
+pb.24
+```
 
 Stack all years and save: 
 
 ```{r}
-pb.stack <- pb.17/pb.18/pb.19/pb.20/pb.21/pb.22
+pb.stack <- pb.17/pb.18/pb.19/pb.20/pb.21/pb.22/pb.23/pb.24
 pb.stack
 ```
 
@@ -767,6 +785,37 @@ Problem period is **08-19 to 10-15**. Save these dates for later:
 exposure.22 <- seq.Date(from = as.Date("2022-08-19"), to = as.Date("2022-10-15"), by = "day")
 ```
 
+**2023**
+
+```{r}
+ggplot(filter(pb.air, Date >= "2023-08-04" & Date <= "2023-10-27"), aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
+  scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
+```
+
+Problem period is **08-04 to 10-27**. Save these dates for later: 
+
+```{r}
+exposure.23 <- seq.Date(from = as.Date("2023-08-04"), to = as.Date("2023-10-28"), by = "day")
+```
+
+**2024**
+
+```{r}
+ggplot(filter(pb.air, Date >= "2024-08-04" & Date <= "2024-10-27"), aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
+  scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
+```
+
+All 2024 Data looks good. 
+
+
+
+
 **Removing these date ranges from the paintbrush data in the complete dataset:**
 
 ```{r}
@@ -775,7 +824,8 @@ fully_cleaned5 <- fully_cleaned4 %>%
          !(site == "paintbrush"&date1>=min(exposure.19)&date1<=max(exposure.19)),
          !(site == "paintbrush"&date1>=min(exposure.20)&date1<=max(exposure.20)),
          !(site == "paintbrush"&date1>=min(exposure.21)&date1<=max(exposure.21)), 
-         !(site == "paintbrush"&date1>=min(exposure.22)&date1<=max(exposure.22))
+         !(site == "paintbrush"&date1>=min(exposure.22)&date1<=max(exposure.22)), 
+         !(site == "paintbrush"&date1>=min(exposure.23)&date1<=max(exposure.23))
          )
 ```
 
@@ -783,7 +833,7 @@ fully_cleaned5 <- fully_cleaned4 %>%
 Make dataframe with exposure dates for future reference:
 
 ```{r}
-exposure_dates <- as.data.frame(c(exposure.18, exposure.19, exposure.20, exposure.21, exposure.22))%>%
+exposure_dates <- as.data.frame(c(exposure.18, exposure.19, exposure.20, exposure.21, exposure.22, exposure.23))%>%
   rename(exposed_dates = 1)%>%
   mutate(yr = year(exposed_dates)) 
 
@@ -937,6 +987,43 @@ Save:
 
 ```{r}
 ggsave("pres_figures/tasr_full_lines.pdf", tasr.lines, width = 12, height = 5, units = "in", device = "pdf", dpi = "retina")
+```
+
+**Facets per site, colored by year**
+
+Add day of year and month column; extract data for July and August:
+
+```{r}
+tasr_summer_doy <- tasr_daily%>%
+  mutate(doy = yday(date1), 
+         month = month(date1))%>%
+  filter(month == 7|month ==8)%>%
+  filter(!is.na(year))
+```
+
+Draw plot of July-Aug data - line graph faceted by site x = day of year, y = temp, color = year
+
+```{r}
+tasr.doy <- ggplot(tasr_summer_doy, aes(x = doy, y = temp_xbar, color = factor(year)))+
+  geom_line()+
+  facet_wrap(~full_name, scales = "free", nrow = 2, ncol = 6)+
+  theme_classic()+
+  scale_color_manual(values = rev(brewer.pal(10, "RdYlGn")))+
+  labs(x = "Day of Year", y = "Stream Temperature, C", color = "Year")+
+  theme(legend.position = "right", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))
+tasr.doy
+```
+
+Save:
+
+```{r}
+ggsave("pres_figures/tasr_stacked_years.pdf", tasr.lines, width = 12, height = 5, units = "in", device = "pdf", dpi = "retina")
 ```
 
 **One year of data all on one plot:**

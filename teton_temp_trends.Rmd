@@ -483,7 +483,7 @@ Next, run a model of richness ~ mean temp for each site separately and return a 
 
 ```{r}
 tasr_models <- tasr_nested %>%
-  mutate(model = map(data, ~lm(summer_t~yr, data = .)%>% #run a model of richness~year for each site (referenced by "."); store results in new column called "model"
+  mutate(model = purrr::map(data, ~lm(summer_t~yr, data = .)%>% #run a model of richness~year for each site (referenced by "."); store results in new column called "model"
                      tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
   unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
   filter(term == "yr")  #remove intercept term to just get info on year for each site

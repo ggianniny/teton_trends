@@ -1,0 +1,847 @@
+---
+title: "TASR Models"
+author: "Gordon Gianniny"
+date: "2024-02-08"
+output: html_document
+---
+
+```{r, echo=FALSE}
+#Loading Packages
+library(tidyverse) #For data wrangling
+library(lubridate) #For working with dates
+library(ggplot2) #Plotting
+library(RColorBrewer)
+library(patchwork)
+library(corrplot)
+library(ggpp)
+library(broom)
+library(flextable)
+library(lme4)
+library(lmerTest)
+library(maps) #mapping with ggplot2
+library(ggmap) #for mapping w/google map basemaps
+library(scales)
+library(maptools)
+library(raster)   ## To convert an "Extent" object to a "SpatialPolygons" object.
+library(rgeos)
+library(mgcv)
+library(itsadug)
+
+#Setting up ggmap API key: NOTE - for the map figures to work, you'll need to set up a Google Maps Platform Console Account at
+#https://cloud.google.com/maps-platform/, create an API key, and store it in your .Renviron file as "GOOGLEMAPS_API_KEY". 
+
+maps_api_key <- Sys.getenv("GOOGLEMAPS_API_KEY")
+register_google(key = maps_api_key)
+
+summarise<-dplyr::summarise
+rename<-dplyr::rename
+group_by<-dplyr::group_by
+```
+
+## Overview
+
+This script pulls in cleaned stream temperature data from TASR sites (data cleaning completed in the teton_data_cleaning.Rmd script) and SNOTEL data from the Phillips Bench and Grand Targhee SNOTEL stations, then runs and tests models of august stream temperature as a function of both time and weather-related variables. Input datasets are: 
+
+* *temps_hourly.csv* - Cleaned hourly stream temperature data from all instrumented sites
+* *source_info.csv* - Stream source information for all instrumented sites
+* *teton_snotel_23.csv* - SNOTEL data (SWE, air temperature) from the Phillips Bench and Grand Targhee SNOTEL sites
+
+Primary Sections are: 
+
+I. Read in and clean data
+II. Data checking and predictor selection
+III. Model testing and selection
+IV. Model visualizations
+
+## I. Read in and clean data
+
+Read in and clean data:
+
+```{r}
+#Source data:
+source <- read.csv("source_info.csv")%>%
+  rename(site = stream) #rename for merge
+
+#Temperature data:
+temp_data <- read.csv("Temperature/cleaned_full_datasets/temps_hourly.csv")%>%
+  mutate(date1 = ymd(date1), 
+         year = year(date1))%>%
+  filter(!is.na(temp_c), !year == 2023)%>% #Drop missing data, 2023 data (no August data for 2023 yet). 
+  merge(source, all = T)%>% #Add in source data
+  filter(month(date1)==8)%>% #extract data for August only
+  mutate(temp_center = scale(temp_c, center = T, scale = T))%>% #add centered/scaled temperature variable
+  group_by(site, full_name, stream_code, date1, year, lat, long)%>%
+  summarise(t_xbar = mean(temp_center, na.rm = T), #calculate daily mean temperature using centered/scaled temp
+            t_max = max(temp_center, na.rm = T), #calculate daily max temp  using centered/scaled temp
+            t_min = min(temp_center, na.rm = T), #calculate daily min temp using centered/scaled temp
+            t_range = t_max-t_min, #calculate daily temp range
+            source = unique(source))%>% #calculate daily mean, min, and max temps for each site along with temp range
+  group_by(site)%>% #group by stream
+  mutate(n_yrs = length(unique(year)))%>%
+  ungroup()%>%
+  filter(!n_yrs<3)
+
+#SNOTEL data:
+snotel <- read.csv("teton_snotel_23.csv")%>%
+  mutate(date1 = as.Date(date, format = "%m/%d/%y"), #recode date column as R date
+         airtemp_c = as.numeric(airtemp_c))%>% #recode airtemp as numeric
+  group_by(date1)%>% #group by date
+  summarise(swe_xbar = mean(swe_cm), #calculate mean SWE and airtemp across both stations
+            airtemp_xbar = mean(airtemp_c, na.rm = T))%>%
+  mutate(mo = month(date1), year = year(date1))%>% #Add month and year cols
+  group_by(year)%>% #group by year
+  mutate(swe_max = max(swe_xbar), #extract max SWE and add to new col
+         swe_max_date = date1[which.max(swe_xbar)], #extract max swe date and add to new column
+         swe_zero_date = date1[which.min(swe_xbar)][1])%>% #extract first day with swe = 0 for each year and add to new column
+  ungroup()%>% #ungroup to get all columns back
+  filter(mo == 8|mo ==7)%>% #extract July & August temperatures
+  group_by(year)%>% #group by year
+  summarise(airtemp_summer = mean(airtemp_xbar), #calculate mean july-aug air temp
+            swe_max = unique(swe_max), 
+            swe_max_date = ymd(unique(swe_max_date)),  
+            swe_zero_date =ymd(unique(swe_zero_date)))%>% #keep max SWE and, max swe date, and swe zero date
+  mutate(melt_days = as.numeric(swe_zero_date-swe_max_date), #calculate melt days (swe zero date minus max swe date)
+         swe_max_doy = yday(swe_max_date), 
+         swe_zero_doy = yday(swe_zero_date)) #add columns for swe max and swe zero day of year - easier to use as predictor. 
+```
+
+Merge stream and SNOTEL data: 
+
+```{r}
+temp_snotel <- merge(temp_data, snotel)
+```
+
+## II. Data checking and predictor selection
+
+### A. Checking distribution of response variable (august stream temps): 
+
+Pivot data for easier plotting: 
+
+```{r}
+temp_pivot <- temp_snotel%>%
+  pivot_longer(!c(year:long, source:swe_zero_doy), names_to = "temp_type", values_to = "stream_temp")%>% #Pivot to get column for temperature, row for each temp type (min, max, mean, range) for each day
+  mutate(transform = log10(stream_temp))%>%
+  mutate(yr_scale = scale(year), #create centered/scaled version of each predictor varaible
+         sweMax_scale = scale(swe_max), 
+         sweMaxDoy_scale = scale(swe_max_doy), 
+         sweZeroDoy_scale = scale(swe_zero_doy), 
+         meltDays_scale = scale(melt_days), 
+         summerAirtemp_scale = scale(airtemp_summer))
+```
+
+Checking data distribution - how are the data distributed across all groups and years?
+
+```{r}
+ggplot(temp_pivot,aes(x = stream_temp, fill = factor(source)))+ # variable = stream temp
+  geom_histogram()+ #draw histogram
+  facet_wrap(~temp_type, scales = "free_x")+ #facet by temperature type
+  theme_classic() #get rid of extra formatting
+
+#which(temp_pivot$stream_temp<=0)
+#temp_pivot[which(temp_pivot$stream_temp<=0),]
+```
+
+Minimum and range are left-skewed (especially range); mean and max look bimodal, especially for snowmelt. Same patterns within years. 
+
+Also have 51 0's in the temperature column (either temp range or minimum)
+
+Testing Log transform:
+
+```{r}
+ggplot(temp_pivot,aes(x = transform, fill = factor(source)))+ # variable = stream temp
+  geom_histogram()+ #draw histogram
+  facet_wrap(~temp_type, scales = "free_x")+ #facet by temperature type
+  theme_classic() #get rid of extra formatting
+```
+
+Log transform doesn't work when using centered/scaled temperatures - too many negative values. 
+
+Checking change in temperature over time: 
+
+**1. By date:**
+
+```{r}
+ggplot(temp_pivot, aes(x = date1, y = stream_temp, color = source))+
+  geom_point()+
+  geom_smooth()+
+  facet_wrap(~temp_type, scales = "free")
+```
+
+**1. By year:**
+
+```{r}
+ggplot(temp_pivot, aes(x = year, y = stream_temp, color = source))+
+  geom_point()+
+  geom_smooth()+
+  facet_wrap(~temp_type, scales = "free")
+```
+
+
+### B. Predictor variable selection (for SNOTEL modeling)
+
+Possible predictor variables are: 
+
+* Year (Is august stream temperature changing over time?)
+* Max SWE (Does maximum SWE affect august stream temperature?)
+* Max SWE date (Does the timing of maximum SWE affect august stream temperature?)
+* SWE Zero date (Does the date that sites were snow-free affect august stream temperature?)
+* Melt days (Does how fast the snowpack melted affect august stream temperature?)
+* Summer (July-August) air temperature (Does air temperature during july/august affect summer stream temperature?)
+
+#### i. Checking relationships between predictors and august stream temp: 
+
+Checking relationships between predictors (centered/scaled) and each response variable; colors for each source type. For simplicity, convert data to get one column for predictor type, one column for predictor value: 
+
+Data prep: 
+
+```{r}
+pred_pivot <- temp_pivot%>%
+  dplyr::select(-c(airtemp_summer:swe_zero_doy), -year)%>% #drop swe max and zero date columns
+  pivot_longer(!c(site:n_yrs, temp_type, stream_temp, transform), names_to = "predictor", values_to = "pred_value") #pivot to get columns for predictor name and predictor value; rows for each predictor x temp type x stream x year combo
+```
+
+Plotting for each potential model: 
+
+**Min temperature:**
+
+```{r}
+p1 <- ggplot(filter(pred_pivot, temp_type == "t_min"), aes(x = pred_value, y = stream_temp, color = source))+ #data = snowmelt only; x = predictor value, y = stream temp, color = stream temperature type
+  geom_point()+ #scatterplot
+  geom_smooth()+ #fit smooth fxn to data
+  facet_wrap(~predictor, scales = "free")+ #facet by predictor type; free scales. 
+  labs(title = "t_min")
+p1
+```
+
+Relationships: 
+
+* Year appears to be roughly linear for glacier-fed streams; swe_max maybe linear for snowmelt-fed streams.
+* Most predictors look flat-ish, especially for glacier and ice-fed streams. 
+
+**Mean temperature:**
+
+```{r}
+p2 <- ggplot(filter(pred_pivot, temp_type == "t_xbar"), aes(x = pred_value, y = stream_temp, color = source))+ #data = snowmelt only; x = predictor value, y = stream temp, color = stream temperature type
+  geom_point()+ #scatterplot
+  geom_smooth()+ #fit smooth fxn to data
+  facet_wrap(~predictor, scales = "free")+ #facet by predictor type; free scales. 
+  labs(title = "t_xbar")
+p2
+```
+
+Relationships: 
+
+* Swe max appears to be roughly linear (-), no obvious trends in other variables - appear non-linear. 
+
+**T_max:**
+
+```{r}
+p3 <- ggplot(filter(pred_pivot, temp_type == "t_max"), aes(x = pred_value, y = stream_temp, color = source))+ #data = snowmelt only; x = predictor value, y = stream temp, color = stream temperature type
+  geom_point()+ #scatterplot
+  geom_smooth()+ #fit smooth fxn to data
+  facet_wrap(~predictor, scales = "free")+ #facet by predictor type; free scales. 
+  labs(title = "t_max")
+p3
+```
+
+Relationships: 
+
+* Swe max again maybe linear (-)
+
+**T Range**
+
+```{r}
+p4 <- ggplot(filter(pred_pivot, temp_type == "t_range"), aes(x = pred_value, y = stream_temp, color = source))+ #data = snowmelt only; x = predictor value, y = stream temp, color = stream temperature type
+  geom_point()+ #scatterplot
+  geom_smooth()+ #fit smooth fxn to data
+  facet_wrap(~predictor, scales = "free")+ #facet by predictor type; free scales. 
+  labs(title = "t_range")
+p4
+```
+
+Combine and save: 
+
+```{r}
+predictor.grid <- p1/p2/p3/p4
+
+ggsave("Temperature/plots/model_figs/predictor_grid.jpg", predictor.grid, device = "jpeg", units = "in", dpi = "retina", height = 16, width = 8.5)
+
+predictor.grid
+```
+
+
+##### **Conclusions:** 
+
+If modeling year and swe max, linear assumption is probably ok. If including other varaibles, may need to use a non-linear method. 
+
+#### ii. Checking predictor correlations: 
+
+Extract predictor variables:
+
+```{r}
+predictors <- temp_snotel%>%
+  dplyr::select(year, airtemp_summer, swe_max, melt_days, swe_max_doy, swe_zero_doy)%>% #extract predictor variables
+  distinct() #remove duplicate values
+```
+
+Calculate correlation matrix and melt for plotting: 
+
+```{r}
+cormat <-round(cor(predictors), 2) #create correlation matrix with rounded values
+cormat[upper.tri(cormat)]<- NA #remove upper triangle values for plotting
+cormat_melt<-reshape2::melt(cormat, na.rm = T)%>% #melt for plotting
+  arrange(desc(value))
+cormat_melt #check output
+```
+
+Plot correlation matrix: 
+
+```{r}
+ggplot(cormat_melt, aes(x = Var1, y = Var2, fill = value))+ #plotting: fill = correlation value, axes = varaibles
+  geom_tile(color = "white")+ #tile graph to get "pixels" for each predictor combo
+ scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+   midpoint = 0, limit = c(-1,1), space = "Lab", 
+   name="Pearson\nCorrelation") + #gradient fill based on correlation
+  theme_minimal()+ #removing xtra formatting
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 10, hjust = 1), 
+    axis.text.y = element_text(
+    size = 10),
+    axis.title = element_blank())+ #adjusting axis text formatting
+ coord_fixed()+ #fixed coordinate system
+  geom_text(aes(label = value)) #adding labels with correlation values to each tile. 
+```
+
+Variables with Correlation > 0.7: 
+
+* year ~ airtemp_summer (0.75)
+* swe_max_doy ~ airtemp_summer (0.72)
+
+Variables with correlation between 0.6 & 0.7
+
+* swe_max_doy ~ melt_days (0.68)
+
+Variables with correlation between 0.5 & 0.6
+
+* swe_zero_doy ~ melt_days (0.59)
+* swe_max_doy ~ year (0.58)
+* swe_zero_doy ~ swe_max (0.55)
+
+**Takeaways:**
+
+* Probably can't include year and summer air temp or swe_max_doy and summer airtemp in the same model. 
+
+**Possible overall models:**
+
+* year+swe_max_doy+swe_zero_doy+swe_max+melt_days
+* airtemp_summer+swe_zero_doy+swe_max+melt_days
+
+
+## III. Linear Model testing and selection
+
+### A. Linear Mixed Model - Change in overall stream temperature over time:
+
+Random effects structure: 
+
+* Two levels of nesting: Data is nested under *Sites*, which are nested under *Sources*. To account for this structure, include random intercepts for Site and Source: (1|site)+(1|source)
+
+Fixed effect: year
+
+Overall model: temperature (min, mean, or max) ~ year + (1|source)+(1|site)
+
+Nest data by temperature type: 
+
+```{r}
+temp_nest <- temp_pivot%>%
+  nest(data = -temp_type)
+```
+
+Fit models for each temperature type (NOT including year*source interaction):
+
+```{r}
+yr.lmms <- temp_nest %>%
+  mutate(model = purrr::map(data, ~lmerTest::lmer(stream_temp~year+(1|source)+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
+  mutate(p.value = round(p.value, 4))%>%
+  filter(!term == "(Intercept)")%>%
+  dplyr::select(temp_type, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)
+yr.lmms
+```
+
+Significant increase in mean, min, and max temperature over time across all sites at the P<0.001 level. Effect sizes: 
+
+* Maximum temperatures increase by 0.19 degrees for every 1 unit increase in year
+* Mean temperatures increase by 0.21 degrees for every 1 unit increase in year
+* Minimum temperatures increase by 0.22 degrees for every 1 unit increase in year
+
+No change in daily temperature change. 
+
+**Model including year x source interaction:**
+
+Overall model: temp(mean, min, max, or range) = year + year*source + (1|site)
+
+**NOTE - update as of 3/28:** Models weren't converging when including year*source interaction and (1|source) random intercept - not enough degrees of freedom. Removing the random intercept for source fixes this problem, but could also cause problems since we're no longer accounting for the fact that data from different sources are likely to be correlated. 
+
+
+```{r}
+yr.lmms <- temp_nest %>%
+  mutate(model = purrr::map(data, ~lmerTest::lmer(stream_temp~year+year*source+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
+  mutate(p.value = round(p.value, 4))%>%
+  filter(!term == "(Intercept)")%>%
+  dplyr::select(temp_type, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)
+yr.lmms
+```
+
+**Note for interpretation - reference condition = glacier-fed streams**
+
+**t_xbar:**
+
+* Significant change (+0.023 deg/year) in mean august temps for glacier-fed streams
+* Intercept for snowmelt streams was significantly lower than glacier-fed streams
+* Intercept for subterranean ice streams was significantly higher than for glacier-fed streams
+* Rate of temp change for snowmelt-fed streams was significantly lower (+0.024 deg/year) than for glacier-fed streams.
+* Rate of temp change for subterranean-ice fed streams was significantly lower (-0.006 deg/year) than for glacier-fed streams
+* **Overall:** Glacier-fed and snowmelt-fed streams have warmed significantly; subterranean ice fed streams have not.
+
+**t_max:** 
+
+* No significant change in maxiumum temperatures for glacier-fed or subterranean ice-fed streams. 
+* Significant increase in maxiumum temperatures (+0.18 deg/year) for snowmelt-fed streams. 
+* Intercept for snowmelt fed streams is significantly lower than glacier or sub-ice fed
+* **Overall:** maximum temperatures are significantly higher in snowmelt-fed streams, but haven't changed in glacier or sub-ice streams. 
+
+**t_min:** 
+
+* Significant increase in min august temps for glacier fed streams (+0.034 deg/year)
+* Intercept for minimum snowmelt-fed august temp is significantly lower than glacier-fed
+* Intercept for minimum sub ice-fed august temp is significantly higher than glacier-fed
+* Minimum temps have increased more in Snowmelt-fed streams (+0.14 deg/year) than in glacier-fed streams
+* Minimum temps have increased less in subterranean ice-fed streams (+0.005 deg/year)
+* **Overall:** Minimum temperatures have increased in all three source types, with by far the largest increases in snowmelt and glacier-fed streams. Minimum temp increases are an order of magnitude smaller in sub-ice streams than in glacier or snowmelt streams.
+
+**t_range:** 
+
+* Significant decrease in t_range in glacier-fed streams (-0. deg/year)
+* intercept for snowmelt-fed streams is significantly lower than glacier or sub-ice
+* t_range for snowmelt-fed streams has increased signficantly (+0.03 deg/year)
+* Slope for t_range for sub-ice streams is not significantly different from glacier-fed streams (i.e. also a decrease of -0.13 deg/yr)
+* **Overall:** Daily temperature fluctuations have decreased in glacier and sub-ice streams over time; increased in snowmelt-fed streams over time. 
+
+
+#### a. Model Testing
+
+For loop to create model objects for each temperature type and draw residual histograms, qq plots, and residual vs fitted plots for each temperature type. Overall model is: 
+
+Overall model: temp(mean, min, max, or range) = year + year*source + (1|site)
+
+**NOTE - update as of 3/28:** Models weren't converging when including year*source interaction and (1|source) random intercept - not enough degrees of freedom. Removing the random intercept for source fixes this problem, but could also cause problems since we're no longer accounting for the fact that data from different sources are likely to be correlated. 
+
+
+```{r}
+temp.types <- unique(temp_pivot$temp_type) #vector of all temp types
+models <- list() #empty list to recieve models
+plots <- list() #empty list to recieve diagnostic plots
+
+for(i in 1:length(temp.types)){
+  d <- temp_pivot%>%
+    filter(temp_type == temp.types[i]) #extract rows with first temp type from list
+  
+  mod <- lmer(stream_temp~ #response variable
+                year+(year*source)+ #fixed effects (including year x source interaction)
+                +(1|site), #random effects
+              data = d) #data source
+  
+  models[[i]]<-mod #save model object in model list
+  
+  df_mod <- broom.mixed::augment(mod) #augment model and convert to df for model diagnostic plots
+  df_mod[".stdresid"] <- resid(mod, type = "pearson") #calculate residuals for model
+  
+  resid<-ggplot(df_mod, aes(x = .fitted, y = .resid))+ #plot fitted vs residuals
+    geom_point()+ #points
+    geom_hline(yintercept = 0)+ #horizontal line at y = 0
+    labs(title = paste("Residual vs Fitted", temp.types[i], sep = " - ")) #axis labels
+  
+  qq<- ggplot(df_mod, aes(sample = .stdresid)) + #qq plot
+  geom_qq() +
+  geom_qq_line()+ #add points and lines
+    labs(title = paste("QQ Plot", temp.types[i], sep = " - ")) #axis labels
+  
+  hist<- ggplot(df_mod, aes(x = .resid))+
+    geom_histogram()+ #draw histogram of residuals
+    labs(title = paste("Residual Histogram", temp.types[i], "= year+(year*source)+(1|source)+(1|site)", sep = " ")) #axis labels
+    
+  
+  plots[[i]]<-(resid|qq)/hist #store residual + qq plot in plots list
+  
+  print(paste("finished", temp.types[i], sep = " "))
+}
+```
+
+Individual model summaries: 
+
+```{r}
+summary(models[[1]])
+summary(models[[2]])
+summary(models[[3]])
+summary(models[[4]])
+```
+
+Check diagnostic plots: 
+
+```{r}
+plots[[1]]
+plots[[2]]
+plots[[3]]
+plots[[4]]
+```
+
+None of the models look particularly good - residuals vs fitted look ok, but qq plots do not follow lines. Residual histograms not normal. 
+
+#### b. Model Vizualization: 
+
+Scatterplot of change in each temperature variable; x = year, y = temp, faceted by temp type, color = source
+
+```{r}
+source.pal <- c("#C26ED6", "#F89225", "#76D96F")
+source.names <- c("Glacier", "Snowmelt", "Icy Seep")
+
+temp.yr <- ggplot(temp_pivot, aes(x = year, y = stream_temp, color = source))+
+  geom_point(alpha = 0.4)+
+  geom_smooth(method = "lm")+
+  facet_wrap(~temp_type, scales = "free", nrow = 4, ncol = 1)+
+  theme_classic()+
+  labs(x = "Year", y = "Temperature, C", color = "Source", title = "Model: temperature = year+(year*source)+(1|source)+(1|site)")+
+  scale_color_manual(values = source.pal, labels = source.names)+
+  theme(legend.position = "bottom", 
+        strip.text = element_text(size = 10, face = "bold"), 
+        axis.text = element_text(size = 10), 
+        axis.title = element_text(size = 10, face = "bold"))
+temp.yr
+```
+
+save: 
+
+```{r}
+ggsave("Temperature/plots/model_figs/temp_yr.jpg", temp.yr, device = "jpeg", units = "in", dpi = "retina", height = 11, width = 8.5)
+```
+
+
+### B. Linear Mixed models testing changes in temperature over time for each source type (seperate models): 
+
+Data prep and model fitting: 
+
+```{r}
+source_nest <- temp_pivot%>%
+  nest(data = -c(source, temp_type)) #nest data by source and temperature type
+
+source.yr.lmms <- source_nest %>%
+  mutate(model = purrr::map(data, ~lmerTest::lmer(stream_temp~year+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
+  mutate(p.value = round(p.value, 4))%>%
+  filter(!term == "(Intercept)")%>%
+  dplyr::select(source, temp_type, term, estimate, std.error, statistic, df, p.value)%>% #drop extra columns
+  rename(predictor_name = term) #rename for easier reading
+
+source.yr.lmms
+```
+
+**Results:**
+
+* Snowmelt: Significant increase in minimum, mean, and maximum temperatures; marginal increase in temp range (p=0.07)
+  + Summary: August stream temperatures in snowmelt-fed streams have increased significantly, with the largest increases occurring in maximum temperatures. The magnitude of daily temperature fluctuations has not changed. 
+
+* Sub_ice: No change in mean temperature, marginal decrease in max temperature (p=0.052), significant increase in min temperature, significant decrease in temp range
+  + Summary: August temperatures in subterranean ice-fed streams have not changed on average, but maximum temperatures have decreased and minimum temperatures have increased, leading to a reduction in the magnitude of daily temperature fluctuations. 
+
+* Glacier: Significant increase in average temperature, no change in max temperature, significant increase in minimum temperature, significant decrease in temp range
+  + Summary: August temperatures in glacier-fed streams have gotten significantly warmer on average. Maximum daily tempreatures have not changed, but minimum daily temperatures have increased, leading to a significant reduction in the magnitude of daily temperature fluctuations. 
+  
+**Bottom Line:** All streams have experienced some warming, but exist on a continuum - snowmelt streams have warmed uniformly (higher min, mean, and max), but daily temperature fluctuations remain about the same. Glacier fed streams have higher minimum and mean temperatures, but maximum temperatures have not changed. Subterranean ice fed streams have seen the least change, with the only significant increase being in daily minimum temperature. Both glacier fed and subterranean ice fed streams have seen a reduction in the magnitude of daily temperature fluctuations due to increasing minimum temperatures and stable (or maybe even decreasing for sub ice) maximum temperatures. 
+
+### C. Linear Mixed Models - Stream temperature as a function of SNOTEL variables:
+
+Random effects structure: 
+
+* Two levels of nesting: Data is nested under *Sites*, which are nested under *Sources*. To account for this structure, include random intercepts for Site and Source: (1|site)+(1|source)
+* In addition, all data is crossed with *Year* - Data within each year aren't hierarchical, but may still be correlated. To account for this, include random intercept for year: (1|year)
+
+Fixed effects: 
+
+Possibilities are: airtemp_summer, swe_zero_doy, swe_max, melt_days, and swe_max_doy. airtemp_summer and swe_max_doy are strongly correlated (>0.7), so one needs to be dropped - swe_max_doy is also strongly correlated with melt_days, so dropping swe_max_doy allows more other variables to remain in the model. In addition, the timing of maximum snowpack is probably less relevant than when that snowpack melted out, which is captured by swe_zero_doy and melt_days. This leaves a fixed effects structure of: 
+
+airtemp_summer+swe_zero_doy+swe_max+melt_days (Using all centered/scaled variables)
+
+Overall model (initial): 
+
+stream_temp ~ summerAirtemp_scale+sweZeroDoy_scale+sweMax_scale+meltDays_scale+(1|source)+(1|site)+(1|year)
+
+Fit models and return summaries for each temperature type: 
+
+```{r}
+snow.lmms <- temp_nest %>%
+  mutate(model = purrr::map(data, ~lmerTest::lmer(stream_temp~summerAirtemp_scale+sweZeroDoy_scale+sweMax_scale+meltDays_scale+(1|source)+(1|site)+(1|year), data = .)%>% #run a model of temp~snotel vars for each site (referenced by "."); store results in new column called "model"
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
+  mutate(p.value = round(p.value, 4))%>%
+  filter(!term == "(Intercept)")%>%
+  dplyr::select(temp_type, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)%>%
+  arrange(p.value)
+snow.lmms
+```
+
+In overall model, only significant predictor is swe_max - higher maximum swe is associated with lower minimum and average temperatures across all stream types. 
+
+
+#### a. Model testing/validation
+
+For loop to create model objects and diagnostic plots for each temp model: 
+
+```{r}
+st.models <- list() #empty list to recieve models
+st.plots <- list() #empty list to recieve diagnostic plots
+
+for(i in 1:length(temp.types)){
+  d <- temp_pivot%>%
+    filter(temp_type == temp.types[i]) #extract rows with first temp type from list
+  
+  mod <- lmer(stream_temp~ #response variable
+                summerAirtemp_scale+sweZeroDoy_scale+sweMax_scale+meltDays_scale+ #fixed effects 
+                (1|source)+(1|site), #random effects
+              data = d) #data source
+  
+  st.models[[i]]<-mod #save model object in model list
+  
+  df_mod <- broom.mixed::augment(mod) #augment model and convert to df for model diagnostic plots
+  df_mod[".stdresid"] <- resid(mod, type = "pearson") #calculate residuals for model
+  
+  resid<-ggplot(df_mod, aes(x = .fitted, y = .resid))+ #plot fitted vs residuals
+    geom_point()+ #points
+    geom_hline(yintercept = 0)+ #horizontal line at y = 0
+    labs(title = paste("Residual vs Fitted", temp.types[i], sep = " - ")) #axis labels
+  
+  qq<- ggplot(df_mod, aes(sample = .stdresid)) + #qq plot
+  geom_qq() +
+  geom_qq_line()+ #add points and lines
+    labs(title = paste("QQ Plot", temp.types[i], sep = " - ")) #axis labels
+  
+  hist<- ggplot(df_mod, aes(x = .resid))+
+    geom_histogram()+ #draw histogram of residuals
+    labs(title = paste(temp.types[i], "= sweMax+sweZeroDoy+meltDays+summerAirtemp+(1|source)+(1|site)+(1|year)", sep = " "))+ #axis labels
+    theme(title = element_text(size = 10))
+    
+  
+  st.plots[[i]]<-(resid|qq)/hist #store residual + qq plot in plots list
+  
+  print(paste("finished", temp.types[i], sep = " "))
+}
+```
+
+Check diagnostic plots: 
+
+```{r}
+st.plots[[1]]
+st.plots[[2]]
+st.plots[[3]]
+st.plots[[4]]
+```
+
+Same problems as previous models - qq plots look skewed, non-normal distribution. 
+
+### D. Linear Mixed Model for SNOTEL Variables, seperate model for each source type: 
+
+Model fitting: 
+
+```{r}
+source.snotel.lmms <- source_nest %>%
+  mutate(model = purrr::map(data, ~lmerTest::lmer(stream_temp~summerAirtemp_scale+sweZeroDoy_scale+sweMax_scale+meltDays_scale+(1|site)+(1|year), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
+  mutate(p.value = round(p.value, 4))%>%
+  filter(!term == "(Intercept)")%>%
+  dplyr::select(source, temp_type, term, estimate, std.error, statistic, df, p.value)%>% #drop extra columns
+  rename(predictor_name = term)%>% #rename for easier reading
+  arrange(p.value)
+
+source.snotel.lmms
+```
+
+Only significant predictors are: 
+
+* Higher swe Max = higher t_range in glacier-fed streams
+* Longer melt duration = higher t_range in glacier-fed streams
+* Higher swe Max = lower t_min in glacier-fed streams. 
+
+Marginally significant (P<0.1) are: 
+
+* Higher SWE max = lower t_min in snowmelt fed streams
+* Higher SWE max = lower t_xbar in snowmelt streams
+* Higher summer airtemp = higher t_min in sub_ice streams
+* Higher swe_max = lower t_max in smowmelt streams
+
+### E. Model visualizations
+
+Data Prep:
+
+```{r}
+pred_data <- temp_pivot%>%
+  pivot_longer(!c(year:transform, yr_scale), names_to = "pred_name", values_to = "pred_value")
+```
+
+T Min: 
+
+```{r}
+st.min<- ggplot(filter(pred_data, temp_type == "t_min"),aes(x = pred_value, y = stream_temp, color = source))+
+  geom_point(alpha = 0.4)+
+  geom_smooth(method = "lm")+
+  facet_wrap(~pred_name, scales = "free")+
+  theme_classic()+
+  labs(x = "Predictor value", y = "Aug. 1-30 Minimum daily temperature, C", color = "Source", 
+       title = "t_min~sweMax+sweZeroDoy+meltDays+summerAirtemp+(1|source)+(1|site)+(1|year)")+
+  scale_color_manual(values = source.pal, labels = source.names)+
+  theme(legend.position = "none", 
+        strip.text = element_text(size = 10, face = "bold"), 
+        axis.text = element_text(size = 10), 
+        axis.title = element_text(size = 10, face = "bold"), 
+        title = element_text(size = 10))
+st.min
+```
+
+T Xbar: 
+
+```{r}
+st.xb<-ggplot(filter(pred_data, temp_type == "t_xbar"),aes(x = pred_value, y = stream_temp, color = source))+
+  geom_point(alpha = 0.4)+
+  geom_smooth(method = "lm")+
+  facet_wrap(~pred_name, scales = "free")+
+  theme_classic()+
+  labs(x = "Predictor value", y = "Aug. 1-30 mean daily temperature, C", color = "Source", 
+       title = "t_xbar~sweMax+sweZeroDoy+meltDays+summerAirtemp+(1|source)+(1|site)+(1|year)")+
+  scale_color_manual(values = source.pal, labels = source.names)+
+  theme(legend.position = "none", 
+        strip.text = element_text(size = 10, face = "bold"), 
+        axis.text = element_text(size = 10), 
+        axis.title = element_text(size = 10, face = "bold"), 
+        title = element_text(size = 10))
+st.xb
+```
+
+T Max: 
+
+```{r}
+st.max<-ggplot(filter(pred_data, temp_type == "t_max"),aes(x = pred_value, y = stream_temp, color = source))+
+  geom_point(alpha = 0.4)+
+  geom_smooth(method = "lm")+
+  facet_wrap(~pred_name, scales = "free")+
+  theme_classic()+
+  labs(x = "Predictor value", y = "Aug. 1-30 maximum daily temperature, C", color = "Source", 
+       title = "t_max~sweMax+sweZeroDoy+meltDays+summerAirtemp+(1|source)+(1|site)+(1|year)")+
+  scale_color_manual(values = source.pal, labels = source.names)+
+  theme(legend.position = "none", 
+        strip.text = element_text(size = 10, face = "bold"), 
+        axis.text = element_text(size = 10), 
+        axis.title = element_text(size = 10, face = "bold"), 
+        title = element_text(size = 10))
+st.max
+```
+
+T range:
+
+```{r}
+st.range <- ggplot(filter(pred_data, temp_type == "t_range"),aes(x = pred_value, y = stream_temp, color = source))+
+  geom_point(alpha = 0.4)+
+  geom_smooth(method = "lm")+
+  facet_wrap(~pred_name, scales = "free")+
+  theme_classic()+
+  labs(x = "Predictor value", y = "Aug. 1-30 daily temperature change, C", color = "Source", 
+       title = "t_range~sweMax+sweZeroDoy+meltDays+summerAirtemp+(1|source)+(1|site)+(1|year)")+
+  scale_color_manual(values = source.pal, labels = source.names)+
+  theme(legend.position = "bottom", 
+        strip.text = element_text(size = 10, face = "bold"), 
+        axis.text = element_text(size = 10), 
+        axis.title = element_text(size = 10, face = "bold"), 
+        title = element_text(size = 10))
+st.range
+```
+
+Stack and save: 
+
+```{r}
+st.all <- st.min/st.xb/st.max/st.range
+
+ggsave("Temperature/plots/model_figs/snotel_comb.jpg", st.all, device = "jpeg", units = "in", dpi = "retina", height = 16, width = 8.5)
+```
+
+## V. GAMM testing
+
+### A. GAMM for change in temperature over time, varying by source: 
+
+Testing individual: 
+
+```{r}
+gamDat <- temps_snotel %>%
+  mutate(source = factor(source), 
+         site = factor(site), 
+         year = as.numeric(year))
+
+gammTest <- mgcv::gamm(t_xbar~s(year, by = source, k=3)+source, random = (list(site = ~1)),
+                 data = gamDat)
+
+class(gammTest)
+summary(gammTest)
+
+summary(gammTest$gam)
+```
+
+For loop to fit models for each term:
+
+```{r}
+gamm.list <- list()
+gamm.plots <- list()
+
+for(i in 1:length(temp.types)){
+  d<-temp_pivot%>%
+    filter(temp_type == temp.types[i])%>%
+    mutate(source = as.factor(source))
+  
+  m<- gamm(stream_temp~s(year, by = source, k = 8)+source, #Fixed effect formula: interaction of year and souce+source
+                data = d, #data source
+                random = list(site = ~1)) #random effects - random intercept for site
+  
+  gamm.list[[i]]<-m$gam
+  
+
+}
+
+```
+
+
+
+```{r}
+summary(gamm.list[[1]])
+
+par(mfrow = c(2, 2))
+plot(gamm.list[[1]])
+gam.check(gamm.list[[1]])
+```
+
+
+
+## VI. Overall Summary: 
+
+1. Across all sites and sources, stream temperatures have increased significantly over time. 
+2. These increases become more nuanced when modeling each source separately. Snowmelt fed streams have undergone the most change, followed by glacier fed streams and then subterranan ice streams. Minimum temperatures have increased significantly in all three source types. 
+3. Across all sites and sources, larger snowpacks (higher maximum swe) are associated with lower average and minimum August stream temperatures. 
+
+
+
+
+
+
+

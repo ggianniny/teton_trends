@@ -649,13 +649,13 @@ source.aov <- aov(area~source, data = site_areas)
 summary(source.aov)
 ```
 
-Weak effect of source on area - which differences are significant? 
+No effect of source 
 
 ```{r}
 TukeyHSD(source.aov)
 ```
 
-Marginally significant difference between snowmelt and glacier (snowmelt = significantly larger area than glacier), no difference between subterranean ice and glacier or subterranean ice and snowmelt. 
+No significant differences after adding 2022 data
 
 
 ### 2. How is Taxonomic Richness changing over time?
@@ -722,7 +722,7 @@ richness_models <- richness_nested %>%
 richness_models
 ```
 
-Significant declines (p<0.05) in richness at s cascade, weakly significant (p<0.1) decreases at mid teton, wind cave. 
+Significant declines (p<0.05) in richness at s cascade, weakly significant (p<0.1) decreases at Cloudveil. 
 
 #### Presentation Richness plot: 
 
@@ -880,7 +880,7 @@ to.binary <- function(col){
 }
 
 yr_binary <- yr_taxa %>%
-  mutate(across(.cols = c(2:8), to.binary)) #apply this function across all year columns in yr_taxa 
+  mutate(across(.cols = c(2:9), to.binary)) #apply this function across all year columns in yr_taxa 
 ```
 
 Check the resulting output: 
@@ -923,7 +923,7 @@ new_taxa <- rowSums(binary_lag[,2:ncol(binary_lag)])
 Add this to a new dataframe with year; calculate cumulative taxa observed each year: 
 
 ```{r}
-cumulative_richness <- data.frame(c(2015:2021), new_taxa)%>% #bind new_taxa object with vector of years
+cumulative_richness <- data.frame(c(2015:2022), new_taxa)%>% #bind new_taxa object with vector of years
   rename(yr = 1)%>% #rename first column "yr"
   mutate(cumulative_taxa =cumsum(new_taxa)) #calculate cumulative taxa observed for each year
 ```
@@ -1062,7 +1062,7 @@ rt_models <- rt_nested %>%
 rt_models
 ```
 
-Significant (-) relationship between mean summer temp and richness at Gusher, not at any other sites. 
+Significant (-) relationship between mean summer temp and richness at Grizzly, marginally significant (-) relationship at Paintbrush and N teton. 
 
 #### B. SWE vs. Richness
 

@@ -36,42 +36,43 @@ summarise<-dplyr::summarise
 
 This script reads in cleaned datafiles with stream temperature and invertebrate data produced by the invert_data_cleaning.Rmd and teton_data_cleaning.Rmd scripts and performs more involved analyses of stream temperature and invertebrate density/diversity over time. A few findings of interest from previous analyses are that: 
 
-    * Average summer (July-Aug) stream temperatures have not changed significantly over time
+  * Average summer (July-Aug) stream temperatures have not changed significantly over time
     
-    * Average summer (July-Aug) air temperatures have increased over time
+  * Average summer (July-Aug) air temperatures have increased over time
     
-    * Overall, invetebrate richness has not changed over time
+  * Overall, invetebrate richness has not changed over time
     
-    * Invertebrate communities in snow-fed streams appear to be more variable than those in glacier-fed streams
+  * Invertebrate communities in snow-fed streams appear to be more variable than those in glacier-fed streams
 
 To build on these findings, the main sections of this script are: 
 
 **I. Temperature:**
     
-    1. Trends in summer mean, max, min, and degree-days over time: Site-by-site and grouped by source
+  1. Trends in summer mean, max, min, and degree-days over time: Site-by-site and grouped by source
     
-    2. Modeling stream temperature using SNOTEL data: Site-by-site and grouped by source
+  2. Modeling stream temperature using SNOTEL data: Site-by-site and grouped by source
     
-    3. Linear mixed models of temperature over time
+  3. Linear mixed models of temperature over time
     
 **II. Invertebrates:**
 
-    1. Trends in richness, abundance, and density over time: Site-by-site and grouped by source
+  1. Trends in richness, abundance, and density over time: Site-by-site and grouped by source
     
-    2. Modeling richness, abundance, and density using SNOTEL data: Site-by-site and grouped by source
+  2. Modeling richness, abundance, and density using SNOTEL data: Site-by-site and grouped by source
     
 **III. Temperature and Invertebrates**
 
-    1. Test for correlations between temperature metrics (mean/max/min summer; degree days): Site-by-site and grouped by source
+  1. Test for correlations between temperature metrics (mean/max/min summer; degree days): Site-by-site and grouped by source
     
 Read in necessary files: 
 
 ```{r}
 stream_temp <- read.csv("Temperature/cleaned_full_datasets/temps_hourly.csv") #hourly stream temp data
+
 invert_density <- read.csv("invert_data/cleaned_csv/full_invert_densities.csv")%>%
   rename(site = Stream)#invert density data
 invert_richness <- read.csv("invert_data/cleaned_csv/invert_richness.csv") #invert richness data
-snotel <- read.csv("teton_snotel.csv") #snotel data
+snotel <- read.csv("teton_snotel_23.csv") #snotel data
 sources <- read.csv("source_info.csv")%>%
   rename(site = stream) #source info, rename for merge
 
@@ -79,8 +80,9 @@ sources <- read.csv("source_info.csv")%>%
 
 stream_source <- merge(stream_temp, sources, all = T)%>%
   mutate(date1 = ymd(date1), 
-         year = year(date1))%>%
-  filter(!is.na(temp_c))#Add source info to hourly temperature data; re-code date as r date format
+         year = year(date1))%>% #Add source info to hourly temperature data; re-code date as r date format
+  filter(!is.na(temp_c), #drop missing temp values
+         !year == 2023) #DROP 2023 DATA - only had 2023 data for first half of August, so not relevant for analysis yet. 
 stream_source_daily <- stream_source%>%
   group_by(site, full_name, stream_code, date1, year, lat, long)%>%
   summarise(t_xbar = mean(temp_c, na.rm = T), 
@@ -93,6 +95,21 @@ richness_source <- merge(invert_richness, sources, all = T)
 ```
 
 
+Aside: Data export for Taylor: 
+
+```{r}
+julyTemps <- stream_source_daily %>%
+  mutate(month = month(date1), 
+         year = year(date1))%>%
+  filter(month == 7)%>%
+  group_by(site, full_name, source, year)%>%
+  summarise(mean_jul_temp = mean(t_xbar), 
+            mean_max_jul_temp = mean(t_max), 
+            mean_min_jul_temp = mean(t_min), 
+            mean_jul_temp_range = mean(t_range))
+
+write.csv(julyTemps, "Temperature/cleaned_full_datasets/julyTemps.csv")
+```
 
 
 
@@ -108,6 +125,19 @@ First, calculate summer (july-aug) mean daily temp, avg daily max and min; plus 
 stream_summer <- stream_source_daily %>%
   mutate(mo = month(date1))%>% #add month column
   filter(mo == 7 | mo == 8)%>% #extract July and August
+  group_by(site, full_name, stream_code, year, lat, long)%>% #group by site and year
+  summarise(summer_xbar = mean(t_xbar, na.rm = T), 
+            max_xbar = mean(t_max, na.rm = T), 
+            min_xbar = mean(t_min, na.rm= T), #calculate mean temperature, mean daily max and min
+            range_xbar = mean(t_range, na.rm = T), #calculate mean daily temperature range
+            dd_2.5 = length(which(t_max >= 2.5)), 
+            dd_5 = length(which(t_max >= 5)),
+            dd_10 = length(which(t_max >= 10)), #calculate no. days with max temp >2.5, 5, and 10 deg
+            source = unique(source)) #retain source col
+
+stream_aug <- stream_source_daily %>%
+  mutate(mo = month(date1))%>% #add month column
+  filter(mo == 8)%>% #extract July and August
   group_by(site, full_name, stream_code, year, lat, long)%>% #group by site and year
   summarise(summer_xbar = mean(t_xbar, na.rm = T), 
             max_xbar = mean(t_max, na.rm = T), 
@@ -440,15 +470,15 @@ save_as_image(tbl1,path = "manuscript/tables/table1_streaminfo.png", res = 300)
 
 #### FIGURE 1: Map of sites used: 
 
-```{r}
+#NOT RUN```{r}
 #Data set-up:
-mean.long <- mean(summer_3plus$long) 
-mean.lat <- mean(summer_3plus$lat) #calculate mean lat/long of all sites
+mean.long <- mean(summer_3plus$long, na.rm=T) 
+mean.lat <- mean(summer_3plus$lat, na.rm =T) #calculate mean lat/long of all sites
 
 map_dat <- as.data.frame(summer_3plus)%>%
   dplyr::select(full_name, source, lat, long)%>%
   distinct()%>%
-  filter(!row_number(.)==10)
+  filter(!is.na(lat))
 
 # Basemap: use get_map to pull map from google API:
 basemap <- get_map(c(mean.long,mean.lat), #center map on mean lat and long of all sites
@@ -464,12 +494,12 @@ gtnp_clip <- crop(gtnp, extent(bb[1,2], bb[1,4], bb[1,1], bb[1,3]))%>% #Clip GTN
   fortify() #fortify to convert from SpatialPolygon to dataframe for plotting
 
 
-```
+#```
 
 Mapping:
 
 
-```{r, warning=F}
+#NOT RUN```{r, warning=F}
 site.map <- ggmap(basemap)+ #basemap: terrain background (no labels) from google maps platform console, centered on avg lat/long of all sites
   geom_polygon(data = gtnp_clip, aes(x = long, y = lat, group = group), color = "black", linetype = "dashed", fill = "darkgreen", alpha = 0.25, size = 0.6)+ #Adding clipped polygon of GTNP
   geom_point(data = map_dat, aes(x = long, y = lat, fill = source, group = NULL), color = "black", size = 3, pch = 21)+ #add  sites, color code by source 
@@ -486,7 +516,7 @@ site.map <- ggmap(basemap)+ #basemap: terrain background (no labels) from google
   geom_text_npc(aes(npcx = 0.84, npcy = 0.65, label = "Grand Teton \n National Park"), size = 4.5, fontface = 4, color = "black", hjust = 0.5, alpha = 0.25)+ #add label for Grand Teton NP
   geom_text_npc(aes(npcx = 0.2, npcy = 0.8, label = "Targhee \n National Forest"), size = 4.5, fontface = 4, color = "black", hjust = 0.5, alpha = 0.25) #add lable for Targhee NF
 site.map
-```
+#```
 
 #### B. Grouped by source
 
@@ -494,6 +524,22 @@ First, group by source and re-calculate max, mean, min, and degree days:
 
 ```{r}
 summer_source <- stream_summer %>%
+  group_by(source, year)%>% # group by source type and year
+  summarise(t_xbar = mean(summer_xbar), 
+            t_max = mean(max_xbar), 
+            t_min = mean(min_xbar), #calculate mean daily temp, mean daily min and max
+            t_range = mean(range_xbar),
+            dd2.5_xbar = mean(dd_2.5), 
+            dd5_xbar = mean(dd_5), 
+            dd10_xbar = mean(dd_10),#calculate mean no. days with max temp >2.5, 5, and 10 C.
+            n_sites = length(unique(site)))%>%  #calculate no sites for each year
+  filter(!is.na(year), !is.na(source)
+         #, !n_sites < 2
+         )%>%
+    mutate(source = case_when(source == "glacier"~"Glacier", source == "snowmelt"~"Snow melt", source == "sub_ice"~"Subterranean ice"))
+
+#For August Only:
+aug_source <- stream_aug%>%
   group_by(source, year)%>% # group by source type and year
   summarise(t_xbar = mean(summer_xbar), 
             t_max = mean(max_xbar), 
@@ -609,7 +655,7 @@ warming_amounts <- source.lms %>%
   mutate(deg_decade = 10*estimate)%>%
   dplyr::select(source, measure, deg_decade, p.value)%>%
   rename(Source = source, Measure = measure, Degrees.Warming = deg_decade, P = p.value)%>%
-  mutate(Measure = case_when(Measure == "t_xbar"~"Mean", Measure == "t_min"~"Minimum", Measure == "t_max"~"Maximum"))
+  mutate(Measure = case_when(Measure == "t_xbar"~"Mean", Measure == "t_min"~"Minimum", Measure == "t_max"~"Maximum", Measure == "t_range"~"Diel Temp Change"))
 warming_amounts
 ```
 
@@ -654,6 +700,69 @@ Save:
 ggsave("Temperature/plots/source_summer.pdf", source.summer.pv, device = "pdf", units = "in", height = 5, width = 6.5, dpi = "retina")
 ```
 
+
+###### ii'. LMs of mean/min/max for August Only:
+
+Nest plot data by source and measurement type:
+
+```{r}
+aug_plot <- as.data.frame(aug_source) %>%
+  dplyr::select(source, year, t_xbar, t_max, t_min, t_range)%>%
+  pivot_longer(-c(source, year), names_to = "measure", values_to = "temp")
+
+aug_nested <- aug_plot%>%
+  nest(data = -c(source, measure))
+```
+
+Modeling:
+
+```{r}
+aug.source.lms <- aug_nested %>%
+  mutate(model = purrr::map(data, ~lm(temp~year, data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     tidy))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model) %>% #unnest model column to get rows for each site, columns for model metrics
+  filter(term == "year")  #remove intercept term to just get info on year for each site
+aug.source.lms
+```
+
+Add p-values and plot: 
+
+```{r}
+aug_source_pvals <- merge(aug.source.lms, aug_plot)%>% #add model info to source dataframe
+  mutate(ypos = case_when(measure == "t_max" ~ 0.95, measure == "t_xbar" ~ 0.9, measure == "t_min" ~ 0.85, measure == "t_range"~0.8)) #create column for adjusting P-value label Y position
+```
+
+Plotting:
+
+```{r}
+ylab <- expression(bold("Stream Temperature " (degree*C)))
+
+source.aug <- ggplot(aug_source_pvals, aes(x = year, y = temp, color = measure))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(se = F, method = "lm", linetype = "dashed", size = 0.5)+
+  theme_classic()+
+  facet_wrap(~source, scales = "free_x")+
+  scale_color_manual(values = c("darkred","darkblue", "darkorange","darkgreen" )
+                     , labels = c("Max. temp.", "Min. temp.", "Temp. range", "Mean temp")
+                     )+
+  labs(x = "Date", y = ylab, color = "Measurement Type")+
+  theme(legend.position = "bottom", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 10), 
+        legend.title = element_text(size = 11, face = "bold"), 
+        strip.text = element_text(size = 10, face = "bold"))+
+  geom_text_npc(aes(npcx = 0.1, npcy = ypos, color = measure, label = paste( "P = ",round(p.value, 3), sep = ""))) # add p value labels to plot
+source.aug
+```
+
+Save:
+
+```{r}
+ggsave("Temperature/plots/source_august.pdf", source.aug, device = "pdf", units = "in", height = 5, width = 6.5, dpi = "retina")
+```
 
 ##### iii. LMs of degree days over time: 
 
@@ -1229,20 +1338,20 @@ Check distribution of response variables:
 
 ```{r}
 #without log10 transform:
-ggplot(lmm_pivot, aes(x = temp_c))+
-  geom_density(fill = "grey", color = "black")+
-  facet_wrap(~measure)+
+ggplot(lmm_pivot, aes(x = temp_c, fill = source))+
+  geom_histogram(color = "black")+
+  facet_wrap(~measure, scales = "free_x")+
   theme_classic()
 
 #with log10 transform:
-ggplot(lmm_pivot, aes(x = transform))+
-  geom_density(fill = "grey", color = "black")+
-  facet_wrap(~measure)+
+ggplot(lmm_pivot, aes(x = transform, fill = source))+
+  geom_histogram(color = "black")+
+  facet_wrap(~measure, scales = "free_x")+
   theme_classic()
 
 ```
 
-All are left-skewed, but a log transform just makes them left-skewed. Skipping log transform for now. 
+All are left-skewed, but a log transform just makes them right-skewed. Skipping log transform for now. 
 
 #### C. Running LMMs
 
@@ -1271,11 +1380,12 @@ max_temps <- filter(lmm_nested, measure == "max_xbar")
 
 max.lmm <- max_temps %>%
   mutate(model = purrr::map(data, ~lmerTest::lmer(temp_c~melt_days+airtemp_summer+swe_max+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
-                     tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
   unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
   mutate(p.value = round(p.value, 4))%>%
   filter(!term == "(Intercept)")%>%
-  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)
+  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)
 max.lmm
 ```
 
@@ -1283,11 +1393,11 @@ Results:
 
 *Subterranean ice:*
 
-Significant negative correlation between summer air temp and max stream temp (maybe more ice melting?)
+No significant effects
 
 *Snowmelt:* 
 
-Significant negative correlation between melt length and max temp; same with summer air temp and max temp (??)
+Significant negative correlation between melt length and max temp; same with max swe and max temp (??)
 
 *Glacier:*
 
@@ -1295,16 +1405,29 @@ No significant effects.
 
 Visualization: 
 
+add p-values:
+
 ```{r}
-ggplot(filter(lmm_plot, measure == "max_xbar"), aes(x = predictor_value, y = temp_c, color = source, group = site))+
+max_pv <- lmm_plot %>%
+  filter(measure == "max_xbar")%>%
+  merge(max.lmm)
+```
+
+plot:
+
+```{r}
+max.lmm.viz<-ggplot(max_pv, aes(x = predictor_value, y = temp_c, color = source, group = site))+
   geom_point(size = 0.5)+
   geom_line(size = 0.5)+
   geom_smooth(aes(group = NULL), method = "lm", se = T, linetype = "dashed", color = "black", size = 0.5)+
   theme_classic()+
   scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
   facet_grid(source~predictor_name, scales = "free")+
-  theme(legend.position = "none")+
-  labs(x = "Predictor Value", y = "Mean maximum July-Aug stream temp, C")
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")), stat = "unique")+
+  theme(legend.position = "none", 
+        axis.title.x = element_blank())+
+  labs(x = "", y = "Mean maximum July-Aug stream temp, C")
+max.lmm.viz
 ```
 
 ##### ii. Minimum temp:
@@ -1318,11 +1441,12 @@ min_temps <- filter(lmm_nested, measure == "min_xbar")
 
 min.lmm <- min_temps %>%
   mutate(model = purrr::map(data, ~lmerTest::lmer(temp_c~melt_days+airtemp_summer+swe_max+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
-                     tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
   unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
   mutate(p.value = round(p.value, 4))%>%
   filter(!term == "(Intercept)")%>%
-  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)
+  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)
 min.lmm
 ```
 
@@ -1330,28 +1454,40 @@ Results:
 
 *Subterranean ice:*
 
-Significant negative correlation between maximum SWE and min summer stream temp (Maybe less ice melting bc of snow insulation?)
+Significant negative correlation between maximum SWE and min summer stream temp (higher SWE = lower minimum temps)
 
 *Snowmelt:* 
 
-Significant negative correlation between melt length, summer air temp, and swe max and summer stream temp. Melt length makes sense, others don't really...
+Significant negative correlation between melt length, max SWE, and summer stream temp. (longer melt and higher max SWE = lower tream temps)
 
 *Glacier:*
 
-No significant effects. 
+Significant negative correlation between max SWE and minimum temps
 
 Visualization: 
+add p-values:
 
 ```{r}
-ggplot(filter(lmm_plot, measure == "min_xbar"), aes(x = predictor_value, y = temp_c, color = source, group = site))+
+min_pv <- lmm_plot %>%
+  filter(measure == "min_xbar")%>%
+  merge(min.lmm)
+```
+
+plot:
+
+```{r}
+min.lmm.viz<-ggplot(min_pv, aes(x = predictor_value, y = temp_c, color = source, group = site))+
   geom_point(size = 0.5)+
   geom_line(size = 0.5)+
   geom_smooth(aes(group = NULL), method = "lm", se = T, linetype = "dashed", color = "black", size = 0.5)+
   theme_classic()+
   scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
   facet_grid(source~predictor_name, scales = "free")+
-  theme(legend.position = "none")+
-  labs(x = "Predictor Value", y = "Mean minimum July-Aug stream temp, C")
+    geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")), stat = "unique")+
+  theme(legend.position = "none", 
+        axis.title.x = element_blank())+
+  labs(x = "", y = "Mean minimum July-Aug stream temp, C")
+min.lmm.viz
 ```
 
 ##### iii. Average temp:
@@ -1365,11 +1501,12 @@ mean_temps <- filter(lmm_nested, measure == "summer_xbar")
 
 mean.lmm <- mean_temps %>%
   mutate(model = purrr::map(data, ~lmerTest::lmer(temp_c~melt_days+airtemp_summer+swe_max+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
-                     tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
   unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
   mutate(p.value = round(p.value, 4))%>%
   filter(!term == "(Intercept)")%>%
-  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)
+  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)
 mean.lmm
 ```
 
@@ -1377,11 +1514,11 @@ Results:
 
 *Subterranean ice:*
 
-Significant negative correlation between summer air temp and mean summer stream temp (Maybe less ice melting bc of snow insulation?)
+No significant correlations - closest is negative correlation between max SWE and avg stream temp. 
 
 *Snowmelt:* 
 
-Significant negative correlation between melt length, summer air temp, and swe max and summer stream temp. Melt length makes sense, others don't really...
+Significant negative correlation Melt length, max SWE, and avg stream temp. 
 
 *Glacier:*
 
@@ -1390,16 +1527,27 @@ No significant effects.
 Visualization: 
 
 ```{r}
-ggplot(filter(lmm_plot, measure == "summer_xbar"), aes(x = predictor_value, y = temp_c, color = source, group = site))+
+mean_pv <- lmm_plot %>%
+  filter(measure == "summer_xbar")%>%
+  merge(mean.lmm)
+```
+
+```{r}
+mean.lmm.viz<-ggplot(mean_pv, aes(x = predictor_value, y = temp_c, color = source, group = site))+
   geom_point(size = 0.5)+
   geom_line(size = 0.5)+
   geom_smooth(aes(group = NULL), method = "lm", se = T, linetype = "dashed", color = "black", size = 0.5)+
   theme_classic()+
   scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
   facet_grid(source~predictor_name, scales = "free")+
-  theme(legend.position = "none")+
-  labs(x = "Predictor Value", y = "Mean daily July-Aug stream temp, C")
+    geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")), stat = "unique")+
+  theme(legend.position = "none", 
+        axis.title.x = element_blank())+
+  labs(x = "", y = "Mean daily July-Aug stream temp, C")
+mean.lmm.viz
 ```
+
+
 
 ##### iv. temp range:
 
@@ -1412,11 +1560,12 @@ temp_ranges <- filter(lmm_nested, measure == "range_xbar")
 
 range.lmm <- temp_ranges %>%
   mutate(model = purrr::map(data, ~lmerTest::lmer(temp_c~melt_days+airtemp_summer+swe_max+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
-                     tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
   unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
   mutate(p.value = round(p.value, 4))%>%
   filter(!term == "(Intercept)")%>%
-  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)
+  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)
 range.lmm
 ```
 
@@ -1424,11 +1573,11 @@ Results:
 
 *Subterranean ice:*
 
-Marginally significant negative correlation between summer air temp and temperature variability (warmer summers = less variability)
+No significant effects
 
 *Snowmelt:* 
 
-Significant negative correlation of melt length and summer air temp with temperature variability (longer melt and warmer summers = less variability). Seems a bit contradictory.
+No significant effects
 
 *Glacier:*
 
@@ -1437,7 +1586,14 @@ No significant effects.
 Visualization: 
 
 ```{r}
-ggplot(filter(lmm_plot, measure == "range_xbar"), aes(x = predictor_value, y = temp_c, color = source, group = site))+
+range_pv <- lmm_plot %>%
+  filter(measure == "range_xbar")%>%
+  merge(range.lmm)
+```
+
+
+```{r}
+tr.lmm<- ggplot(range_pv, aes(x = predictor_value, y = temp_c, color = source, group = site))+
   geom_point(size = 0.5)+
   geom_line(size = 0.5)+
   geom_smooth(aes(group = NULL), method = "lm", se = T, linetype = "dashed", color = "black", size = 0.5)+
@@ -1445,8 +1601,635 @@ ggplot(filter(lmm_plot, measure == "range_xbar"), aes(x = predictor_value, y = t
   scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
   facet_grid(source~predictor_name, scales = "free")+
   theme(legend.position = "none")+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")), stat = "unique")+
   labs(x = "Predictor Value", y = "Mean July-Aug daily stream temp. change, C")
+tr.lmm
 ```
+
+**Stack and save:**
+
+```{r}
+lmm.viz.stack <- min.lmm.viz/mean.lmm.viz/max.lmm.viz/tr.lmm
+lmm.viz.stack
+```
+
+Save:
+
+```{r}
+ggsave("Temperature/plots/lmm_visualizations.pdf", lmm.viz.stack, device = "pdf", units = "in", dpi = "retina", height = 11, width = 8.5)
+```
+
+### 4. August-only analysis (per Stefano's Feedback):
+
+General goal: repeat LMM analyses using data from August only.
+
+Calculate august stream temp metrics; drop sites with <3 years data:
+
+```{r}
+aug_temps <- stream_source_daily %>%
+  mutate(mo = month(date1))%>% #add month column
+  filter(mo == 8)%>% #extract August
+  group_by(site, full_name, stream_code, year, lat, long)%>% #group by site and year
+  summarise(summer_xbar = mean(t_xbar, na.rm = T), 
+            max_xbar = mean(t_max, na.rm = T), 
+            min_xbar = mean(t_min, na.rm= T), #calculate mean temperature, mean daily max and min
+            range_xbar = mean(t_range, na.rm = T), #calculate mean daily temperature range
+            dd_2.5 = length(which(t_max >= 2.5)), 
+            dd_5 = length(which(t_max >= 5)),
+            dd_10 = length(which(t_max >= 10)), #calculate no. days with max temp >2.5, 5, and 10 deg
+            source = unique(source))%>% #retain source col
+  group_by(site)%>%
+  mutate(n_yrs = length(unique(year)))%>%
+  ungroup()%>%
+  filter(!n_yrs<3)
+```
+
+Add SNOTEL data; add columns with day of year for swe max and swe zero; calculate days since exposure: 
+
+```{r}
+aug_snotel <- merge(aug_temps, snotel_summary)%>% # merge
+  mutate(swe_max_doy =yday(swe_max_date), 
+         swe_zero_doy=yday(swe_zero_date), #add columns with day of year for swe max and zero
+         days_exposed=yday(mdy("08-01-2024"))-swe_zero_doy) #Calculate days since snow cover
+```
+
+Test correlation between melt duration and days since snow cover: 
+
+```{r}
+summary(lm(days_exposed~melt_days, data = aug_snotel))
+```
+
+R2 = 0.5, so strong negative correlation between the two (longer melt duration = shorter time since exposure - not surprising). Test models with both, but probably can't include in same model: 
+
+Data prep for plotting & modeling:
+
+```{r}
+aug_pivot <- aug_snotel %>%
+  dplyr::select(max_xbar, min_xbar, range_xbar, summer_xbar, source, airtemp_summer, swe_max, melt_days, site, year, days_exposed)%>%
+  pivot_longer(!c(source, airtemp_summer, swe_max, melt_days, site, year, days_exposed), names_to = "measure", values_to = "temp_c")%>%
+  mutate(transform = log10(temp_c))
+
+#for plotting model results: 
+
+aug_plot <- aug_pivot%>%
+  pivot_longer(!c(source, site, year, measure, temp_c, transform), names_to = "predictor_name", values_to = "predictor_value")
+```
+
+Nest data by source: 
+
+```{r}
+aug_nested <- aug_pivot%>%
+  nest(data = -c(source, measure))
+```
+
+#### 4A. Aug only, melt duration
+
+##### i. Maximum temp:
+
+Run LMM for each source and measure - form: 
+
+(t_max, t_min, t_range, t_ave) ~ airtemp_summer + swe_max + melt_days + random(site)
+
+```{r}
+max_aug <- filter(aug_nested, measure == "max_xbar")
+
+aug.max.lmm <- max_aug %>%
+  mutate(model = purrr::map(data, ~lmerTest::lmer(temp_c~melt_days+airtemp_summer+swe_max+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
+  mutate(p.value = round(p.value, 4))%>%
+  filter(!term == "(Intercept)")%>%
+  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)
+aug.max.lmm
+```
+
+Results: 
+
+*Subterranean ice:*
+
+No significant effects
+
+*Snowmelt:* 
+
+Significant negative correlation between max temp and max swe
+
+*Glacier:*
+
+No significant effects. 
+
+Visualization: 
+
+add p-values:
+
+```{r}
+augmax_pv <- aug_plot %>%
+  filter(measure == "max_xbar")%>%
+  merge(aug.max.lmm)
+```
+
+plot:
+
+```{r}
+aug.max.lmm.viz<-ggplot(augmax_pv, aes(x = predictor_value, y = temp_c, color = source, group = site))+
+  geom_point(size = 0.5)+
+  geom_line(size = 0.5)+
+  geom_smooth(aes(group = NULL), method = "lm", se = T, linetype = "dashed", color = "black", size = 0.5)+
+  theme_classic()+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  facet_grid(source~predictor_name, scales = "free")+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")), stat = "unique")+
+  theme(legend.position = "none", 
+        axis.title.x = element_blank())+
+  labs(x = "Predictor Value", y = "Mean maximum Aug stream temp, C")
+aug.max.lmm.viz
+```
+
+##### ii. Minimum temp:
+
+Run LMM for each source and measure - form: 
+
+(t_max, t_min, t_range, t_ave) ~ airtemp_summer + swe_max + melt_days + random(site)
+
+```{r}
+min_aug <- filter(aug_nested, measure == "min_xbar")
+
+aug.min.lmm <- min_aug %>%
+  mutate(model = purrr::map(data, ~lmerTest::lmer(temp_c~melt_days+airtemp_summer+swe_max+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
+  mutate(p.value = round(p.value, 4))%>%
+  filter(!term == "(Intercept)")%>%
+  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)
+aug.min.lmm
+```
+
+Results: 
+
+*Subterranean ice:*
+
+Significant negative correlation with max SWE
+
+*Snowmelt:* 
+
+Significant negative correlation between max SWE and stream temp
+
+*Glacier:*
+
+Significant positive correlation between summer air temp and min aug stream temp; negative with swe max
+
+Visualization: 
+add p-values:
+
+```{r}
+augmin_pv <- aug_plot %>%
+  filter(measure == "min_xbar")%>%
+  merge(aug.min.lmm)
+```
+
+plot:
+
+```{r}
+aug.min.lmm.viz<-ggplot(augmin_pv, aes(x = predictor_value, y = temp_c, color = source, group = site))+
+  geom_point(size = 0.5)+
+  geom_line(size = 0.5)+
+  geom_smooth(aes(group = NULL), method = "lm", se = T, linetype = "dashed", color = "black", size = 0.5)+
+  theme_classic()+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  facet_grid(source~predictor_name, scales = "free")+
+    geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")), stat = "unique")+
+  theme(legend.position = "none", 
+        axis.title.x = element_blank())+
+  labs(x = "Predictor Value", y = "Mean minimum Aug stream temp, C")
+aug.min.lmm.viz
+```
+
+##### iii. Average temp:
+
+Run LMM for each source and measure - form: 
+
+(t_max, t_min, t_range, t_ave) ~ airtemp_summer + swe_max + melt_days + random(site)
+
+```{r}
+mean_aug <- filter(aug_nested, measure == "summer_xbar")
+
+aug.mean.lmm <- mean_aug %>%
+  mutate(model = purrr::map(data, ~lmerTest::lmer(temp_c~melt_days+airtemp_summer+swe_max+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
+  mutate(p.value = round(p.value, 4))%>%
+  filter(!term == "(Intercept)")%>%
+  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)
+aug.mean.lmm
+```
+
+Results: 
+
+*Subterranean ice:*
+
+Significant negative correlation with max swe
+
+*Snowmelt:* 
+
+Significant negative correlation with max swe
+
+*Glacier:*
+
+Significant positive correlation with summer airtemp. 
+marginally significant negative correlation with mean swe. 
+
+Visualization: 
+
+```{r}
+augmean_pv <- aug_plot %>%
+  filter(measure == "summer_xbar")%>%
+  merge(aug.mean.lmm)
+```
+
+```{r}
+aug.mean.lmm.viz<-ggplot(augmean_pv, aes(x = predictor_value, y = temp_c, color = source, group = site))+
+  geom_point(size = 0.5)+
+  geom_line(size = 0.5)+
+  geom_smooth(aes(group = NULL), method = "lm", se = T, linetype = "dashed", color = "black", size = 0.5)+
+  theme_classic()+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  facet_grid(source~predictor_name, scales = "free")+
+    geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")), stat = "unique")+
+  theme(legend.position = "none", 
+        axis.title.x = element_blank())+
+  labs(x = "Predictor Value", y = "Mean daily Aug stream temp, C")
+aug.mean.lmm.viz
+```
+
+
+##### iv. temp range:
+
+Run LMM for each source and measure - form: 
+
+(t_max, t_min, t_range, t_ave) ~ airtemp_summer + swe_max + melt_days + random(site)
+
+```{r}
+aug_ranges <- filter(aug_nested, measure == "range_xbar")
+
+aug.range.lmm <- aug_ranges %>%
+  mutate(model = purrr::map(data, ~lmerTest::lmer(temp_c~melt_days+airtemp_summer+swe_max+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
+  mutate(p.value = round(p.value, 4))%>%
+  filter(!term == "(Intercept)")%>%
+  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)
+aug.range.lmm
+```
+
+Results: 
+
+*Subterranean ice:*
+
+No significant effects
+
+*Snowmelt:* 
+
+No significant effects
+
+*Glacier:*
+
+No significant effects.
+
+Visualization: 
+
+```{r}
+augrange_pv <- aug_plot %>%
+  filter(measure == "range_xbar")%>%
+  merge(aug.range.lmm)
+```
+
+
+```{r}
+aug.range.lmm.plot <- ggplot(augrange_pv, aes(x = predictor_value, y = temp_c, color = source, group = site))+
+  geom_point(size = 0.5)+
+  geom_line(size = 0.5)+
+  geom_smooth(aes(group = NULL), method = "lm", se = T, linetype = "dashed", color = "black", size = 0.5)+
+  theme_classic()+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  facet_grid(source~predictor_name, scales = "free")+
+  theme(legend.position = "none")+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")), stat = "unique")+
+  labs(x = "Predictor Value", y = "Mean Aug daily stream temp. change, C")
+aug.range.lmm.plot
+```
+
+
+**Stack and save:**
+
+```{r}
+aug.lmm.viz.stack <- aug.min.lmm.viz/aug.mean.lmm.viz/aug.max.lmm.viz/aug.range.lmm.plot
+aug.lmm.viz.stack
+```
+
+Save:
+
+```{r}
+ggsave("Temperature/plots/aug_lmm_visualizations.pdf", aug.lmm.viz.stack, device = "pdf", units = "in", dpi = "retina", height = 11, width = 8.5)
+```
+
+#### 4B. Aug only, days since snow cover
+
+##### i. Maximum temp:
+
+Run LMM for each source and measure - form: 
+
+(t_max, t_min, t_range, t_ave) ~ airtemp_summer + swe_max + days_exposed + random(site)
+
+```{r}
+max_aug <- filter(aug_nested, measure == "max_xbar")
+
+aug.max.exp <- max_aug %>%
+  mutate(model = purrr::map(data, ~lmerTest::lmer(temp_c~days_exposed+airtemp_summer+swe_max+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
+  mutate(p.value = round(p.value, 4))%>%
+  filter(!term == "(Intercept)")%>%
+  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)
+aug.max.exp
+```
+
+Results: 
+
+*Subterranean ice:*
+
+No significant effects
+
+*Snowmelt:* 
+
+Significant negative correlation between max temp and max swe
+
+*Glacier:*
+
+No significant effects. 
+
+Visualization: 
+
+add p-values:
+
+```{r}
+augmax_exp_pv <- aug_plot %>%
+  filter(measure == "max_xbar")%>%
+  merge(aug.max.exp)
+```
+
+plot:
+
+```{r}
+aug.max.exp.viz<-ggplot(augmax_exp_pv, aes(x = predictor_value, y = temp_c, color = source, group = site))+
+  geom_point(size = 0.5)+
+  geom_line(size = 0.5)+
+  geom_smooth(aes(group = NULL), method = "lm", se = T, linetype = "dashed", color = "black", size = 0.5)+
+  theme_classic()+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  facet_grid(source~predictor_name, scales = "free")+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")), stat = "unique")+
+  theme(legend.position = "none", 
+        axis.title.x = element_blank())+
+  labs(x = "Predictor Value", y = "Mean maximum Aug stream temp, C")
+aug.max.exp.viz
+```
+
+##### ii. Minimum temp:
+
+Run LMM for each source and measure - form: 
+
+(t_max, t_min, t_range, t_ave) ~ airtemp_summer + swe_max + days_exposed + random(site)
+
+```{r}
+min_aug <- filter(aug_nested, measure == "min_xbar")
+
+aug.min.exp <- min_aug %>%
+  mutate(model = purrr::map(data, ~lmerTest::lmer(temp_c~days_exposed+airtemp_summer+swe_max+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
+  mutate(p.value = round(p.value, 4))%>%
+  filter(!term == "(Intercept)")%>%
+  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)
+aug.min.exp
+```
+
+Results: 
+
+*Subterranean ice:*
+
+Significant negative correlation with max SWE
+
+*Snowmelt:* 
+
+Significant negative correlation between max SWE and stream temp; positive between days exposed and stream temp. 
+
+*Glacier:*
+
+Significant positive correlation between summer air temp and min aug stream temp; negative with swe max
+
+Visualization: 
+add p-values:
+
+```{r}
+augmin_exp_pv <- aug_plot %>%
+  filter(measure == "min_xbar")%>%
+  merge(aug.min.exp)
+```
+
+plot:
+
+```{r}
+aug.min.exp.viz<-ggplot(augmin_exp_pv, aes(x = predictor_value, y = temp_c, color = source, group = site))+
+  geom_point(size = 0.5)+
+  geom_line(size = 0.5)+
+  geom_smooth(aes(group = NULL), method = "lm", se = T, linetype = "dashed", color = "black", size = 0.5)+
+  theme_classic()+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  facet_grid(source~predictor_name, scales = "free")+
+    geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")), stat = "unique")+
+  theme(legend.position = "none", 
+        axis.title.x = element_blank())+
+  labs(x = "Predictor Value", y = "Mean minimum Aug stream temp, C")
+aug.min.exp.viz
+```
+
+##### iii. Average temp:
+
+Run LMM for each source and measure - form: 
+
+(t_max, t_min, t_range, t_ave) ~ airtemp_summer + swe_max + days_exposed + random(site)
+
+```{r}
+mean_aug <- filter(aug_nested, measure == "summer_xbar")
+
+aug.mean.exp <- mean_aug %>%
+  mutate(model = purrr::map(data, ~lmerTest::lmer(temp_c~days_exposed+airtemp_summer+swe_max+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
+  mutate(p.value = round(p.value, 4))%>%
+  filter(!term == "(Intercept)")%>%
+  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)
+aug.mean.exp
+```
+
+Results: 
+
+*Subterranean ice:*
+
+Significant negative correlation with max swe
+
+*Snowmelt:* 
+
+Significant negative correlation with max swe
+
+*Glacier:*
+
+Marginally significant positive correlation with summer airtemp. 
+
+Visualization: 
+
+```{r}
+augmean_exp_pv <- aug_plot %>%
+  filter(measure == "summer_xbar")%>%
+  merge(aug.mean.exp)
+```
+
+```{r}
+aug.mean.exp.viz<-ggplot(augmean_exp_pv, aes(x = predictor_value, y = temp_c, color = source, group = site))+
+  geom_point(size = 0.5)+
+  geom_line(size = 0.5)+
+  geom_smooth(aes(group = NULL), method = "lm", se = T, linetype = "dashed", color = "black", size = 0.5)+
+  theme_classic()+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  facet_grid(source~predictor_name, scales = "free")+
+    geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")), stat = "unique")+
+  theme(legend.position = "none", 
+        axis.title.x = element_blank())+
+  labs(x = "Predictor Value", y = "Mean daily Aug stream temp, C")
+aug.mean.exp.viz
+```
+
+
+##### iv. temp range:
+
+Run LMM for each source and measure - form: 
+
+(t_max, t_min, t_range, t_ave) ~ airtemp_summer + swe_max + days_exposed + random(site)
+
+```{r}
+aug_ranges <- filter(aug_nested, measure == "range_xbar")
+
+aug.range.exp <- aug_ranges %>%
+  mutate(model = purrr::map(data, ~lmerTest::lmer(temp_c~days_exposed+airtemp_summer+swe_max+(1|site), data = .)%>% #run a model of temp~year for each site (referenced by "."); store results in new column called "model"
+                     broom.mixed::tidy(effects="fixed", conf.int = TRUE)))%>% #tidy function to construct a summary table with model results (seperate tables for each site)
+  unnest(model)%>% #unnest model column to get rows for each site, columns for model metrics
+  mutate(p.value = round(p.value, 4))%>%
+  filter(!term == "(Intercept)")%>%
+  dplyr::select(source, term, estimate, std.error, statistic, df, p.value)%>%
+  rename(predictor_name = term)
+aug.range.exp
+```
+
+Results: 
+
+*Subterranean ice:*
+
+No significant effects
+
+*Snowmelt:* 
+
+No significant effects
+
+*Glacier:*
+
+No significant effects.
+
+Visualization: 
+
+```{r}
+augrange_exp_pv <- aug_plot %>%
+  filter(measure == "range_xbar")%>%
+  merge(aug.range.exp)
+```
+
+
+```{r}
+aug.range.exp.plot <- ggplot(augrange_exp_pv, aes(x = predictor_value, y = temp_c, color = source, group = site))+
+  geom_point(size = 0.5)+
+  geom_line(size = 0.5)+
+  geom_smooth(aes(group = NULL), method = "lm", se = T, linetype = "dashed", color = "black", size = 0.5)+
+  theme_classic()+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  facet_grid(source~predictor_name, scales = "free")+
+  theme(legend.position = "none")+
+  geom_text_npc(aes(npcx = 0.9, npcy = 0.1, label = paste( "P = ",round(p.value, 2), sep = "")), stat = "unique")+
+  labs(x = "Predictor Value", y = "Mean Aug daily stream temp. change, C")
+aug.range.exp.plot
+```
+
+
+**Stack and save:**
+
+```{r}
+aug.exp.viz.stack <- aug.min.exp.viz/aug.mean.exp.viz/aug.max.exp.viz/aug.range.exp.plot
+aug.exp.viz.stack
+```
+
+Save:
+
+```{r}
+ggsave("Temperature/plots/aug_lmm_exposure.pdf", aug.exp.viz.stack, device = "pdf", units = "in", dpi = "retina", height = 11, width = 8.5)
+```
+
+
+#### 4C. Model Diagnostics
+
+First, need to get lmer outputs for all of these models. Using a for loop: 
+
+```{r}
+aug_pivot<-mutate(aug_pivot, comb = paste(source, measure, sep = ", "))
+
+mod.list <- list()
+df.mod.list<-list()
+diag.list<-list()
+combs<-unique(aug_pivot$comb)
+
+```
+
+
+```{r}
+for(i in 1:length(combs)){
+  temp<-filter(aug_pivot, comb == comb[i])
+  mod<-lmerTest::lmer(temp_c~days_exposed+airtemp_summer+swe_max+(1|site), 
+                                data = temp
+                                  )
+  df_mod <- broom.mixed::augment(mod)
+  df_mod[".stdresid"] <- resid(mod, type = "pearson")
+  
+  df.mod.list[[i]]<-df_mod
+  mod.list[[i]]<-mod
+  
+  resid<-ggplot(df.mod.list[[i]], aes(x = .fitted, y = .resid))+
+    geom_point()+
+    geom_hline(yintercept = 0)+
+    labs(title = paste("Residuals", combs[i], sep = " - "))
+  qq<- ggplot(df.mod.list[[i]], aes(sample = .stdresid)) +
+  geom_qq() +
+  geom_qq_line()+
+    labs(title = paste("QQ Plot", combs[i], sep = " - "))
+  diag.list[[i]]<-resid|qq
+}
+
+diag.list[[4]]
+```
+
+
 
 ## II. Invertebrates:
 

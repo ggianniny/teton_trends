@@ -13,6 +13,13 @@ source_info <- read.csv("source_info.csv")%>%
 temp_clean <- read_csv("Temperature/cleaned_full_datasets/temps_hourly.csv")
 
 unique(temp_clean$site)
+unique(temp_clean$year)
+
+temp_clean |>
+  filter(date1 > "2022-01-01") |>
+  select(date1, year) |>
+  mutate(year_correct = year(date1))|>
+  distinct()
 
 temp_clean <- left_join(temp_clean,
                         source_info)
@@ -22,14 +29,20 @@ temp_aug <- temp_clean %>%
   select(temp_c, year, month, source, site) %>%
   filter(!is.na(temp_c),
          !is.na(source),
-         !year == 2023,
+         #!year == 2023,
          month == 8,
          site != "silver_run") %>%
   mutate(year_s = (year - mean(year)) / sd(year),
          temp_s = (temp_c - mean(temp_c)) / sd(temp_c))
 
+# temp_aug |>
+#   filter(year > 2022) |>
+#   select(year) |>
+#   #mutate(year_correct = year(date1))|>
+#   distinct()
+
 temp_aug %>%
-  ggplot(aes(x = year_s,
+  ggplot(aes(x = year,
              y = temp_s, 
              color = site)) +
   geom_point() +
@@ -37,7 +50,7 @@ temp_aug %>%
   stat_smooth(method = "lm", 
               inherit.aes = FALSE,
               color = "black",
-              aes(x = year_s, y = temp_s)) +
+              aes(x = year, y = temp_s)) +
   facet_wrap(~source, scales = "free_y")
 
 get_prior(temp_s ~ year_s * source + (1 + year_s |site) + (1|year_s),
@@ -62,6 +75,7 @@ brm1 <- update(brm1,
                chains = 4,
                cores = 4,
                iter = 2000)
+
 
 # save the output
 saveRDS(brm1, "Temperature/brms_models/fit_rand_slopes.rds")
@@ -108,6 +122,8 @@ brm1 %>%
   mutate(year_pos = b_year_s > 0) %>%
   summarize(mean(year_pos))
 # 52.7%  +
+# 2024-09 --> 40.8%
+
 # sub ice
 brm1 %>%
   spread_draws(b_Intercept, 
@@ -119,6 +135,7 @@ brm1 %>%
          sub_pos = sub > 0) %>%
   summarize(mean(sub_pos))
 # 62% +
+# 2024-09 --> 55.4%
 
 # Snow
 brm1 %>%
@@ -129,6 +146,7 @@ brm1 %>%
          snow_pos = snow > 0) %>%
   summarize(mean(snow_pos))
 # 99.6% +
+# 2024-09 --> 99.4%
 
 
 # calculate mean and sd of original data 
@@ -179,17 +197,32 @@ fixef(brm1)
 # glacier
 fixef(brm1)[2,1] * (sd_temp / sd_year)
 # increase of 0.017C per year
+# 2024-09 --> -0.055
+
 # snowmelt
 (fixef(brm1)[2,1]+fixef(brm1)[5,1]) * (sd_temp / sd_year)
 # increase of 0.806C per year
+# 2024-09 --> +0.676
+
 # Sub
 (fixef(brm1)[2,1]+fixef(brm1)[6,1]) * (sd_temp / sd_year)
 # increase of 0.088C per year
+# 2024-09 --> 0.027
+
 
 brm1$data
+max(brm1$data$year_s)
+# 2024 run max = 1.696
+brm1$data$year_s %>% unique() %>% sort()
+# 2024 run difference = 
+1.6960715 - 1.2375859
+# 0.4584856
+1.6960715 + 0.4584856
+# 2.154557
+# UPDATE ????????
 # new year = 1.722[max year_s] + 0.529 [difference between year_s] = 2.251
 pred_data <- expand_grid(source = unique(brm1$data$source),
-                         year_s = c(1.722, 2.251))
+                         year_s = c(1.696, 2.155))
 
 # predict temperature in new year
 # add epred draws for new year
@@ -201,7 +234,7 @@ preds <-add_epred_draws(
 conditional_effects(brm1, effects = "year_s:source")
 
 preds %>%
-  filter(year_s == 2.251) %>%
+  filter(year_s == 2.155) %>%
   mutate(fill = .epred > 0) %>%
   mutate(.epred = (.epred/sd_temp)) %>%
   ggplot(aes(x = .epred,
@@ -217,5 +250,5 @@ preds %>%
   stat_halfeye() +
   theme_bw() +
   labs(x = "Temperature change, Celsius",
-       title = "Predicted Temperature Change in 2024") +
+       title = "Predicted Temperature Change in 2025") +
   guides(fill=guide_legend(title="Prediction"))

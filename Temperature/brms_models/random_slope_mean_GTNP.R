@@ -79,11 +79,13 @@ brm1 <- update(brm1,
                iter = 2000)
 tictoc::toc()
 # 2024-11-25 = ~01:20:00
+# 2024-12-03 = (all 2024 data) = 
 
 # save the output
 saveRDS(brm1, "Temperature/brms_models/fit_rand_slopes_aug_GTNP.rds")
 # brm1 <- readRDS("Temperature/brms_models/fit_rand_slopes_aug_GTNP.rds")
 plot(brm1)
+pairs(brm1)
 
 pp_check(brm1,
          type = "stat_grouped",
@@ -125,6 +127,7 @@ brm1 %>%
   mutate(year_pos = b_year_s > 0) %>%
   summarize(mean(year_pos))
 # 69.2% +
+# 2024-12-03 = (all 2024 data) = 92.2% +
 
 # sub ice
 brm1 %>%
@@ -137,6 +140,7 @@ brm1 %>%
          sub_pos = sub > 0) %>%
   summarize(mean(sub_pos))
 # 74% +
+# 2024-12-03 = (all 2024 data) = 80.6%+
 
 # Snow
 brm1 %>%
@@ -147,6 +151,7 @@ brm1 %>%
          snow_pos = snow > 0) %>%
   summarize(mean(snow_pos))
 # 99.4% +
+# 2024-12-03 = (all 2024 data) = 99.3%+
 
 
 # calculate mean and sd of original data 
@@ -197,29 +202,33 @@ fixef(brm1)
 # glacier
 fixef(brm1)[2,1] * (sd_temp / sd_year)
 # increase of 0.140
+# 2024-12-03 = (all 2024 data) = 0.27
 
 # snowmelt
 (fixef(brm1)[2,1]+fixef(brm1)[5,1]) * (sd_temp / sd_year)
 # increase of 0.999
+# 2024-12-03 = (all 2024 data) = 1.06
 
 # Sub
 (fixef(brm1)[2,1]+fixef(brm1)[6,1]) * (sd_temp / sd_year)
 # increase of 0.225
+# 2024-12-03 = (all 2024 data) = 0.22
 
 
 brm1$data
+sort(round(unique(brm1$data$year_s) * sd_year + mean_year))
 max(brm1$data$year_s)
-# 2024 run max = 1.696
-brm1$data$year_s %>% unique() %>% sort()
-# 2024 run difference = 
-1.6960715 - 1.2375859
-# 0.4584856
-1.6960715 + 0.4584856
-# 2.154557
-# UPDATE ????????
-# new year = 1.722[max year_s] + 0.529 [difference between year_s] = 2.251
+# 2024 run max = 1.477339
+year_s_vector <- brm1$data$year_s %>% unique() %>% sort()
+year_s_vector
+# difference between standardized years
+# max year - penultimate max year
+year_diff <- year_s_vector[length(year_s_vector)] - year_s_vector[(length(year_s_vector)-1)] 
+year_diff
+new_year <- year_s_vector[length(year_s_vector)] + year_diff
+new_year
 pred_data <- expand_grid(source = unique(brm1$data$source),
-                         year_s = c(1.696, 2.155))
+                         year_s = c(new_year, new_year +year_diff))
 
 # predict temperature in new year
 # add epred draws for new year
@@ -231,7 +240,7 @@ preds <-add_epred_draws(
 conditional_effects(brm1, effects = "year_s:source")
 
 preds %>%
-  filter(year_s == 2.155) %>%
+  filter(year_s == new_year) %>%
   mutate(fill = .epred > 0) %>%
   mutate(.epred = (.epred/sd_temp)) %>%
   ggplot(aes(x = .epred,

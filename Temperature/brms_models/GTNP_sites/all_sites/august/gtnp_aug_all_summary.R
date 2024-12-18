@@ -14,35 +14,40 @@ pairs(brm1)
 pp_check(brm1,
          type = "stat_grouped",
          group = "source")
-pp_check(brm1,
-         type = "stat_grouped",
-         group = "year_s")
-pp_check(brm1)
-pp_check(brm1,
-         type = "boxplot")
-pp_check(brm1,
-         type = "dens_overlay_grouped",
-         group = "source")
-pp_check(brm1,
-         ndraws = 100,
-         type = "scatter_avg_grouped",
-         group = "source")
+# pp_check(brm1,
+#          type = "stat_grouped",
+#          group = "year_s")
+# #pp_check(brm1)
+# pp_check(brm1,
+#          type = "boxplot")
+# pp_check(brm1,
+#          type = "dens_overlay_grouped",
+#          group = "source")
+# pp_check(brm1,
+#          ndraws = 100,
+#          type = "scatter_avg_grouped",
+#          group = "source")
 
 # model summaries ####
 summary(brm1)
 coef(brm1)$site[,,"year_s"]
 coef(brm1)
 
-bayes_R2(object = brm1)
+bayes_R2(object = brm1) # 59%
 
 conditional_effects(brm1)
 
 # plot individual sites through time  
 get_variables(brm1)
 
-fit_data <- brm1$data |>
-  select(source, year_s, site) |>
+# calculate mean and sd of original data 
+fit_data_orig <- readRDS(paste(write_dir, 
+                               "/fit_data.rds",
+                               sep = ""))
+fit_data_orig |>
+  select(site) |>
   distinct()
+
 # add new years here
 year_s_vector <- brm1$data$year_s %>% unique() %>% sort()
 # difference between standardized years

@@ -43,6 +43,10 @@ temp_aug <- temp_clean %>%
   mutate(year_s = (year - mean(year)) / sd(year),
          temp_s = (temp_c - mean(temp_c)) / sd(temp_c))
 
+saveRDS(temp_aug, paste(write_dir, 
+                        "/fit_data.rds",
+                        sep = ""))
+
 temp_aug %>%
   ggplot(aes(x = year,
              y = temp_c, 

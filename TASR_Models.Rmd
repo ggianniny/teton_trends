@@ -490,7 +490,6 @@ summary(models[[2]])
 summary(models[[3]])
 summary(models[[4]])
 ```
-
 Check diagnostic plots: 
 
 ```{r}

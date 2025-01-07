@@ -75,3 +75,4 @@ saveRDS(brm1, paste(write_dir,
 
 # mathematical model ####
 # need to write out mathematical model and likelihood
+

@@ -7,7 +7,7 @@ library(tidybayes)
 write_dir <- "Temperature/brms_models/all_sites/august"
 
 brm1 <- readRDS("Temperature/brms_models/all_sites/august/fit_rand_slopes_aug.rds")
-plot(brm1)
+# plot(brm1)
 # pairs(brm1)
 
 # posterior predictions ####
@@ -33,7 +33,7 @@ summary(brm1)
 # coef(brm1)$site[,,"year_s"]
 # coef(brm1)
 
-bayes_R2(object = brm1) # 63.3%
+bayes_R2(object = brm1) # 63.4%
 
 conditional_effects(brm1)
 
@@ -246,7 +246,7 @@ snow_pos <- brm1 %>%
   mutate(source = "snow_melt")
 
 
-prob_pos_df <- bind_rows(glac_pos, sub_pos, snow_pos)
+(prob_pos_df <- bind_rows(glac_pos, sub_pos, snow_pos))
 write_csv(prob_pos_df,
           file = paste(write_dir, "/prob_slope_positive.csv", 
                        sep = ""))

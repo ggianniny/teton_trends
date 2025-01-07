@@ -44,9 +44,31 @@ temp_aug <- temp_clean %>%
          month == 8) %>%
   mutate(year_s = (year - mean(year)) / sd(year),
          temp_s = (temp_c - mean(temp_c)) / sd(temp_c))
-temp_clean |>
+
+temp_aug |>
   select(site) |> 
   distinct()
+
+temp_aug |>
+  group_by(year, site) |> 
+  count() |>
+  arrange(desc(year), desc(site))
+
+# remove windcave in 2024
+# Logger was exposed to air when data was downloaded
+
+dim(temp_aug)
+temp_aug <- temp_aug |>
+  mutate(rm = site == "windcave" & year == 2024) |>
+  filter(rm == FALSE) |>
+  select(-rm)
+
+temp_aug |>
+  dim()
+temp_aug |>
+  group_by(year, site) |> 
+  count() |>
+  arrange(desc(site))
 
 saveRDS(temp_aug, paste(write_dir, 
                         "/fit_data.rds",
@@ -74,7 +96,7 @@ my_prior <- c(prior(normal(0,0.5), class = b),
 
 # fit "quick" model
 # make sure it works, and avoid need to compile each time. 
-brm1 <- brm(temp_s ~ year_s * source +
+brm1 <- brm(temp_s ~ year_s + source + year_s:source +
               (1 + year_s |site) + (1|year_s),
             data = temp_aug,
             prior = my_prior,
@@ -83,10 +105,12 @@ brm1 <- brm(temp_s ~ year_s * source +
 
 # update the above model with more chains, cores, and iterations
 tictoc::tic()
-brm1 <- update(brm1,
-               chains = 4,
-               cores = 4,
-               iter = 2000)
+brm1 <- update(
+  brm1,
+  chains = 4,
+  cores = 4,
+  iter = 200,
+  save_pars = save_pars(all = TRUE))
 tictoc::toc()
 # 2024-12-17 = 3.3 hours
 
@@ -94,3 +118,67 @@ tictoc::toc()
 saveRDS(brm1, paste(write_dir,
                     "/fit_rand_slopes_aug.rds", 
                     sep = ""))
+
+# change models and compare
+tictoc::tic()
+brm2 <- brm(temp_s ~ year_s + source + year_s:source +
+              (1|site) + (1|year_s),
+            data = temp_aug,
+            prior = my_prior,
+            iter = 10,
+            chains = 1)
+tictoc::toc()
+
+tictoc::tic()
+brm2 <- update(brm2,
+               chains = 4,
+               cores = 4,
+               iter = 2000,
+               save_pars = save_pars(all = TRUE))
+tictoc::toc()
+
+saveRDS(brm2, paste(write_dir,
+                    "/fit_slopes_aug.rds", 
+                    sep = ""))
+
+brm3 <- brm(temp_s ~ year_s + source + 
+              (1|site) + (1|year_s),
+            data = temp_aug,
+            prior = my_prior,
+            iter = 10,
+            chains = 1)
+
+tictoc::tic()
+brm3 <- update(brm3,
+               chains = 4,
+               cores = 4,
+               iter = 2000,
+               save_pars = save_pars(all = TRUE))
+tictoc::toc()
+saveRDS(brm3, paste(write_dir,
+                    "/fit_no-interaction-slopes_aug.rds", 
+                    sep = ""))
+
+
+brm4 <- brm(temp_s ~ year_s + 
+              (1|site) + (1|year_s),
+            data = temp_aug,
+            prior = my_prior,
+            iter = 10,
+            chains = 1)
+tictoc::tic()
+brm4 <- update(brm4,
+               chains = 4,
+               cores = 4,
+               iter = 2000,
+               save_pars = save_pars(all = TRUE))
+tictoc::toc()
+saveRDS(brm4, paste(write_dir,
+                    "/fit_no-source_aug.rds", 
+                    sep = ""))
+
+loo1 <- loo(brm1, moment_match = TRUE)
+loo2 <- loo(brm2, moment_match = TRUE)
+loo3 <- loo(brm3, moment_match = TRUE)
+loo4 <- loo(brm4, moment_match = TRUE)
+loo_compare(loo1, loo2, loo3, loo4)

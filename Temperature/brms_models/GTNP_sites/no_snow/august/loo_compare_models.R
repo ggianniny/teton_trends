@@ -23,7 +23,4 @@ loo3 <- loo(brm3)#, moment_match = TRUE)
 loo4 <- loo(brm4)#, moment_match = TRUE)
 loo_compare(loo1, loo2, loo3, loo4)
 
-# if this doesn't work, add following to model fits:
-# update(... ,
-  # save_pars = save_pars(all = TRUE),
-  # ...
+# < 4, models are similar; here, diff is >130

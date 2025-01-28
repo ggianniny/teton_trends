@@ -202,8 +202,8 @@ For April 1st 2015 - March 1st 2023 for both sites. On average, peak snowpack fo
 Data import and some re-formatting: 
 
 ```{r}
-snotel <- read.csv("teton_snotel.csv")%>% #read in file
-  mutate(date = as.Date(date, format = "%m/%d/%y"), #re-code date column as R date obj
+snotel <- read.csv("teton_snotel24.csv")%>% #read in file
+  mutate(date = mdy(date), #re-code date column as R date obj
          airtemp_c = as.numeric(airtemp_c), #recode air temperature as numeric
          snowdepth_cm = as.numeric(snowdepth_cm)) 
 ```

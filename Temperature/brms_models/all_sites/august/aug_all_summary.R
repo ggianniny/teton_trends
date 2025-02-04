@@ -22,9 +22,16 @@ brm1 <- readRDS("Temperature/brms_models/all_sites/august/fit_rand_slopes_aug.rd
 # plot(brm1)
 # pairs(brm1)
 
+brm1$data |>
+  distinct(site, source) |>
+  arrange(source)
+
 # posterior predictions ####
+pp_check(brm1,
+         type = "stat_grouped",
+         group = "source")
 # pp_check(brm1,
-#          type = "stat_grouped",
+#          type = "violin_grouped",
 #          group = "source")
 # pp_check(brm1,
 #          type = "stat_grouped",
@@ -46,6 +53,7 @@ summary(brm1)
 # coef(brm1)
 
 mod_r2 <- bayes_R2(object = brm1)
+mod_r2
 write_csv(as.data.frame(mod_r2), paste(write_dir, 
                         "/best_mod_r2.csv",
                         sep = ""))
@@ -60,8 +68,9 @@ fit_data_orig <- readRDS(paste(write_dir,
                                "/fit_data.rds",
                                sep = ""))
 fit_data_orig |>
-  select(site) |>
-  distinct()
+  select(site, source) |>
+  distinct() |>
+  arrange(source)
 
 # # add new years here ####
 # Need to fix this, if we decide to do it ####

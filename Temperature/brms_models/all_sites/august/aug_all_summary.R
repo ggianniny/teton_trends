@@ -4,25 +4,44 @@ library(tidyverse)
 library(brms)
 library(tidybayes)
 
+my_ggsave <- function(
+    filename = default_name(plot),
+    height= 8,
+    width= 8,
+    dpi= 200, ...) {
+  ggsave(filename=filename,
+         height=height,
+         width=width,
+         dpi=dpi,
+         ...)
+}
+
 write_dir <- "Temperature/brms_models/all_sites/august"
 
 brm1 <- readRDS("Temperature/brms_models/all_sites/august/fit_rand_slopes_aug.rds")
-plot(brm1)
+# plot(brm1)
 # pairs(brm1)
+
+brm1$data |>
+  distinct(site, source) |>
+  arrange(source)
 
 # posterior predictions ####
 pp_check(brm1,
          type = "stat_grouped",
          group = "source")
 # pp_check(brm1,
+#          type = "violin_grouped",
+#          group = "source")
+# pp_check(brm1,
 #          type = "stat_grouped",
 #          group = "year_s")
 # #pp_check(brm1)
 # pp_check(brm1,
 #          type = "boxplot")
-pp_check(brm1,
-         type = "dens_overlay_grouped",
-         group = "source")
+# pp_check(brm1,
+#          type = "dens_overlay_grouped",
+#          group = "source")
 # pp_check(brm1,
 #          ndraws = 100,
 #          type = "scatter_avg_grouped",
@@ -33,9 +52,13 @@ summary(brm1)
 # coef(brm1)$site[,,"year_s"]
 # coef(brm1)
 
-bayes_R2(object = brm1) # 63.3%
+mod_r2 <- bayes_R2(object = brm1)
+mod_r2
+write_csv(as.data.frame(mod_r2), paste(write_dir, 
+                        "/best_mod_r2.csv",
+                        sep = ""))
 
-conditional_effects(brm1)
+# conditional_effects(brm1)
 
 # plot individual sites through time  
 get_variables(brm1)
@@ -45,8 +68,9 @@ fit_data_orig <- readRDS(paste(write_dir,
                                "/fit_data.rds",
                                sep = ""))
 fit_data_orig |>
-  select(site) |>
-  distinct()
+  select(site, source) |>
+  distinct() |>
+  arrange(source)
 
 # # add new years here ####
 # Need to fix this, if we decide to do it ####
@@ -113,7 +137,9 @@ pred_plot <- add_predicted_draws(
              position = position_jitter(
                width = 35,
                height = NULL)) +
-  facet_wrap(source~site) +
+  facet_wrap(source~site,
+             ncol = 3,
+             scales = "free_y") +
   theme_bw() +
   labs(title = "Predicted Temperatures",
        subtitle = "Ribbon shows predictions for new data",
@@ -127,7 +153,7 @@ pred_plot <- add_predicted_draws(
                                 "slategrey")) 
 pred_plot
 
-ggsave(plot = pred_plot,
+my_ggsave(plot = pred_plot,
        filename = paste(write_dir, "/Predicted_temps.png", 
                         sep = ""))
 
@@ -161,7 +187,8 @@ fit_plot <- add_epred_draws(
   #                color = source),
   #            inherit.aes = FALSE) +
   facet_wrap(source~site,
-             scales = "free_y") +
+             scales = "free_y",
+             ncol = 3) +
   theme_bw() +
   labs(title = "Fitted August Temperatures",
        subtitle = "Ribbon is 95% CrI for mean temperature",
@@ -175,7 +202,7 @@ fit_plot <- add_epred_draws(
                                 "slategrey"))
 fit_plot
 
-ggsave(plot = fit_plot,
+my_ggsave(plot = fit_plot,
        filename = paste(write_dir, "/fitted_temps.png", 
                         sep = ""))
 
@@ -188,7 +215,7 @@ fit_spag <- add_epred_draws(newdata = fit_data_obs_years,
   ggplot(aes(x = year_s, y = .epred, color = source)) +
   geom_line(aes(y = .epred, group = paste(site, .draw)),
             alpha = .2) +
-  facet_wrap(source~site) +
+  facet_wrap(source~site, ncol = 3) +
   theme_bw() +
   labs(title = "Fitted August Temperatures",
        subtitle = "Spaghetti Plot, 100 draws",
@@ -204,7 +231,7 @@ fit_spag <- add_epred_draws(newdata = fit_data_obs_years,
   geom_abline()
 fit_spag
 
-ggsave(plot = fit_spag,
+my_ggsave(plot = fit_spag,
        filename = paste(write_dir, "/fitted_spaghetti.png", 
                         sep = ""))
 
@@ -246,7 +273,7 @@ snow_pos <- brm1 %>%
   mutate(source = "snow_melt")
 
 
-prob_pos_df <- bind_rows(glac_pos, sub_pos, snow_pos)
+(prob_pos_df <- bind_rows(glac_pos, sub_pos, snow_pos))
 write_csv(prob_pos_df,
           file = paste(write_dir, "/prob_slope_positive.csv", 
                        sep = ""))
@@ -305,14 +332,14 @@ source_slope_halfeye <- ggplot(b_year,
                          round(glac_pos[1,1],2),
                          sep = " ")) +
   annotate("text", # snow
-           x = 1, 
+           x = 0.65, 
            y = 2.5,
            label = paste("P(Positive)",
                          round(snow_pos[1,1],3),
                          sep = " "))
 
 source_slope_halfeye
-ggsave(plot = source_slope_halfeye,
+my_ggsave(plot = source_slope_halfeye,
        filename = paste(write_dir, "/source_slope_halfeye.png", 
                         sep = ""))
 
@@ -377,7 +404,7 @@ source_slope_epred <- add_epred_draws(
                                 "slategrey"))
   
 source_slope_epred
-ggsave(plot = source_slope_epred,
+my_ggsave(plot = source_slope_epred,
        filename = paste(write_dir, "/source_slope_epred.png", 
                         sep = ""))
 
@@ -405,6 +432,6 @@ source_spag <- add_epred_draws(newdata = source_data,
                                 "springgreen4",
                                 "slategrey"))
 source_spag
-ggsave(plot = source_spag,
+my_ggsave(plot = source_spag,
        filename = paste(write_dir, "/source_slope_spag.png", 
                         sep = ""))

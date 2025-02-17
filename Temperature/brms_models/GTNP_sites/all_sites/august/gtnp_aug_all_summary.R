@@ -7,13 +7,15 @@ library(tidybayes)
 write_dir <- "Temperature/brms_models/GTNP_sites/all_sites/august"
 
 brm1 <- readRDS("Temperature/brms_models/GTNP_sites/all_sites/august/fit_rand_slopes_aug_GTNP.rds")
-plot(brm1)
-pairs(brm1)
+# plot(brm1)
+# pairs(brm1)
 
 # posterior predictions ####
-pp_check(brm1,
-         type = "stat_grouped",
-         group = "source")
+
+# pp_check(brm1,
+#          type = "stat_grouped",
+#          group = "source")
+
 # pp_check(brm1,
 #          type = "stat_grouped",
 #          group = "year_s")
@@ -35,7 +37,7 @@ coef(brm1)
 
 bayes_R2(object = brm1) # 59%
 
-conditional_effects(brm1)
+# conditional_effects(brm1)
 
 # plot individual sites through time  
 get_variables(brm1)

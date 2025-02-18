@@ -12,6 +12,7 @@ library(lubridate) #For working with dates
 library(ggplot2) #Plotting
 library(RColorBrewer)
 library(patchwork)
+library(cpop)
 select<-dplyr::select
 mutate<-dplyr::mutate
 rename<-dplyr::rename
@@ -724,11 +725,12 @@ Cleaning year-by year - General approach:
 Plot:
 
 ```{r}
-ggplot(filter(pb.air, Date >= "2018-08-20" & Date <= "2018-10-14"), aes(x = Date, y = temp_c, color = measure))+
+pb.18<-ggplot(filter(pb.air, Date >= "2018-08-20" & Date <= "2018-10-14"), aes(x = Date, y = temp_c, color = measure))+
   geom_line()+
   theme_classic()+
   labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
   scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
+pb.18
 ```
 
 Problem period is **8/21-10/13/18**. Save these dates for later: 
@@ -742,11 +744,12 @@ exposure.18 <- seq.Date(from = as.Date("2018-08-21"), to = as.Date("2018-10-13")
 Plot:
 
 ```{r}
-ggplot(filter(pb.air, Date >= "2019-08-23" & Date <= "2019-10-02"), aes(x = Date, y = temp_c, color = measure))+
+pb.19<-ggplot(filter(pb.air, Date >= "2019-08-23" & Date <= "2019-10-02"), aes(x = Date, y = temp_c, color = measure))+
   geom_line()+
   theme_classic()+
   labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
   scale_color_manual(values = c("#984EA3","#FF7F00","#377EB8"), labels = c("Phillips (Air)", "Targhee (Air)", "Paintbrush (Stream)"))
+pb.18
 ```
 
 Problem period is **08-23 to 10-02**. Save these dates for later: 
@@ -876,12 +879,108 @@ ggplot(filter(fully_cleaned6, site == "paintbrush"), aes(x = date1, y = temp_c))
 
 Appears to have successfully removed the desired sections from each year - use this file (fully_cleaned5) for future calculations and analysis.
 
-### C1. S AK Basin
+#### IV. S AK Basin
 
-Checking for errors/exposure in 2019 and 2020:
+##### A. Removing extra measurements from 2016 & 2017
+
+First, plot n obs to identify error:
 
 ```{r}
-ggplot(filter(fully_cleaned6, site == "s_ak_basin", year ==2019|year==2020e), aes(x = date1, y = temp_c))+
+fully_cleaned6%>%
+  filter(site=="s_ak_basin")%>%
+  mutate(year=year(date1))%>%
+  group_by(year)%>%
+  summarise(n_obs = length(temp_c))%>%
+  ggplot(aes(x = year, y = n_obs))+
+  geom_bar(stat="identity", position = "dodge")+
+  scale_x_continuous(breaks=c(2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024))
+```
+
+Years with 15min logging interval are 2016 and 2017. 
+
+Goal = average each set of 4 logging intervals with same date_tm
+
+```{r}
+fully_cleaned7 <- fully_cleaned6%>%
+  group_by(date_tm, date1, site, year)%>% #group by date_tm to combine non-unique values, retain other cols
+  summarise(temp_c = mean(temp_c), 
+         temp_raw = mean(temp_raw)) #calculate mean of 15min readings to get hourly reading
+
+head(filter(fully_cleaned7, site=="s_ak_basin"))
+```
+
+Check if successful:
+
+```{r}
+fully_cleaned7%>%
+  filter(site=="s_ak_basin")%>%
+  mutate(year=year(date1))%>%
+  group_by(year)%>%
+  summarise(n_obs = length(temp_c))%>%
+  ggplot(aes(x = year, y = n_obs))+
+  geom_bar(stat="identity", position = "dodge")+
+  scale_x_continuous(breaks=c(2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024))
+```
+
+Seems to have worked - reality check length of time for 2016 and 17:
+
+```{r}
+ggplot(filter(fully_cleaned7, site == "s_ak_basin"), aes(x = date1, y = temp_c))+
+  geom_point()+
+  theme_classic()
+```
+
+##### B. 2019 & 2020 problem areas
+
+Manual removal of overlap between stream temp + Grand Targhee air temp. 
+
+Combine Airtemp + S AK Basin Data:
+
+```{r}
+s_ak <- filter(fully_cleaned7, site == "s_ak_basin")%>% #select data for paintbrush
+  mutate(Date = ymd(date1))%>% #extract just date w/out time from date_tm col
+  group_by(Date, year)%>% #group by day
+  summarise(stream_temp = mean(temp_c, na.rm = T), 
+            temp_range = (max(temp_c, na.rm = T)-min(temp_c, na.rm = T))) #calculate mean daily temp
+
+s_ak.air <- merge(s_ak, airtemp, all = T)%>% #merge with air temps
+  pivot_longer(!c(Date, year, temp_range), names_to = "measure", values_to = "temp_c")%>% #pivot longer for plotting
+  mutate(measure = if_else(measure == "stream_temp", "z_sak_t", measure), 
+         year = year(Date))
+
+```
+
+**2019**
+
+```{r}
+sak.19<- ggplot(filter(s_ak.air, Date >= "2019-08-10" & Date <= "2019-10-19", measure == "z_sak_t"|measure=="targhee_c"), aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
+  scale_color_manual(values = c("#FF7F00","#377EB8"), labels = c("Targhee (Air)", "S AK Basin (Stream)"))
+sak.19
+```
+
+**2020**
+
+```{r}
+sak.20<-ggplot(filter(s_ak.air, Date >= "2020-08-10" & Date <= "2020-11-01", measure == "z_sak_t"|measure=="targhee_c"), aes(x = Date, y = temp_c, color = measure))+
+  geom_line()+
+  theme_classic()+
+  labs(x = "Date", y = "Mean Daily Temperature, C", color = "Temp. Type")+
+  scale_color_manual(values = c("#FF7F00","#377EB8"), labels = c("Targhee (Air)", "S AK Basin (Stream)"))
+sak.20
+```
+
+
+Not an exact match in either year - comparison with paintbrush: 
+
+```{r}
+(sak.19|sak.20)/(pb.18|pb.19)
+```
+
+```{r}
+ggplot(filter(fully_cleaned7, site == "s_ak_basin", year ==2019|year==2020e), aes(x = date1, y = temp_c))+
   geom_point()+
   theme_classic()
 ```
@@ -891,7 +990,7 @@ Appears to be some very high/variable readings in both years. Isolating error pe
 2019:
 
 ```{r}
-ggplot(filter(fully_cleaned6, site == "s_ak_basin", date1 >= "2019-08-15" & date1 <= "2019-10-20"), aes(x = date_tm, y = temp_c))+
+ggplot(filter(fully_cleaned7, site == "s_ak_basin", date1 >= "2019-08-15" & date1 <= "2019-10-20"), aes(x = date_tm, y = temp_c))+
   geom_point()+
   theme_classic()
 ```
@@ -905,7 +1004,7 @@ s.ak.19 <- seq.Date(from = as.Date("2019-08-15"), to = as.Date("2019-10-20"), by
 2020:
 
 ```{r}
-ggplot(filter(fully_cleaned6, site == "s_ak_basin", date1 >= "2020-08-15" & date1 <= "2020-11-11"), aes(x = date_tm, y = temp_c))+
+ggplot(filter(fully_cleaned7, site == "s_ak_basin", date1 >= "2020-08-15" & date1 <= "2020-11-11"), aes(x = date_tm, y = temp_c))+
   geom_point()+
   theme_classic()
 ```
@@ -919,7 +1018,7 @@ s.ak.20 <- seq.Date(from = as.Date("2020-08-15"), to = as.Date("2020-11-11"), by
 Remove problem periods from data:
 
 ```{r}
-fully_cleaned7 <- fully_cleaned6 %>%
+fully_cleaned8 <- fully_cleaned7 %>%
   filter(!(site == "s_ak_basin"&date1>=min(s.ak.19)&date1<=max(s.ak.19)), 
          !(site == "s_ak_basin"&date1>=min(s.ak.20)&date1<=max(s.ak.20))
          )
@@ -928,8 +1027,9 @@ fully_cleaned7 <- fully_cleaned6 %>%
 Check if successful:
 
 ```{r}
-ggplot(filter(fully_cleaned7, site == "s_ak_basin", year ==2019|year==2020), aes(x = date1, y = temp_c))+
+ggplot(filter(fully_cleaned8, site == "s_ak_basin", year ==2019|year==2020), aes(x = date1, y = temp_c))+
   geom_point()+
+  scale_y_continuous(limits = c(0, 12))+
   theme_classic()
 ```
 
@@ -938,13 +1038,13 @@ ggplot(filter(fully_cleaned7, site == "s_ak_basin", year ==2019|year==2020), aes
 Re-filling missing date ranges after cleaning:
 
 ```{r}
-full_clean_split <- split(fully_cleaned7, fully_cleaned7$site) # split into 17 df's, one for each site
+full_clean_split <- split(fully_cleaned8, fully_cleaned8$site) # split into 17 df's, one for each site
 ```
 
 Apply previously constructed function to this list to re-fill dates: 
 
 ```{r}
-full_clean_filled_split <- lapply(full_clean_split, fill.date) #apply function
+#full_clean_filled_split <- lapply(full_clean_split, fill.date) #apply function
 
 ggplot(full_clean_filled_split$windcave, aes(x = date1, y = temp_c))+ #check windcave to see if successful
   geom_line()
@@ -1054,7 +1154,7 @@ tasr.lines <- ggplot(tasr_dat, aes(x = date1, y = temp_c, color = source))+
   facet_wrap(~full_name, scales = "free_x", nrow = 2, ncol = 6)+
   theme_classic()+
   labs(x = "Date", y = "Stream Temperature, C", color = "Stream Source")+
-  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Rock Glacier"))+
   theme(legend.position = "bottom", 
         axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
         axis.title = element_text(size = 11, face = "bold"), 
@@ -1082,7 +1182,7 @@ tasr_summer_doy <- tasr_dat%>%
   filter(month >=6&month<=8)%>%
   filter(!is.na(year))%>%
   mutate(across(contains("doy"), ~as.Date("2021-12-31") + .x))%>%
-  mutate(source_print = case_when(source == "sub_ice" ~ "Icy Seep", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snow Melt"))%>%
+  mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"))%>%
   mutate(source_name = paste(source_print, full_name, sep = " - "), 
          year=year(date1))%>%
   group_by(date1, source_name, site, full_name, source, doy, year, month)%>%
@@ -1125,7 +1225,7 @@ All summer data, free Y axis:
 boxplot.pal <- c(brewer.pal(3, "Purples"), brewer.pal(5, "Greens"), brewer.pal(4, "Oranges"))
 
 summer.boxplot <- tasr_summer_doy%>%
-  mutate(source_print = case_when(source == "sub_ice" ~ "Icy Seep", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snow Melt"))%>%
+  mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"))%>%
   #filter(!site == "windcave")%>%
   ggplot(aes(x = factor(year), y = temp_xbar))+
   geom_jitter(aes(x = factor(year), y = temp_xbar, color = source_name))+
@@ -1154,7 +1254,7 @@ All summer data, fixed Y axis:
 ```{r}
 
 summer.boxplot.y <- tasr_summer_doy%>%
-  mutate(source_print = case_when(source == "sub_ice" ~ "Icy Seep", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snow Melt"))%>%
+  mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"))%>%
   #filter(!site == "windcave")%>%
   ggplot(aes(x = factor(year), y = temp_xbar))+
   geom_jitter(aes(x = factor(year), y = temp_xbar, color = source_name))+
@@ -1185,7 +1285,7 @@ August Only, free Y axis:
 
 ```{r}
 aug.boxplot <- tasr_summer_doy%>%
-  mutate(source_print = case_when(source == "sub_ice" ~ "Icy Seep", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snow Melt"))%>%
+  mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"))%>%
   filter(
     #!site == "windcave", 
          month == 8)%>%
@@ -1213,7 +1313,7 @@ August Only, fixed Y axis
 
 ```{r}
 aug.boxplot.y <- tasr_summer_doy%>%
-  mutate(source_print = case_when(source == "sub_ice" ~ "Icy Seep", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snow Melt"))%>%
+  mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"))%>%
   filter(
     #!site == "windcave", 
     month == 8)%>%
@@ -1244,7 +1344,7 @@ Windcave Only:
 
 ```{r}
 wc.aug.boxplot <- tasr_summer_doy%>%
-  mutate(source_print = case_when(source == "sub_ice" ~ "Icy Seep", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snow Melt"))%>%
+  mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"))%>%
   filter(site == "windcave", month == 8)%>%
   ggplot(aes(x = factor(year), y = temp_xbar))+
   geom_jitter(aes(x = factor(year), y = temp_xbar, color = site))+
@@ -1266,7 +1366,7 @@ wc.aug.boxplot
 
 ```{r}
 wc.sum.boxplot <- tasr_summer_doy%>%
-  mutate(source_print = case_when(source == "sub_ice" ~ "Icy Seep", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snow Melt"))%>%
+  mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"))%>%
   filter(site == "windcave")%>%
   ggplot(aes(x = factor(year), y = temp_xbar))+
   geom_boxplot(fill = NA)+
@@ -1301,7 +1401,7 @@ Data prep:
 
 ```{r}
 tasr_daily<-tasr_dat%>%
-  mutate(source_print = case_when(source == "sub_ice" ~ "Icy Seep", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snow Melt"), 
+  mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"), 
          source_name = paste(source_print, full_name, sep = " - "))%>%
   group_by(date1, site, source, source_print, source_name)%>%
   summarise(t_xbar = mean(temp_raw), 
@@ -1338,7 +1438,7 @@ ggsave("pres_figures/tasr_por_smooth.jpg", por.smooth, width = 8.5, height = 11,
 
 ```{r}
 por.smooth.summer <- tasr_summer_doy%>%
-  mutate(source_print = case_when(source == "sub_ice" ~ "Icy Seep", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snow Melt"))%>%
+  mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"))%>%
   ggplot(aes(x = date1, y = temp_xbar, color = source_name))+
   geom_point()+
   geom_smooth(se = F)+
@@ -1363,7 +1463,7 @@ ggsave("pres_figures/tasr_summer_smooth.jpg", por.smooth.summer, width = 8.5, he
 
 ```{r}
 por.smooth.aug <- tasr_summer_doy%>%
-  mutate(source_print = case_when(source == "sub_ice" ~ "Icy Seep", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snow Melt"))%>%
+  mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"))%>%
   filter(month == 8)%>%
   ggplot(aes(x = date1, y = temp_xbar, color = source_name))+
   geom_point()+
@@ -1395,7 +1495,7 @@ First plot - all "degree hours" > 0C, color coded by site, panels for source:
 ```{r}
 temp.lines <- tasr_dat%>%
   filter(temp_raw>0)%>%
-  mutate(source_print = case_when(source == "sub_ice" ~ "Icy Seep", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snow Melt"),
+  mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"),
       source_name = paste(source_print, full_name, sep = " - "))%>%
   ggplot(aes(x = date1, y = temp_raw, color = source_name, fill = source_name))+
   geom_bar(stat = "identity", width = 0.01)+
@@ -1418,23 +1518,37 @@ Calculate cumulative degrees above zero for each stream & year:
 
 ```{r}
 tasr_cumulative_hourly <- tasr_dat%>%
-  mutate(source_print = case_when(source == "sub_ice" ~ "Icy Seep", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snow Melt"),
-      source_name = paste(source_print, full_name, sep = " - "))%>%
-  group_by(year, site, source_name, source_print)%>%
-  summarise(temp_cum = sum((na.omit(temp_c))))
+  mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"), #add print-friendly source types
+      source_name = paste(source_print, full_name, sep = " - "))%>% #combined source + site name for plotting
+  group_by(year, site, source_name, source_print)%>% #group by year + site, retain new naming columns for plotting
+  summarise(temp_cum = sum((na.omit(temp_c)))) #calculate total "degree hours", = sum of ALL hourly temp readings >0 for each site/year combo. 
 ```
 
 Plot:
 
 ```{r}
-temps.cumulative <- ggplot(tasr_cumulative_hourly, aes(x = year, y = temp_cum, color = source_name))+
+temps.cumulative <- ggplot(tasr_cumulative_hourly, aes(x = year, y = temp_cum, color = source_name))+ # set axes x = year, y= cumulative degree hours, color = source type /name combo
   geom_point()+
-  geom_line()+
-  geom_smooth(method = "lm", linetype = "dashed", size = 0.4, se = F)+
-  facet_wrap(~source_print, nrow = 3, ncol = 1, scales = "free")+
-  scale_color_manual(values = boxplot.pal)+
-  theme_classic()
+  geom_line()+ #add points for each year + line
+  geom_smooth(method = "lm", linetype = "dashed", size = 0.4, se = F)+ #add dashed LM smooth to look at trends
+  facet_wrap(~source_print, nrow = 3, ncol = 1)+ #facet wrap by source type
+  scale_color_manual(values = boxplot.pal)+ #setting color pallate
+  theme_classic()+ #removing extra formatting
+  scale_x_continuous(breaks = c(2015, 2017, 2019, 2021, 2023))+ #updating/cleaning up X-axis labels
+  labs(x = "Year", y = "Cumulative degree hours >0 C", color = "Stream Source & Name")+
+  theme(
+    axis.title = element_text(size = 11, face = "bold"),
+    legend.title = element_text(size = 11, face = "bold"), 
+    legend.position = "right", 
+    strip.text = element_text(size = 11, face = "bold")
+  )
 temps.cumulative
+```
+
+Save:
+
+```{r}
+ggsave("pres_figures/thermalStress_line.jpg", temps.cumulative,  width = 8.5, height = 8.5, units = "in", device = "jpeg", dpi = "retina")
 ```
 
 
@@ -1445,7 +1559,9 @@ Calculate daily mean temps:
 ```{r}
 tasr_daily <- tasr_dat %>%
   mutate(d = day(date1))%>%
-  group_by(site, d, source, full_name, year, date1)%>%
+  mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"), 
+         source_name = paste(source_print, full_name, sep = " - "))%>%
+  group_by(site, d, source, full_name, year, date1, source_print, source_name)%>%
   summarise(temp_xbar = mean(temp_c, na.rm = T))
 ```
 
@@ -1500,7 +1616,7 @@ tasr.source <- ggplot(filter(tasr_daily, date1>"2021-01-01" & date1 < "2021-12-3
   geom_line()+
   theme_classic()+
   labs(x = "Date", y = "Stream Temperature, C", color = "Stream Name")+
-  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Rock Glacier"))+
   theme(legend.position = "right", 
         axis.title = element_text(size = 11, face = "bold"), 
         axis.text = element_text(size = 10), 
@@ -1526,8 +1642,8 @@ Original Plot:
 ```{r}
 source.yr.pal <- c(
   "#efedf5", "#e0dce6", "#ccc7d3", "#b8b2c0", "#a098a9", "#867c90", "#675b73", "#51435e", "#322241", "#130124", 
-  "#fdae6b", "#eca161" , "#d99356", "#c4844a", "#b17640", "#9e6836", "#8a592a", "#75491e", "#5d3711", "#412201", 
-  "#a1d99b", "#95ce8f", "#85c07f", "#73b16e", "#5e9f59", "#498d45", "#347b30", "#236c1f", "#156011", "#055201")
+  "#a1d99b", "#95ce8f", "#85c07f", "#73b16e", "#5e9f59", "#498d45", "#347b30", "#236c1f", "#156011", "#055201", 
+  "#fdae6b", "#eca161" , "#d99356", "#c4844a", "#b17640", "#9e6836", "#8a592a", "#75491e", "#5d3711", "#412201")
 ```
 
 ```{r}
@@ -1540,7 +1656,7 @@ temp.profiles <- tasr_daily%>%
          doy_dt = as.Date(doy, origin = "2024-01-01"),
          year_src = paste(source_print, year, sep = " "))%>%
   filter(month>=6&month<=9)%>%
-  ggplot(aes(x = doy_dt, y = t_xbar, color = year_src))+
+  ggplot(aes(x = doy_dt, y = temp_xbar, color = year_src))+
   geom_line()+
   facet_wrap(~source_name, nrow = 3)+
   #facet_grid(rows = vars(source_print), cols = vars(site))+
@@ -1576,7 +1692,7 @@ temp.profiles.free <- tasr_daily%>%
          doy_dt = as.Date(doy, origin = "2024-01-01"),
          year_src = paste(source_print, year, sep = " "))%>%
   filter(month>=6&month<=9)%>%
-  ggplot(aes(x = doy_dt, y = t_xbar, color = year_src))+
+  ggplot(aes(x = doy_dt, y = temp_xbar, color = year_src))+
   geom_line()+
   facet_wrap(~source_name, scales = "free_y")+
   scale_color_manual(values = source.yr.pal)+
@@ -1709,7 +1825,7 @@ tasr.full <- ggplot(tasr_dat, aes(x = date1, y = temp_raw, group = full_name, co
   geom_line()+
   theme_classic()+
   labs(x = "Date", y = "Stream Temperature, C", color = "Stream Source")+
-  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Icy Seep"))+
+  scale_color_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Rock Glacier"))+
   theme(legend.position = "right", 
         axis.title = element_text(size = 11, face = "bold"), 
         axis.text = element_text(size = 10), 
@@ -1736,7 +1852,7 @@ tasr_dat1 <- tasr_dat%>%
   ), 
   source_print = case_when(
     source == "glacier"~"Glacier", 
-    source == "snowmelt"~"Snow Melt", 
+    source == "snowmelt"~"Snowfield", 
     source == "sub_ice"~"Subterranean Ice"
   ))
 ```
@@ -1777,6 +1893,188 @@ Save output .csv file:
 write.csv(tasr_dat1, "Temperature/cleaned_full_datasets/tasr_inclNeg.csv")
 ```
 
+---
+---
+
+## 7. Onset of Warming (Changepoint Analysis)
 
 
+Example from online:
+```{r}
+# generate some test data
+    set.seed(0)
+    x <- seq(0,1,0.01)
+    n <- length(x)
+    sd <- rep(0.1,n)
+    mu <- c(2*x[1:floor(n/2)],2 - 2*x[(floor(n/2)+1):n])
+    y <- rnorm(n,mu,sd)
+    
+# use the locations in x
+res <- cpop(y,x,beta=2*log(length(y)),sd=sd)
+changepoints(res)
+plot(res)
+```
+
+
+*Attempting with one spring (May 1 - Sep 1) of data from one stream: *
+
+Notes:
+
+* Probably need to do daily averages - not trying to get to hourly. 
+* Maybe easier to use DOY instead of date for simplicity. 
+
+Data prep & Initial plotting:
+
+```{r}
+tasr_test <- tasr_dat%>%
+  filter(site=="n_teton"&date1>="2024-04-01"&date1<="2024-09-01")%>% #filter out data for Grizzly between April 1 and Aug 1 2024
+  mutate(doy = yday(date1))%>%
+  group_by(site, doy)%>%
+  summarise(t_xbar = mean(temp_raw))%>%
+  filter(!is.na(t_xbar))
+
+#Plot to check for obvious step change(s):
+
+ggplot(tasr_test, aes(x=doy, y =t_xbar))+
+  geom_point()+
+  theme_classic()
+```
+
+Attempt using cpop function:
+
+```{r}
+griz24.cpop <- cpop(tasr_test$t_xbar, tasr_test$doy, #providing y and x vectors for cpop function
+                    beta =80) #adjusting beta value to increase penalty for adding more changepoints (default of 2*log(length(y)) (~9.8) was returning CP's before major step-change)
+```
+
+Check results - plot, extract changepoint:
+
+```{r}
+plot(griz24.cpop)+
+  labs(title = unique(tasr_test$site))
+changepoints(griz24.cpop)
+changepoints(griz24.cpop)[1,1]
+```
+
+Take-aways: 
+
+* Creates a bunch of changepoints - in first two tests, the first changepoint was the one we're looking for with beta set to 15. 
+* Potential issue with picking beta - might not be super repeatable for sites/years with less clear break in slope. 
+* Same goes for picking date range - changing date range changes # break points, but not position of major break points. 
+* Some sites also have multiple "phases" of warming, one starting earlier in year and then a second ~early July
+
+*General Workflow to iterate:*
+
+Starting with tasr_dat - hourly data for all sites + years:
+
+* Calculate daily mean temps, add DOY. 
+* Extract desired site + year combo
+* Filter desired date range *4/1-8/1*
++ NOTE - probably need to remove years that don't have data from this range. 
+* Feed resulting data into cpop function wity y = t_xbar, x = doy. 
++ Set beta high (80?) to try and isolate most obvious breakpoints. 
+* Extract first breakpoint and store along with site name and year.
+* Save a plot of the output to check that correct breakpoint was extracted.
+
+### A. Data Prep:
+
+```{r}
+tasr_doy <- tasr_dat %>%
+  group_by(site, date1, source)%>% #group by site, date, and source
+  summarise(t_xbar = mean(temp_raw))%>% #calculate mean daily temp
+  mutate(doy = yday(date1), 
+         year = year(date1), 
+         site_yr = paste(site, year, sep = "_"))%>% #add columns for day of year, year, and site/year combo
+  filter(doy>=92&doy<=245)%>% #extract DOY's 92-245 (April 1-Sep 1)
+  filter(!is.na(t_xbar))%>% #remove days with missing temp readings
+  group_by(site_yr)%>% #group by site year
+  mutate(doyMin = min(doy), 
+         doyMax = max(doy))%>% #add min and max DOY for each site/year combob
+  ungroup()%>% #ungroup
+  filter(!doyMin>92, 
+         !doyMax<245)%>% #remove site/year combos with incomplete data or missing temp data
+  arrange(source, site, doy)
+```
+
+### B. Iterate changepoint extraction over year/site with a for-loop:
+
+Split data by site_yr:
+
+```{r}
+tasr_split <- split(tasr_doy, tasr_doy$site_yr)
+```
+
+For loop to extract CP's & save plots for each site/year:
+
+```{r, warning = F, message=F}
+site.yrs <- unique(tasr_doy$site_yr) #vector with unique values of site_yr
+cps <- data.frame()#initiate empty df to receive cp data
+cp.plots <- list()#initiate empty list to recieve cp plots
+
+#For Loop:
+
+for(i in 1:length(site.yrs)){
+  t <- tasr_doy%>%
+    filter(site_yr == site.yrs[i]) #extract data for year/site combo "i"
+    #filter(doy>=92&doy<=245)%>% #extract data for ~April 1-Sept 1 based on 2024 DOY - may be off date-wise by a day for leap years
+  
+  c<-cpop(t$t_xbar, t$doy, beta = 80) #feeding temperature and doy data into cpop, setting beta to 80 
+  cp<-changepoints(c)[1,1] #extract first changepoint
+  cpp<-plot(c)+ #create plot of cp estimations
+    labs(title = site.yrs[i], x = "day of yr", y = "temp, C") #add plot title w/site+year
+  
+  cpdf <- data.frame(unique(t$site), unique(t$year), unique(t$source), cp) #create dataframe with site, year, and dataframe
+  cps<- rbind(cps, cpdf) #append to cps data frame
+    
+  
+  cp.plots[[i]]<-cpp #store plot as "ith" item in plot list
+  
+  print(paste("completed ", i, "/", length(site.yrs), sep = ""))
+}
+
+cps<-cps%>%
+  rename("site"=1, "year"=2, "source"=3, "cp_doy"=4)
+```
+
+Checking results:
+
+```{r}
+head(cps) #check output table
+snowmelt.cps<-(cp.plots[[14]]|cp.plots[[15]]|cp.plots[[16]]|cp.plots[[17]])/(cp.plots[[18]]|cp.plots[[19]]|cp.plots[[20]]|cp.plots[[21]])/(cp.plots[[22]]|cp.plots[[23]]|cp.plots[[24]]|cp.plots[[25]])/(cp.plots[[26]]|cp.plots[[27]]|cp.plots[[28]])
+snowmelt.cps #check CPS for all snowmelt sites
+```
+
+Generally pulling correct CP, with exception of N teton in 2019, 2020, and 2022
+
+Save output plot:
+
+```{r}
+ggsave("Temperature/plots/snowmelt_changepoints.jpg", snowmelt.cps, device = "jpeg", units = "in", dpi = "retina", width = 11, height = 8.5)
+```
+
+Plot of change over time: 
+
+```{r}
+snowmelt.cp.trends <- ggplot(filter(cps, source == "snowmelt"), aes(x = year, y = cp_doy, color = site))+
+  geom_point()+
+  geom_line()+
+  geom_smooth(method = "lm", se = F, linetype = "dashed")+
+  theme_classic()+
+  facet_wrap(~site)+
+  theme(legend.position = "none", 
+        axis.title = element_text(size = 11, face = "bold"), 
+        axis.text = element_text(size = 10), 
+        strip.text = element_text(size = 10, face = "bold"))+
+  labs(x = "Year", y = "Onset of warming - day of year")+
+  scale_color_manual(values = c("#d99356", "#c4844a", "#b17640"))
+snowmelt.cp.trends
+```
+
+Save:
+
+```{r}
+ggsave("Temperature/plots/snowmelt_changepoint_trends.jpg", snowmelt.cp.trends, device = "jpeg", units = "in", dpi = "retina", width = 11, height = 8.5)
+```
+
+North Teton all over the place bc pulling earlier CP, both grizzly and S teton maybe downward trend (downward trend = warming onset earlier in the year)
 

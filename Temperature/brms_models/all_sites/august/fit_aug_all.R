@@ -4,7 +4,7 @@ library(tidyverse)
 library(brms)
 library(tidybayes)
 
-# source("Temperature/brms_models/GTNP_sites/no_snow/august/fit_aug_all.R")
+# source("Temperature/brms_models/all_sites/august/fit_aug_all.R")
 
 write_dir <- "Temperature/brms_models/all_sites/august"
 

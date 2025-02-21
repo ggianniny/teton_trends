@@ -1,5 +1,9 @@
 # Random intercept and slope for August in GTNP 
 
+# make sure sources match new coding:
+# "sub_ice" ~ "rock_glacier",
+# "snowmelt" ~ "snowfield",
+
 library(tidyverse)
 library(brms)
 library(tidybayes)
@@ -27,9 +31,9 @@ brm1$data |>
   arrange(source)
 
 # posterior predictions ####
-pp_check(brm1,
-         type = "stat_grouped",
-         group = "source")
+# pp_check(brm1,
+#          type = "stat_grouped",
+#          group = "source")
 # pp_check(brm1,
 #          type = "violin_grouped",
 #          group = "source")
@@ -55,7 +59,7 @@ summary(brm1)
 mod_r2 <- bayes_R2(object = brm1)
 mod_r2
 write_csv(as.data.frame(mod_r2), paste(write_dir, 
-                        "/best_mod_r2.csv",
+                        "/best_mod_r2_aug.csv",
                         sep = ""))
 
 # conditional_effects(brm1)
@@ -154,7 +158,7 @@ pred_plot <- add_predicted_draws(
 pred_plot
 
 my_ggsave(plot = pred_plot,
-       filename = paste(write_dir, "/Predicted_temps.png", 
+       filename = paste(write_dir, "/Predicted_temps_aug.png", 
                         sep = ""))
 
 
@@ -203,7 +207,7 @@ fit_plot <- add_epred_draws(
 fit_plot
 
 my_ggsave(plot = fit_plot,
-       filename = paste(write_dir, "/fitted_temps.png", 
+       filename = paste(write_dir, "/fitted_temps_aug.png", 
                         sep = ""))
 
 # spaghetti of fits
@@ -232,7 +236,7 @@ fit_spag <- add_epred_draws(newdata = fit_data_obs_years,
 fit_spag
 
 my_ggsave(plot = fit_spag,
-       filename = paste(write_dir, "/fitted_spaghetti.png", 
+       filename = paste(write_dir, "/fitted_spaghetti_aug.png", 
                         sep = ""))
 
 
@@ -250,23 +254,23 @@ glac_pos <- brm1 %>%
 # sub ice
 sub_pos <- brm1 %>%
   spread_draws(#b_Intercept, 
-    #b_sourcesub_ice,
+    #b_sourcerock_glacier,
     b_year_s,
-    `b_year_s:sourcesub_ice`) %>%
-  rename(year_sub = `b_year_s:sourcesub_ice`) %>%
+    `b_year_s:sourcerock_glacier`) %>%
+  rename(year_sub = `b_year_s:sourcerock_glacier`) %>%
   mutate(sub = b_year_s + year_sub, 
          sub_pos = sub > 0) %>%
   summarize(prob_pos = mean(sub_pos))|>
-  mutate(source = "sub_ice")
+  mutate(source = "rock_glacier")
 
 
 # snow
 snow_pos <- brm1 %>%
   spread_draws(#b_Intercept, 
-    #b_sourcesub_ice,
+    #b_sourcesnowfield,
     b_year_s,
-    `b_year_s:sourcesnowmelt`) %>%
-  rename(year_sub = `b_year_s:sourcesnowmelt`) %>%
+    `b_year_s:sourcesnowfield`) %>%
+  rename(year_sub = `b_year_s:sourcesnowfield`) %>%
   mutate(sub = b_year_s + year_sub, 
          sub_pos = sub > 0) %>%
   summarize(prob_pos = mean(sub_pos))|>
@@ -275,7 +279,7 @@ snow_pos <- brm1 %>%
 
 (prob_pos_df <- bind_rows(glac_pos, sub_pos, snow_pos))
 write_csv(prob_pos_df,
-          file = paste(write_dir, "/prob_slope_positive.csv", 
+          file = paste(write_dir, "/prob_slope_positive_aug.csv", 
                        sep = ""))
 
 
@@ -288,21 +292,21 @@ b_glacier <- brm1 %>%
 
 b_sub <- brm1 %>%
   spread_draws(b_year_s,
-               `b_year_s:sourcesub_ice`) %>%
-  rename(year_sub = `b_year_s:sourcesub_ice`) %>%
+               `b_year_s:sourcerock_glacier`) %>%
+  rename(year_sub = `b_year_s:sourcerock_glacier`) %>%
   mutate(b_year_s = b_year_s + year_sub,
          b_year_s = b_year_s * (sd_temp / sd_year)) %>%
   select(-year_sub) |>
-  mutate(source = "sub_ice")
+  mutate(source = "rock_glacier")
 
 b_snow <- brm1 %>%
   spread_draws(b_year_s,
-               `b_year_s:sourcesnowmelt`) %>%
-  rename(year_snow = `b_year_s:sourcesnowmelt`) %>%
+               `b_year_s:sourcesnowfield`) %>%
+  rename(year_snow = `b_year_s:sourcesnowfield`) %>%
   mutate(b_year_s = b_year_s + year_snow,
          b_year_s = b_year_s * (sd_temp / sd_year)) %>%
   select(-year_snow) |>
-  mutate(source = "snowmelt")
+  mutate(source = "snowfield")
 
 b_year <- bind_rows(b_glacier, b_sub, b_snow)
 
@@ -319,7 +323,7 @@ source_slope_halfeye <- ggplot(b_year,
        x = "Slope Coefficient",
        y = "Water Source") +
   guides(fill=guide_legend(title="Positive Slope")) +
-  annotate("text", # sub_ice
+  annotate("text", # rock_glacier
            x = 0.5,
            y = 3.5,
            label = paste("P(Positive)",
@@ -340,15 +344,15 @@ source_slope_halfeye <- ggplot(b_year,
 
 source_slope_halfeye
 my_ggsave(plot = source_slope_halfeye,
-       filename = paste(write_dir, "/source_slope_halfeye.png", 
+       filename = paste(write_dir, "/source_slope_halfeye_aug.png", 
                         sep = ""))
 
 # slope magnitude table ####
 slope_mags <- data.frame(
-  source = c("glacier", "sub_ice", "snowmelt"),
+  source = c("glacier", "rock_glacier", "snowfield"),
   magnitude = c(
     fixef(brm1)[2,1] * (sd_temp / sd_year), #glacier
-    (fixef(brm1)[2,1]+fixef(brm1)[6,1]) * (sd_temp / sd_year), # sub_ice
+    (fixef(brm1)[2,1]+fixef(brm1)[6,1]) * (sd_temp / sd_year), # rock_glacier
     (fixef(brm1)[2,1]+fixef(brm1)[5,1]) * (sd_temp / sd_year) # snow
     
   ),
@@ -362,7 +366,7 @@ slope_mags <- data.frame(
 )
 slope_mags
 write_csv(slope_mags,
-          file = paste(write_dir, "/slope_magnitudes.csv", 
+          file = paste(write_dir, "/slope_magnitudes_aug.csv", 
                        sep = ""))
 
 
@@ -405,7 +409,7 @@ source_slope_epred <- add_epred_draws(
   
 source_slope_epred
 my_ggsave(plot = source_slope_epred,
-       filename = paste(write_dir, "/source_slope_epred.png", 
+       filename = paste(write_dir, "/source_slope_epred_aug.png", 
                         sep = ""))
 
 
@@ -433,5 +437,5 @@ source_spag <- add_epred_draws(newdata = source_data,
                                 "slategrey"))
 source_spag
 my_ggsave(plot = source_spag,
-       filename = paste(write_dir, "/source_slope_spag.png", 
+       filename = paste(write_dir, "/source_slope_spag_aug.png", 
                         sep = ""))

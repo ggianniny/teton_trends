@@ -10,9 +10,16 @@ write_dir <- "Temperature/brms_models/all_sites/august"
 
 source_info <- read.csv("source_info.csv")%>%
   rename(site = stream) #rename for merge
+
 source_info <- source_info %>%
-  mutate(source = case_when(site == "cloudveil" ~ "sub_ice",
-                            .default = source))
+  mutate(source = case_when(
+    site == "cloudveil" ~ "sub_ice",
+    .default = source)) |>
+  mutate(source = case_when(
+    source == "sub_ice" ~ "rock_glacier",
+    source == "snowmelt" ~ "snowfield",
+    .default = source))
+unique(source_info$source)
 
 #Temperature data:
 

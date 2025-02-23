@@ -1084,29 +1084,16 @@ Re-filling missing date ranges after cleaning:
 full_clean_split <- split(fully_cleaned8, fully_cleaned8$site) # split into 17 df's, one for each site
 ```
 
-Apply previously constructed function to this list to re-fill dates: 
+Fill in missing date values (grouped by site), check if successful:
 
 ```{r}
-#full_clean_filled_split <- lapply(full_clean_split, fill.date) #apply function
-
-ggplot(full_clean_filled_split$windcave, aes(x = date1, y = temp_c))+ #check windcave to see if successful
+temps_final <- fully_cleaned8%>%
+  group_by(site)%>% #group by site
+  complete(date1=seq.Date(from = min(date1), to = max(date1), by = "day")) #fill dates by day from min to max within each site.
+  
+ggplot(filter(temps_final, site =="windcave"), aes(x = date1, y = temp_c))+
   geom_line()
 ```
-
-Re-combine into single dataframe for further cleaning: 
-
-```{r}
-temps_final <- full_clean_filled_split %>%
-  bind_rows(.id = "site")
-```
-
-Check if successful after rowbind:
-
-```{r}
-ggplot(filter(temps_final, site == "windcave"), aes(x = date1, y = temp_c))+
-  geom_line()
-```
-
 
 ---
 ---
@@ -1142,6 +1129,8 @@ Merge with temperature dataset:
 temps_final1 <- merge(temps_final, coords, all.x = T)%>%
   arrange(site, date1)%>%
   mutate(year = year(date1))
+
+sak.test<-filter(temps_final1, site == "s_ak_basin")
 ```
 
 

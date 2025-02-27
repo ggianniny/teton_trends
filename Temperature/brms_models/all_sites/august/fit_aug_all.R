@@ -123,7 +123,7 @@ brm1 <- update(
   chains = 4,
   cores = 4,
   iter = 2000,
-  save_pars = save_pars(all = TRUE))
+  save_all_pars = TRUE)
 tictoc::toc()
 # 2025-01-09 = ~2.5 hours
 

@@ -31,6 +31,14 @@ brm1$data |>
   arrange(source)
 
 # posterior predictions ####
+pp_check(brm1) +
+  labs(title = "Gaussian")
+pp_check(brm1, type = "dens_overlay_grouped",
+         group = "source") +
+  labs(title = "Gaussian")
+pp_check(brm1, 
+         type = "boxplot") +
+  labs(title = "Gaussian")
 # pp_check(brm1,
 #          type = "stat_grouped",
 #          group = "source")

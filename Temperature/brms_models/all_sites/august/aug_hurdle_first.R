@@ -224,11 +224,11 @@ saveRDS(hurdle_aug, paste(write_dir,
                     "/fit_rand_slopes_hurdle_aug.rds", 
                     sep = ""))
 
-hurdle_aug <- readRDS(
-  paste(
-    write_dir,
-    "/fit_rand_slopes_hurdle_aug.rds",
-    sep = ""))
+# hurdle_aug <- readRDS(
+#   paste(
+#     write_dir,
+#     "/fit_rand_slopes_hurdle_aug.rds",
+#     sep = ""))
 
 
 pp_check(hurdle_aug)+
@@ -517,3 +517,79 @@ c_eff <- conditional_effects(hurdle_aug,
 
 str(c_eff)
 plot(c_eff[[1]]) +facet_wrap("source")
+
+
+
+
+fit_data_obs_years <- hurdle_aug$data |>
+  select(source, year_s, site) |>
+  distinct() |>
+  mutate(year = (year_s*sd_year)+mean_year,
+         month = 8,
+         day = 15,
+         date = make_date(year, month, day),
+         source = factor(
+           source,
+           levels = c(
+             "snowfield",
+             "glacier",
+             "rock_glacier")))
+
+# plot of predicting new data ####
+pred_plot <- add_predicted_draws(
+  newdata = fit_data_obs_years,
+  hurdle_aug,
+  allow_new_levels = TRUE) |>
+  median_qi(.prediction) |>
+  mutate(.prediction = (.prediction*max_temp),
+         .lower = (.lower*max_temp),
+         .upper = (.upper*max_temp),
+         source = factor(
+           source,
+           levels = c(
+             "snowfield",
+             "glacier",
+             "rock_glacier"))) |>
+  ggplot(aes(x = date, 
+             y = .prediction,
+             ymin = .lower, 
+             ymax = .upper,
+             fill = source,
+             color = source)) +
+  geom_ribbon(alpha = 0.5) +
+  geom_line() +
+  geom_point(data = hurdle_aug$data |>
+               mutate(year = (year_s*sd_year)+mean_year,
+                      month = 8,
+                      day = 15,
+                      date = make_date(year, month, day),
+                      temp = (temp_1*max_temp),
+                      source = factor(
+                        source,
+                        levels = c(
+                          "snowfield",
+                          "glacier",
+                          "rock_glacier"))),
+             aes(x = date,
+                 y = temp,
+                 color = source),
+             inherit.aes = FALSE,
+             alpha = 0.2, 
+             position = position_jitter(
+               width = 35,
+               height = NULL)) +
+  facet_wrap(source~site,
+             ncol = 3,
+             scales = "free_y") +
+  theme_bw() +
+  labs(title = "Predicted Temperatures",
+       subtitle = "Ribbon shows predictions for new data",
+       x = "Year",
+       y = "Predicted Temperature") +
+  scale_fill_manual(values = c("springgreen4",
+                               "deepskyblue", 
+                                "slategrey")) +
+  scale_color_manual(values = c("springgreen4",
+                                "deepskyblue", 
+                                "slategrey")) 
+pred_plot

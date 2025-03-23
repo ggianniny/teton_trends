@@ -264,6 +264,97 @@ zero.scatter <- ggplot(clean_zero, aes(x = date_tm, y = temp_c, color = site))+
 zero.scatter
 ```
 
+Checking distribution of zeros across sites + years:
+
+```{r}
+neg.values <- clean_zero%>%
+  mutate(date1=ymd(substr(date_tm, 1, 10)))%>% #add date column
+  group_by(site, date1)%>%
+  mutate(n_obs = length(temp_raw))%>%
+  ungroup()%>%
+  filter(temp_raw<0)%>% #extract negative readings
+  group_by(site, date1)%>% #group by site and date
+  summarise(n_neg = length(temp_raw), 
+            n_obs = mean(n_obs))%>% #count number of negative temperature values per day for each site. 
+  mutate(doy = yday(date1), 
+         year=year(date1), 
+         site_yr = paste(site, year, sep = " "), 
+         doy_dt = as.Date(doy, origin = "2024-01-01"))
+
+#Plotting:
+neg.plot <- ggplot(neg.values, aes(x = doy_dt, y = n_neg, fill = factor(year)))+
+  geom_bar(stat="identity", position = "dodge")+
+  facet_wrap(~site)+
+  theme_classic()+
+  theme(legend.position = "right", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))+
+  labs(x = "Day of Year", y = "Number of hourly temp readings <0C", fill = "Year", title = paste("# Negative Readings per day by site ", "(", sum(neg.values$n_neg), "total neg. readings)"))+
+  scale_x_date(date_breaks = "3 months", date_labels = "%b-%d")
+neg.plot
+```
+
+Checking magnitude of <0 values (whole year and June-Sep):
+
+```{r}
+#Distribution of negative values (whole year): 
+neg_data <- clean_zero %>%
+  filter(temp_raw<0)%>%
+  mutate(doy = yday(date_tm))%>%
+  mutate(during_season = ifelse(doy>165&doy<259, "Y", "N"))
+
+neg.cdf <- ecdf(neg_data$temp_raw)
+plot(neg.cdf)
+
+summary(neg_data$temp_raw)
+
+#distribution of negative values (season only):
+
+
+
+neg.season.cdf <- ecdf(
+  (neg_data%>%
+     filter(during_season == "Y"))$temp_raw
+)
+plot(neg.season.cdf)
+
+summary(
+  (neg_data%>%
+     filter(during_season == "Y"))$temp_raw)
+
+```
+
+Second plot: total # negative readings over time:
+
+```{r}
+neg_totals <- neg.values%>%
+  group_by(site, doy_dt, doy)%>%
+  summarise(neg_tot = sum(n_neg))%>%
+  mutate(during_season = ifelse(doy>165&doy<259, "Y", "N"), 
+         season_negs = ifelse(during_season == "Y", neg_tot, 0))
+
+neg.duringseason <- sum(neg_totals$season_negs)
+plot.title <- paste("# Negative Readings per day by site ", "(", sum(neg.values$n_neg), " total neg. readings; ", neg.duringseason," neg. readings June 15 - Sep. 15",")", sep ="")
+
+neg.tot.plot <-ggplot(neg_totals, aes(x = doy_dt, y = neg_tot, fill = during_season))+
+  geom_bar(stat = "identity", position = "dodge")+
+  facet_wrap(~site)+
+  theme_classic()+
+  scale_x_date(date_breaks = "3 months", date_labels = "%b-%d")+
+  scale_fill_manual(values = c("lightblue","maroon"), labels = c("No", "Yes"))+
+  theme(legend.position = "right", 
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))+
+  labs(x = "Day of Year", y = "#hourly temp readings <0C", fill = "During Season (June 15 - Sep. 15)?", title = plot.title)
+neg.tot.plot
+
+```
+
+Save:
+
+```{r}
+ggsave("Temperature/plots/neg_values_plot.jpg", plot = neg.tot.plot, device = "jpeg", width = 11, height = 8.5, dpi = "retina")
+```
+
+
 ###B. Adding missing dates to get rid of connecting lines during periods with no data: 
 
 ```{r}
@@ -693,7 +784,7 @@ ggsave("Temperature/plots/paintbrush_15.jpg", plot = pb.15, device = "jpeg", wid
 ```
 
 
-##### IIIc. Manual cleaning for periods with overlap: 
+##### **IIIc. Manual cleaning for periods with overlap: **
 ##### (Method used for final dataset)
 
 First step: Identify years and times that appear to have significant overlap: 
@@ -908,7 +999,7 @@ pb.drydays
 Save:
 
 ```{r}
-ggsave("Temperature/plots/pb_dry_days.jpg", pb.drydays, width = 8.5, height = 6.5, units = "in", device = "jpeg", dpi = "retina")
+ggsave("Temperature/plots/pb_dry_days.pdf", pb.drydays, width = 8.5, height = 6.5, units = "in", device = "pdf", dpi = "retina")
 ```
 
 #### IV. S AK Basin
@@ -975,8 +1066,16 @@ s_ak <- filter(fully_cleaned7, site == "s_ak_basin")%>% #select data for paintbr
   summarise(stream_temp = mean(temp_c, na.rm = T), 
             temp_range = (max(temp_c, na.rm = T)-min(temp_c, na.rm = T))) #calculate mean daily temp
 
+tr.xbar<- mean(s_ak$temp_range)
+tr.sd<- sd(
+  (filter(s_ak, !year==2019, !year==2020))$temp_range
+  )
+
+s_ak<-s_ak%>%
+  mutate(tr_sd = ifelse(temp_range>(tr.xbar+(5*tr.sd)), ">5sd", "<5sd"))
+
 s_ak.air <- merge(s_ak, airtemp, all = T)%>% #merge with air temps
-  pivot_longer(!c(Date, year, temp_range), names_to = "measure", values_to = "temp_c")%>% #pivot longer for plotting
+  pivot_longer(!c(Date, year, temp_range, tr_sd), names_to = "measure", values_to = "temp_c")%>% #pivot longer for plotting
   mutate(measure = if_else(measure == "stream_temp", "z_sak_t", measure), 
          year = year(Date))
 
@@ -1011,7 +1110,98 @@ Not an exact match in either year - comparison with paintbrush:
 (sak.19|sak.20)/(pb.18|pb.19)
 ```
 
-###### ii. Diel temp change Removal
+###### ii. **Diel temp change Removal** 
+###### (Method used for final data cleaning)
+
+First, check ranges & plot diel temp change over time:
+
+```{r}
+ggplot(s_ak, aes(x = Date, y =temp_range
+                 #, color = tr_sd
+                 ))+
+  geom_line()+
+  theme_classic()+
+  geom_hline(aes(yintercept=mean(s_ak$temp_range)), linetype = "dashed")+
+  geom_ribbon(aes(ymin = (mean(s_ak$temp_range))-(5*tr.sd), 
+                  ymax = (mean(s_ak$temp_range))+(5*tr.sd)
+                    ), alpha =0.5)+
+  labs(x = "Date", y = "Daily Temperature Range, C")
+```
+
+Summary stats:
+
+```{r}
+summary(s_ak$temp_range)
+sd(s_ak$temp_range)
+
+#Comparison with error and normal year:
+sd(
+  filter(s_ak, year == 2022)$temp_range
+)
+
+sd(
+  filter(s_ak, year == 2019)$temp_range
+)
+```
+
+Remove everything >5 SD:
+
+```{r}
+s_ak.1sd <- s_ak%>%
+  filter(!tr_sd==">5sd")
+
+ggplot(s_ak.1sd, aes(x = Date, y =temp_range
+                 #, color = tr_sd
+                 ))+
+  geom_line()+
+  theme_classic()+
+  geom_hline(aes(yintercept=mean(s_ak.1sd$temp_range)), linetype = "dashed")+
+  geom_ribbon(aes(ymin = (mean(s_ak.1sd$temp_range))-sd(s_ak.1sd$temp_range), 
+                  ymax = (mean(s_ak.1sd$temp_range))+sd(s_ak.1sd$temp_range)
+                    ), alpha =0.5)+
+  labs(x = "Date", y = "Daily Temperature Range, C")
+
+```
+
+Extract date ranges with >1SD:
+
+```{r}
+s.ak_toDrop <- s_ak %>%
+  filter(tr_sd == ">5sd")%>%
+  select(Date, year)%>%
+  group_by(year)%>%
+  mutate(id = seq(1:length(Date)))%>%
+  ungroup()%>%
+  pivot_wider(id_cols = id, names_from = year, values_from = Date)%>%
+  rename("y2019"=2, "y2020"=3)
+
+max(s.ak_toDrop$y2020, na.rm = T)
+```
+
+Drop from full data & check results: 
+
+```{r}
+fully_cleaned8 <- fully_cleaned7%>%
+  filter(!(site=="s_ak_basin"&date1<max(s.ak_toDrop$y2020, na.rm = T)&date1>min(s.ak_toDrop$y2020, na.rm = T)),
+         !(site=="s_ak_basin"&date1<max(s.ak_toDrop$y2019, na.rm = T)&date1>min(s.ak_toDrop$y2019, na.rm = T))
+         )
+
+s.ak.trClean<-ggplot(filter(fully_cleaned8, site == "s_ak_basin", year ==2019|year==2020), aes(x = date1, y = temp_c))+
+  geom_point()+
+  theme_classic()+
+  labs(title = "Cleaned (removed obs with diel temp change >5SD from mean")+
+  scale_y_continuous(limits = c(0, 15))
+s.ak.trClean
+
+s.ak.raw<-ggplot(filter(fully_cleaned7, site == "s_ak_basin", year ==2019|year==2020), aes(x = date1, y = temp_c))+
+  geom_point()+
+  theme_classic()+
+  labs(title = "Raw")+
+  scale_y_continuous(limits = c(0, 15))
+s.ak.raw
+
+s.ak.raw/s.ak.trClean
+```
 
 
 
@@ -1055,9 +1245,9 @@ ggplot(filter(fully_cleaned7, site == "s_ak_basin", date1 >= "2020-06-15" & date
 s.ak.20 <- seq.Date(from = as.Date("2020-08-15"), to = as.Date("2020-11-11"), by = "day")
 ```
 
-Remove problem periods from data:
+NOT RUN: Remove problem periods from data:
 
-```{r}
+
 fully_cleaned8 <- fully_cleaned7 %>%
   filter(!(site == "s_ak_basin"&date1>=min(s.ak.19)&date1<=max(s.ak.19)), 
          !(site == "s_ak_basin"&date1>=min(s.ak.20)&date1<=max(s.ak.20))
@@ -1066,7 +1256,7 @@ fully_cleaned8 <- fully_cleaned7 %>%
 
 Check if successful:
 
-```{r}
+
 ggplot(filter(fully_cleaned8, site == "s_ak_basin", year ==2019|year==2020), aes(x = date1, y = temp_c))+
   geom_point()+
   scale_y_continuous(limits = c(0, 12))+
@@ -1893,7 +2083,7 @@ warmcold.lines
 Save:
 
 ```{r}
-ggsave("Temperature/plots/warm_cold_lines.jpg", warmcold.lines, device = "jpeg", units = "in", dpi = "retina", width = 8.5, height = 8.5)
+ggsave("Temperature/plots/warm_cold_lines.pdf", warmcold.lines, device = "pdf", units = "in", dpi = "retina", width = 8.5, height = 8.5)
 ```
 
 ## 6. Combine plot with full period of record for all sites; individual plots for each site (including below zero)

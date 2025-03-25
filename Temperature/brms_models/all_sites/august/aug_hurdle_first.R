@@ -86,6 +86,34 @@ temp |>
   facet_wrap(~month,
              scales = "free")
 
+temp |>
+  filter(month == 8) |>
+  ggplot(aes(x = temp_c, 
+             fill = source)) +
+  geom_histogram(alpha = 0.5,
+                 position = "identity") +
+  facet_wrap(~month,
+             scales = "free")
+
+temp |>
+  filter(month == 7 | month == 6) |>
+  ggplot(aes(x = temp_c, 
+             fill = source)) +
+  geom_histogram(alpha = 0.5,
+                 position = "identity") +
+  facet_wrap(~month,
+             scales = "free")
+
+temp |>
+  filter(month == 7 | month == 6 | month == 8) |>
+  ggplot(aes(x = temp_c, 
+             fill = source)) +
+  geom_histogram(alpha = 0.5,
+                 position = "identity") +
+  # facet_wrap(~month,
+  #            scales = "free")
+  NULL
+
 # make smaller data to figure out Hurdle model
 
 # test_dat <- temp |>
@@ -393,6 +421,24 @@ b_glacier <- hurdle_aug %>%
          b_year_s = (b_year_s * (max_temp / sd_year)))
 
 # set up raw temp as avergae
+
+data.frame(year_real = c(2019, 2020)) |>
+  mutate(year_s = (year_real - mean_year)/sd_year) |>
+  expand_grid(source = unique(temp$source)) |>
+  add_epred_draws(hurdle_aug,
+                  re_formula = NA,
+                  allow_new_levels = TRUE) |>
+  ungroup()|>
+  mutate(.epred = .epred * max_temp) |>
+  select(-.row, -.chain, -.iteration, -year_s) |>
+  pivot_wider(names_from = "year_real",
+              values_from = ".epred") |>
+  mutate(slope_new = `2020` - `2019`) |>
+  # slope_new = chnage in actual temperature right scale
+  mutate(prop = slope_new / `2019` *100) |>
+  group_by(source) |>
+  mean_qi(prop)
+
 
 data.frame(year_real = c(2019, 2020)) |>
   mutate(year_s = (year_real - mean_year)/sd_year) |>

@@ -1444,11 +1444,11 @@ ggsave("pres_figures/tasr_stacked_years.pdf", tasr.doy, width = 12, height = 5, 
 All summer data, free Y axis:
 
 ```{r}
-boxplot.pal <- c(brewer.pal(3, "Purples"), brewer.pal(5, "Greens"), brewer.pal(4, "Oranges"))
+boxplot.pal <- c(brewer.pal(3, "Purples"), brewer.pal(4, "Greens"), brewer.pal(4, "Oranges"))
 
 summer.boxplot <- tasr_summer_doy%>%
   mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"))%>%
-  #filter(!site == "windcave")%>%
+  filter(!site == "windcave", !site == "paintbrush")%>%
   ggplot(aes(x = factor(year), y = temp_xbar))+
   geom_jitter(aes(x = factor(year), y = temp_xbar, color = source_name))+
    geom_boxplot(fill = NA)+
@@ -1477,7 +1477,7 @@ All summer data, fixed Y axis:
 
 summer.boxplot.y <- tasr_summer_doy%>%
   mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"))%>%
-  #filter(!site == "windcave")%>%
+  filter(!site == "windcave", !site == "paintbrush")%>%
   ggplot(aes(x = factor(year), y = temp_xbar))+
   geom_jitter(aes(x = factor(year), y = temp_xbar, color = source_name))+
    geom_boxplot(fill = NA)+
@@ -1509,7 +1509,7 @@ August Only, free Y axis:
 aug.boxplot <- tasr_summer_doy%>%
   mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"))%>%
   filter(
-    #!site == "windcave", 
+    !site == "windcave", !site == "paintbrush",
          month == 8)%>%
   ggplot(aes(x = factor(year), y = temp_xbar))+
   geom_jitter(aes(x = factor(year), y = temp_xbar, color = source_name))+
@@ -1537,7 +1537,7 @@ August Only, fixed Y axis
 aug.boxplot.y <- tasr_summer_doy%>%
   mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"))%>%
   filter(
-    #!site == "windcave", 
+    !site == "windcave", !site == "paintbrush",
     month == 8)%>%
   ggplot(aes(x = factor(year), y = temp_xbar))+
   geom_jitter(aes(x = factor(year), y = temp_xbar, color = source_name))+
@@ -1623,6 +1623,7 @@ Data prep:
 
 ```{r}
 tasr_daily<-tasr_dat%>%
+  filter(!site == "windcave", !site == "paintbrush")%>%
   mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"), 
          source_name = paste(source_print, full_name, sep = " - "))%>%
   group_by(date1, site, source, source_print, source_name)%>%
@@ -1660,6 +1661,7 @@ ggsave("pres_figures/tasr_por_smooth.jpg", por.smooth, width = 8.5, height = 11,
 
 ```{r}
 por.smooth.summer <- tasr_summer_doy%>%
+  filter(!site == "windcave", !site == "paintbrush")%>%
   mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"))%>%
   ggplot(aes(x = date1, y = temp_xbar, color = source_name))+
   geom_point()+
@@ -1685,6 +1687,7 @@ ggsave("pres_figures/tasr_summer_smooth.jpg", por.smooth.summer, width = 8.5, he
 
 ```{r}
 por.smooth.aug <- tasr_summer_doy%>%
+  filter(!site == "windcave", !site == "paintbrush")%>%
   mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"))%>%
   filter(month == 8)%>%
   ggplot(aes(x = date1, y = temp_xbar, color = source_name))+
@@ -1717,6 +1720,7 @@ First plot - all "degree hours" > 0C, color coded by site, panels for source:
 ```{r}
 temp.lines <- tasr_dat%>%
   filter(temp_raw>0)%>%
+  filter(!site == "windcave", !site == "paintbrush")%>%
   mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"),
       source_name = paste(source_print, full_name, sep = " - "))%>%
   ggplot(aes(x = date1, y = temp_raw, color = source_name, fill = source_name))+
@@ -1740,6 +1744,7 @@ Calculate cumulative degrees above zero for each stream & year:
 
 ```{r}
 tasr_cumulative_hourly <- tasr_dat%>%
+  filter(!site == "windcave", !site == "paintbrush")%>%
   mutate(source_print = case_when(source == "sub_ice" ~ "Rock Glacier", source == "glacier" ~ "Glacier", source == "snowmelt" ~ "Snowfield"), #add print-friendly source types
       source_name = paste(source_print, full_name, sep = " - "))%>% #combined source + site name for plotting
   group_by(year, site, source_name, source_print)%>% #group by year + site, retain new naming columns for plotting
@@ -1872,6 +1877,7 @@ source.yr.pal <- c(
 
 
 temp.profiles <- tasr_daily%>%
+  filter(!site == "windcave", !site == "paintbrush")%>%
   mutate(month = month(date1), 
          year = year(date1),
          doy = yday(date1), 
@@ -1908,6 +1914,7 @@ Free Y Axis:
 
 ```{r}
 temp.profiles.free <- tasr_daily%>%
+  filter(!site == "windcave", !site == "paintbrush")%>%
   mutate(month = month(date1), 
          year = year(date1),
          doy = yday(date1), 
@@ -2288,7 +2295,7 @@ for(i in 1:length(site.yrs)){
     filter(site_yr == site.yrs[i]) #extract data for year/site combo "i"
     #filter(doy>=92&doy<=245)%>% #extract data for ~April 1-Sept 1 based on 2024 DOY - may be off date-wise by a day for leap years
   
-  c<-cpop(t$t_xbar, t$doy, beta = 80) #feeding temperature and doy data into cpop, setting beta to 80 
+  c<-cpop(t$t_xbar, t$doy, beta = 400) #feeding temperature and doy data into cpop, setting beta to 80 
   cp<-changepoints(c)[1,1] #extract first changepoint
   cpp<-plot(c)+ #create plot of cp estimations
     labs(title = site.yrs[i], x = "day of yr", y = "temp, C") #add plot title w/site+year
@@ -2346,5 +2353,16 @@ Save:
 ggsave("Temperature/plots/snowmelt_changepoint_trends.jpg", snowmelt.cp.trends, device = "jpeg", units = "in", dpi = "retina", width = 11, height = 8.5)
 ```
 
-North Teton all over the place bc pulling earlier CP, both grizzly and S teton maybe downward trend (downward trend = warming onset earlier in the year)
+Messy, but general downward trends in all three sites. 
+
+
+## 8. Scatterplot: SNOTEL Air Temps (cumulative) vs. cumulative stream temps. 
+
+
+General idea = cumulative degrees above zero (throughout year, just summer) for air and stream temps - sum up for each year, plot vs. eachother over time. 
+
+Plot: x = stream temp, y = air temp, facet by site. 
+
+
+
 

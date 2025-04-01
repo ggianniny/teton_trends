@@ -879,6 +879,38 @@ ggplot(filter(fully_cleaned6, site == "paintbrush"), aes(x = date1, y = temp_c))
 
 Appears to have successfully removed the desired sections from each year - use this file (fully_cleaned5) for future calculations and analysis.
 
+######a.  Create quick plot with dry days: 
+
+Prep data:
+
+```{r}
+pb_dry <- data.frame(c(2018, 2019, 2020, 2021, 2022, 2023), c(length(exposure.18), length(exposure.19), length(exposure.20), length(exposure.21), length(exposure.22), length(exposure.23)))%>% #create data frame with years, length of sections trimmed out of data for each year
+  rename("year" = 1, "dry_days" = 2) #renaming columns
+```
+
+Plotting:
+
+```{r}
+pb.drydays <- ggplot(pb_dry, aes(x = year, y = dry_days, fill = dry_days))+
+  geom_bar(stat = "identity", position = "dodge")+
+  theme_classic()+
+  scale_fill_gradient(low = "#fdae6b", high ="#412201")+
+  labs(x= "Year", y = "Number of dry days")+
+  scale_x_continuous(breaks = c(2018, 2019, 2020, 2021, 2022, 2023))+
+  theme(
+    axis.text = element_text(size = 10), 
+    axis.title = element_text(size = 11, face = "bold"), 
+    legend.position = "none"
+  )
+pb.drydays
+```
+
+Save:
+
+```{r}
+ggsave("Temperature/plots/pb_dry_days.jpg", pb.drydays, width = 8.5, height = 6.5, units = "in", device = "jpeg", dpi = "retina")
+```
+
 #### IV. S AK Basin
 
 ##### A. Removing extra measurements from 2016 & 2017
@@ -932,7 +964,7 @@ ggplot(filter(fully_cleaned7, site == "s_ak_basin"), aes(x = date1, y = temp_c))
 
 ##### B. 2019 & 2020 problem areas
 
-Manual removal of overlap between stream temp + Grand Targhee air temp. 
+###### i. Manual removal of overlap between stream temp + Grand Targhee air temp. 
 
 Combine Airtemp + S AK Basin Data:
 
@@ -979,19 +1011,27 @@ Not an exact match in either year - comparison with paintbrush:
 (sak.19|sak.20)/(pb.18|pb.19)
 ```
 
+###### ii. Diel temp change Removal
+
+
+
+###### iii. Manual removal from visual assessment 
+
 ```{r}
-ggplot(filter(fully_cleaned7, site == "s_ak_basin", year ==2019|year==2020e), aes(x = date1, y = temp_c))+
-  geom_point()+
+ggplot(filter(fully_cleaned7, site == "s_ak_basin", year ==2019|year==2020), aes(x = date1, y = temp_c))+
+  geom_line()+
   theme_classic()
 ```
 
-Appears to be some very high/variable readings in both years. Isolating error periods: 
+Appears to be some very high/variable readings in both years. Pattern is a gradual uncrease in T, then dramatic fluctuations up/down, then dropping to zero (or below) and continuing rapid fluctuation. Seems consistent with exposure.
+
+Manually Isolating error periods: 
 
 2019:
 
 ```{r}
-ggplot(filter(fully_cleaned7, site == "s_ak_basin", date1 >= "2019-08-15" & date1 <= "2019-10-20"), aes(x = date_tm, y = temp_c))+
-  geom_point()+
+ggplot(filter(fully_cleaned7, site == "s_ak_basin", date1 >= "2019-08-15" & date1 <= "2019-10-20"), aes(x = date_tm, y = temp_raw))+
+  geom_line()+
   theme_classic()
 ```
 
@@ -1004,8 +1044,8 @@ s.ak.19 <- seq.Date(from = as.Date("2019-08-15"), to = as.Date("2019-10-20"), by
 2020:
 
 ```{r}
-ggplot(filter(fully_cleaned7, site == "s_ak_basin", date1 >= "2020-08-15" & date1 <= "2020-11-11"), aes(x = date_tm, y = temp_c))+
-  geom_point()+
+ggplot(filter(fully_cleaned7, site == "s_ak_basin", date1 >= "2020-06-15" & date1 <= "2020-11-11"), aes(x = date_tm, y = temp_c))+
+  geom_line()+
   theme_classic()
 ```
 
@@ -1033,6 +1073,9 @@ ggplot(filter(fully_cleaned8, site == "s_ak_basin", year ==2019|year==2020), aes
   theme_classic()
 ```
 
+**Other cleaning idea: calculate daily temp range, plot over time, run thru cpop to pull slope breaks around areas in question and trim based on those**
+
+
 ### D. Some Final Cleaning/organizing for optimal plotting: 
 
 Re-filling missing date ranges after cleaning:
@@ -1041,29 +1084,16 @@ Re-filling missing date ranges after cleaning:
 full_clean_split <- split(fully_cleaned8, fully_cleaned8$site) # split into 17 df's, one for each site
 ```
 
-Apply previously constructed function to this list to re-fill dates: 
+Fill in missing date values (grouped by site), check if successful:
 
 ```{r}
-#full_clean_filled_split <- lapply(full_clean_split, fill.date) #apply function
-
-ggplot(full_clean_filled_split$windcave, aes(x = date1, y = temp_c))+ #check windcave to see if successful
+temps_final <- fully_cleaned8%>%
+  group_by(site)%>% #group by site
+  complete(date1=seq.Date(from = min(date1), to = max(date1), by = "day")) #fill dates by day from min to max within each site.
+  
+ggplot(filter(temps_final, site =="windcave"), aes(x = date1, y = temp_c))+
   geom_line()
 ```
-
-Re-combine into single dataframe for further cleaning: 
-
-```{r}
-temps_final <- full_clean_filled_split %>%
-  bind_rows(.id = "site")
-```
-
-Check if successful after rowbind:
-
-```{r}
-ggplot(filter(temps_final, site == "windcave"), aes(x = date1, y = temp_c))+
-  geom_line()
-```
-
 
 ---
 ---
@@ -1099,6 +1129,8 @@ Merge with temperature dataset:
 temps_final1 <- merge(temps_final, coords, all.x = T)%>%
   arrange(site, date1)%>%
   mutate(year = year(date1))
+
+sak.test<-filter(temps_final1, site == "s_ak_basin")
 ```
 
 
@@ -1815,6 +1847,54 @@ Save:
 ggsave("Temperature/plots/temp_profiles_gradient.jpg", gradient.stacked.profiles, device = "jpeg", units = "in", dpi = "retina", width = 11, height = 8.5)
 ```
 
+
+####5d. Warm/Cold plots
+
+Goal = faceted plot with 3 warm, 3 cold streams (temps stacked by years). 
+
+* Warm streams = Grizzly, N Teton, S Teton (red, on bottom)
+* Cold streams = Delta, Mid Teton, S Cascade (blue, on top)
+
+```{r}
+warmcold.pal <- c("#a1e2fa","#94ceec", "#86b8dd", "#7ba6d1", "#6b8dc0", "#5a72ad", "#49579b", "#383c88", "#282377", "#130260", "#fdae6b", "#eca161" , "#d99356", "#c4844a", "#b17640", "#9e6836", "#8a592a", "#75491e", "#5d3711", "#412201")
+
+warmcold.lines <- tasr_daily%>%
+  filter(site == "grizzly"|site=="n_teton"|site=="s_teton"|site=="delta"|site=="mid_teton"|site=="s_cascade")%>%
+  mutate(month = month(date1), 
+         year = year(date1),
+         doy = yday(date1), 
+         doy_dt = as.Date(doy, origin = "2024-01-01"),
+         year_src = paste(source_print, year, sep = " "),
+         strm_type = case_when(site == "s_cascade"~"Cold", site =="mid_teton"~"Cold", site == "delta"~"Cold", site == "grizzly"~"Warm", site=="n_teton"~"Warm", site == "s_teton"~"Warm"), 
+         type_yr = paste(strm_type, year, sep = " - "), 
+         site_type = paste(strm_type, full_name, sep = " - "))%>%
+  filter(month>=6&month<=9)%>%
+  ggplot(aes(x = doy_dt, y = temp_xbar, color = type_yr))+
+  geom_line()+
+  facet_wrap(~site_type, nrow = 2, ncol = 3)+
+  #facet_grid(rows = vars(source_print), cols = vars(site))+
+  scale_color_manual(values = warmcold.pal)+
+  theme_classic()+
+  scale_x_date(date_labels = "%b/%d")+
+  labs(x = "Date", y = "Mean daily stream temperature, C", color = "Stream type & year")+
+  theme(
+    axis.title = element_text(size=10, face="bold"), 
+    strip.text = element_text(size = 9, face = "bold"), 
+    legend.title = element_text(size = 10, face = "bold"), 
+    axis.text.y = element_text(size = 9), 
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1), 
+    legend.text = element_text(size = 9)
+  )+
+  guides(color = guide_legend(ncol = 2))
+
+warmcold.lines
+```
+
+Save:
+
+```{r}
+ggsave("Temperature/plots/warm_cold_lines.jpg", warmcold.lines, device = "jpeg", units = "in", dpi = "retina", width = 8.5, height = 8.5)
+```
 
 ## 6. Combine plot with full period of record for all sites; individual plots for each site (including below zero)
 

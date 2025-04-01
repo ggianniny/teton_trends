@@ -1,6 +1,7 @@
 # august hurdle
 
 # rescale data by dividing by the global max
+# hurdle model for August
 
 library(tidyverse)
 library(brms)
@@ -13,6 +14,16 @@ write_dir <- "Temperature/brms_models/all_sites/august"
 
 # rescale data by dividing by max
 ### scale of 0 to 1. What is the intercept?
+# source("Temperature/brms_models/all_sites/august/aug_hurdle.R")
+
+write_dir <- "Temperature/brms_models/all_sites/august"
+
+
+
+# modify data #### 
+
+# rescale data by dividing by mean
+### Makes intercept 1, values can still be 0 or positive. 
 ### 
 
 source_info <- read.csv("source_info.csv")%>%
@@ -56,7 +67,7 @@ temp_clean <- left_join(temp_clean,
                         source_info)
 
 temp <- temp_clean %>% 
-  select(temp_c, year, month, source, site) %>%
+  select(temp_c, temp_raw, year, month, source, site) %>%
   filter(!is.na(temp_c),
          !is.na(source)) %>%
   mutate(year_s = (year - mean(year)) / sd(year),
@@ -82,11 +93,19 @@ get_prior(temp_1 ~ year_s * source +
           data = aug_dat)
 
 my_prior <- c(prior(normal(0,0.5), class = b),
-              prior(normal(-2.6,1), class = Intercept),
-              # mean ~ 0.07. log(0.07) = -2.6
+              prior(normal(0,0.5), class = Intercept),
               prior(exponential(2), class = sd))
+# slope b normal(0,1)
+# intercept, gamma auto loglink function, n(0,0.5)
+# hu prior leave it alone
 
 
+
+aug_dat <- temp |>
+  filter(month == 8)
+saveRDS(aug_dat, paste(write_dir, 
+                        "/hurdle_fit_data.rds",
+                        sep = ""))
 
 hurdle_aug <- brm(temp_1 ~ year_s + source +
                     year_s:source +
@@ -98,10 +117,12 @@ hurdle_aug <- brm(temp_1 ~ year_s + source +
                   chains = 1)
 
 hurdle_aug <- update(hurdle_aug,
-                     iter = 600, 
+                     iter = 10, #2000, 
                      chains = 4, 
-                     cores = 4)
+                     cores = 4,
+                     save_all_pars = TRUE)
 # save the output
 saveRDS(hurdle_aug, paste(write_dir,
-                          "/fit_rand_slopes_hurdle_aug.rds", 
-                          sep = ""))
+                    "/fit_rand_slopes_hurdle_aug.rds", 
+                    sep = ""))
+

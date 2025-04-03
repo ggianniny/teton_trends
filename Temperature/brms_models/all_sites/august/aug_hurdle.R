@@ -1,4 +1,6 @@
 # hurdle model for August
+# this script just fits the hurdle model for august. 
+# need to make a separate script for summarizing output, making figures, etc. 
 
 library(tidyverse)
 library(brms)
@@ -7,7 +9,7 @@ library(tidybayes)
 # source("Temperature/brms_models/all_sites/august/aug_hurdle.R")
 
 write_dir <- "Temperature/brms_models/all_sites/august"
-
+model_month <- 8
 
 
 # modify data #### 
@@ -62,9 +64,9 @@ my_prior <- c(prior(normal(0,0.5), class = b),
 
 
 
-aug_dat <- temp |>
-  filter(month == 8)
-saveRDS(aug_dat, paste(write_dir, 
+mod_dat <- temp |>
+  filter(month == model_month)
+saveRDS(mod_dat, paste(write_dir, 
                         "/hurdle_fit_data.rds",
                         sep = ""))
 
@@ -72,7 +74,7 @@ hurdle_aug <- brm(temp_1 ~ year_s + source +
                     year_s:source +
                     (1 + year_s |site) + (1|year_s),
                   family = hurdle_gamma(),
-                  data = aug_dat,
+                  data = mod_dat,
                   prior = my_prior,
                   iter = 10,
                   chains = 1)

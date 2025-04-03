@@ -38,6 +38,8 @@ unique(temp_clean$site)
 # Mt St John (gusher), South Cascade, Alaska Basin, Wind Cave
 # Grizzly, Painbrush, N Fork Teton, S Fork Teton
 
+temp_clean <- read_csv("Temperature/cleaned_full_datasets/temps_hourly.csv")
+
 # sites to remove
 rm_sites <- c("silver_run", "death_canyon", "peterson", "quad_cr", "schoolroom", "paintbrush", "windcave")
 
@@ -60,6 +62,7 @@ temp_clean |>
                  position = "identity") +
   facet_wrap(~month,
              scales = "free")
+
 
 temp <- temp_clean %>% 
   select(temp_c, temp_raw, year, month, source, site) %>%
@@ -139,124 +142,161 @@ my_prior <- c(prior(normal(0,0.5), class = b),
 
 # time run --> divide by max instead of mean, data range would be 0/1
 
-sample_prior <- brm(temp_s ~ year_s + source +
-                      year_s:source +
-                      (1 + year_s |site) + (1|year_s),
-                    #bf(temp_s ~year_s..., hu ~ season) # IF we have a larger model with multiple/all monts in it
-                    # could make it the same as the temp data
-                    family = hurdle_gamma(),
-                    data = test_dat,
-                    prior = my_prior,
-                    sample_prior = "only",
-                    iter = 10,
-                    chains = 1)
-
-sample_prior <- update(sample_prior,
-                       iter = 4000)
-
-#plot(sample_prior)
-pp_check(sample_prior,
-         type = "dens_overlay_grouped",
-         group = "source")
-
+# sample_prior <- brm(temp_s ~ year_s + source +
+#                       year_s:source +
+#                       (1 + year_s |site) + (1|year_s),
+#                     #bf(temp_s ~year_s..., hu ~ season) # IF we have a larger model with multiple/all monts in it
+#                     # could make it the same as the temp data
+#                     family = hurdle_gamma(),
+#                     data = test_dat,
+#                     prior = my_prior,
+#                     sample_prior = "only",
+#                     iter = 10,
+#                     chains = 1)
+# 
+# sample_prior <- update(sample_prior,
+#                        iter = 4000)
+# 
+# #plot(sample_prior)
+# pp_check(sample_prior,
+#          type = "dens_overlay_grouped",
+#          group = "source")
+# 
+# # # simulate types of data you might collect
+# mean_year <- mean((temp$year))
+# sd_year <- sd((temp$year))
+# # mean_temp <- mean((fit_data_orig$temp_c))
+# # sd_temp <- sd((fit_data_orig$temp_c))
+# 
 # # simulate types of data you might collect
+# fit_data_obs_years <- sample_prior$data |>
+#   select(source, year_s, site) |>
+#   distinct() |>
+#   mutate(year = (year_s*sd_year)+mean_year,
+#          month = 5,
+#          day = 15,
+#          date = make_date(year, month, day))
+# 
+# # plot of predicting new data ####
+# add_predicted_draws(
+#   newdata = fit_data_obs_years,
+#   sample_prior,
+#   allow_new_levels = TRUE) |>
+#   #median_qi(.prediction) |>
+#   # mutate(.prediction = (.prediction*sd_temp)+mean_temp,
+#   #        .lower = (.lower*sd_temp)+mean_temp,
+#   #        .upper = (.upper*sd_temp)+mean_temp) |>
+#   ggplot(aes(x = year, 
+#              y = .prediction,
+#              # ymin = .lower, 
+#              # ymax = .upper,
+#              # fill = source,
+#              color = source)) +
+#   # geom_ribbon(alpha = 0.5) +
+#   # geom_line() +
+#   geom_point() +
+#   facet_wrap(~site,
+#              scales = "free_y") +
+#   theme_bw() 
+# 
+# add_predicted_draws(
+#   newdata = fit_data_obs_years,
+#   sample_prior,
+#   allow_new_levels = TRUE) |>
+#   ggplot(aes(x = .prediction,
+#              fill = source)) +
+#   geom_histogram(binwidth = 1,
+#                  position = "identity")
+# 
+# 
+# hurdle1 <- brm(temp_1 ~ year_s + source +
+#                       year_s:source +
+#                       (1 + year_s |site) + (1|year_s),
+#                     family = hurdle_gamma(),
+#                     data = test_dat,
+#                     prior = my_prior,
+#                     iter = 10,
+#                     chains = 1)
+# 
+# hurdle1 <- update(hurdle1, 
+#                   iter = 1000,
+#                   chains = 4, 
+#                   cores = 4)
+# pp_check(hurdle1,
+#          type = "dens_overlay_grouped",
+#          group = "source")
+# 
+# # boxplot
+# pp_check(hurdle_aug,
+#          type = "violin_grouped",
+#          group = "source")
+# 
+# bayes_R2(object = hurdle_aug)
+# 
+# aug_dat <- temp |>
+#   filter(month == 8)
+# 
+# hurdle_aug <- brm(temp_1 ~ year_s + source +
+#                     year_s:source +
+#                     (1 + year_s |site) + (1|year_s),
+#                   family = hurdle_gamma(),
+#                   data = aug_dat,
+#                   prior = my_prior,
+#                   iter = 10,
+#                   chains = 1)
+# 
+# hurdle_aug <- update(hurdle_aug,
+#                      iter = 2000, 
+#                      chains = 4, 
+#                      cores = 4,
+#                      save_all_pars = TRUE)
+# # save the output
+# # saveRDS(hurdle_aug, paste(write_dir,
+# #                     "/fit_rand_slopes_hurdle_aug.rds", 
+# #                     sep = ""))
+
+hurdle_aug <- readRDS(
+  paste(
+    write_dir,
+    "/fit_rand_slopes_hurdle_aug.rds",
+    sep = ""))
+
+source_info <- read.csv("source_info.csv")%>%
+  rename(site = stream) #rename for merge
+
+source_info <- source_info %>%
+  mutate(source = case_when(
+    site == "cloudveil" ~ "sub_ice",
+    .default = source)) |>
+  mutate(source = case_when(
+    source == "sub_ice" ~ "rock_glacier",
+    source == "snowmelt" ~ "snowfield",
+    .default = source))
+
+temp_clean <- read_csv("Temperature/cleaned_full_datasets/temps_hourly.csv")
+
+# sites to remove
+rm_sites <- c("silver_run", "death_canyon", "peterson", "quad_cr", "schoolroom", "paintbrush", "windcave")
+
+temp_clean <- temp_clean |>
+  mutate(month = month(date1),
+         year = year(date1)) |>
+  filter(!is.na(temp_c),
+         !site %in% rm_sites)
+
+temp_clean <- left_join(temp_clean,
+                        source_info)
+
+temp <- temp_clean %>% 
+  select(temp_c, temp_raw, year, month, source, site) %>%
+  filter(!is.na(temp_c),
+         !is.na(source)) %>%
+  mutate(year_s = (year - mean(year)) / sd(year),
+         temp_1 = temp_c / max(temp_c))
+
+
 mean_year <- mean((temp$year))
 sd_year <- sd((temp$year))
-# mean_temp <- mean((fit_data_orig$temp_c))
-# sd_temp <- sd((fit_data_orig$temp_c))
-
-# simulate types of data you might collect
-fit_data_obs_years <- sample_prior$data |>
-  select(source, year_s, site) |>
-  distinct() |>
-  mutate(year = (year_s*sd_year)+mean_year,
-         month = 5,
-         day = 15,
-         date = make_date(year, month, day))
-
-# plot of predicting new data ####
-add_predicted_draws(
-  newdata = fit_data_obs_years,
-  sample_prior,
-  allow_new_levels = TRUE) |>
-  #median_qi(.prediction) |>
-  # mutate(.prediction = (.prediction*sd_temp)+mean_temp,
-  #        .lower = (.lower*sd_temp)+mean_temp,
-  #        .upper = (.upper*sd_temp)+mean_temp) |>
-  ggplot(aes(x = year, 
-             y = .prediction,
-             # ymin = .lower, 
-             # ymax = .upper,
-             # fill = source,
-             color = source)) +
-  # geom_ribbon(alpha = 0.5) +
-  # geom_line() +
-  geom_point() +
-  facet_wrap(~site,
-             scales = "free_y") +
-  theme_bw() 
-
-add_predicted_draws(
-  newdata = fit_data_obs_years,
-  sample_prior,
-  allow_new_levels = TRUE) |>
-  ggplot(aes(x = .prediction,
-             fill = source)) +
-  geom_histogram(binwidth = 1,
-                 position = "identity")
-
-
-hurdle1 <- brm(temp_1 ~ year_s + source +
-                      year_s:source +
-                      (1 + year_s |site) + (1|year_s),
-                    family = hurdle_gamma(),
-                    data = test_dat,
-                    prior = my_prior,
-                    iter = 10,
-                    chains = 1)
-
-hurdle1 <- update(hurdle1, 
-                  iter = 1000,
-                  chains = 4, 
-                  cores = 4)
-pp_check(hurdle1,
-         type = "dens_overlay_grouped",
-         group = "source")
-
-# boxplot
-pp_check(hurdle_aug,
-         type = "violin_grouped",
-         group = "source")
-
-bayes_R2(object = hurdle_aug)
-
-aug_dat <- temp |>
-  filter(month == 8)
-
-hurdle_aug <- brm(temp_1 ~ year_s + source +
-                    year_s:source +
-                    (1 + year_s |site) + (1|year_s),
-                  family = hurdle_gamma(),
-                  data = aug_dat,
-                  prior = my_prior,
-                  iter = 10,
-                  chains = 1)
-
-hurdle_aug <- update(hurdle_aug,
-                     iter = 2000, 
-                     chains = 4, 
-                     cores = 4,
-                     save_all_pars = TRUE)
-# save the output
-saveRDS(hurdle_aug, paste(write_dir,
-                    "/fit_rand_slopes_hurdle_aug.rds", 
-                    sep = ""))
-
-# hurdle_aug <- readRDS(
-#   paste(
-#     write_dir,
-#     "/fit_rand_slopes_hurdle_aug.rds",
-#     sep = ""))
 
 
 pp_check(hurdle_aug)+
@@ -271,7 +311,7 @@ pp_check(hurdle_aug,
 hurd_r2 <- bayes_R2(object = hurdle_aug)
 hurd_r2
 
-bayes_factor(hurdle_aug, brm1)
+#bayes_factor(hurdle_aug, brm1)
 
 fit_data_obs_years <- hurdle_aug$data |>
   select(source, year_s, site) |>
@@ -280,6 +320,27 @@ fit_data_obs_years <- hurdle_aug$data |>
          month = 8,
          day = 15,
          date = make_date(year, month, day))
+
+# hu values?
+add_epred_draws(
+  newdata = fit_data_obs_years,
+  hurdle_aug,
+  allow_new_levels = TRUE, 
+  dpar = TRUE) |>
+  ungroup() |>
+  group_by(source) |>
+  median_qi(hu)
+# same for all sources?
+
+add_epred_draws(
+  newdata = fit_data_obs_years,
+  hurdle_aug,
+  allow_new_levels = TRUE, 
+  dpar = TRUE) |>
+  median_qi(hu) |>
+  select(source, site, year_s, hu, .lower, .upper)
+
+plot(conditional_effects(hurdle_aug, dpar = "hu"))
 
 
 add_epred_draws(
@@ -412,7 +473,7 @@ snow_pos <- hurdle_aug %>%
 (prob_pos_df <- bind_rows(glac_pos, sub_pos, snow_pos))
 
 
-
+hurdle_aug
 
 # halfeye
 b_glacier <- hurdle_aug %>%
@@ -437,7 +498,7 @@ data.frame(year_real = c(2019, 2020)) |>
   # slope_new = chnage in actual temperature right scale
   mutate(prop = slope_new / `2019` *100) |>
   group_by(source) |>
-  mean_qi(prop)
+  median_qi(prop)
 
 
 data.frame(year_real = c(2019, 2020)) |>

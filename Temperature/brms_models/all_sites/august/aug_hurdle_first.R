@@ -64,12 +64,7 @@ temp_clean |>
              scales = "free")
 
 
-temp <- temp_clean %>% 
-  select(temp_c, temp_raw, year, month, source, site) %>%
-  filter(!is.na(temp_c),
-         !is.na(source)) %>%
-  mutate(year_s = (year - mean(year)) / sd(year),
-         temp_1 = temp_c / max(temp_c))
+
 
 hist(temp$temp_1)
 

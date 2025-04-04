@@ -1,0 +1,561 @@
+---
+title: "August Hurdle Summary"
+author: "Justin Pomeranz"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(brms)
+library(tidybayes)
+
+# rmarkdown::render("Temperature/brms_models/all_sites/august/Aug_Hurd_summary.Rmd")
+```
+
+# Overview
+
+This document outlines the model specification for mean August stream temperatures in the Teton Alpine Stream Research (TASR) sites. The raw data is explored and the results of the Bayesian Hierarchical model are viewed. The model is fit in a separate script in order to save space and time to render this document.
+
+# Setup
+
+### Libraries
+
+```{r libraries, eval=FALSE}
+library(tidyverse)
+library(brms)
+library(tidybayes)
+```
+
+### Data
+
+#### Site Metadata
+
+```{r source_data}
+source_info <- read.csv(here::here("source_info.csv"))%>%
+  rename(site = stream) #rename for merge
+
+# change source for cloudveil
+source_info <- source_info %>%
+  mutate(source = case_when(
+    site == "cloudveil" ~ "sub_ice",
+    .default = source)) |>
+  # chnage source names for CSU paper
+  mutate(source = case_when(
+    source == "sub_ice" ~ "rock_glacier",
+    source == "snowmelt" ~ "snowfield",
+    .default = source))
+unique(source_info$source)
+```
+
+#### Temperature data
+
+```{r temp_data, warning=FALSE, message=FALSE}
+temp_clean <- read_csv(here::here("Temperature/cleaned_full_datasets/temps_hourly.csv"))
+
+# sites to remove
+rm_sites <- c("silver_run", "death_canyon", "peterson", "quad_cr", "schoolroom", "paintbrush", "windcave")
+
+temp_clean <- temp_clean |>
+  # make month and year columns in date format
+  mutate(month = month(date1),
+         year = year(date1)) |>
+  # remove sites  
+  filter(!is.na(temp_c),
+         !site %in% rm_sites)
+unique(temp_clean$site)
+```
+
+-   Join the two data sets
+
+```{r}
+temp_clean <- left_join(temp_clean,
+                        source_info)
+```
+
+-   modify data
+
+```{r modify_data}
+temp_aug <- temp_clean %>% 
+  select(temp_c, temp_raw, year, month, source, site) %>%
+  filter(!is.na(temp_c),
+         !is.na(source),
+         month == 8) %>%
+  mutate(year_s = (year - mean(year)) / sd(year), # centered and scaled year
+         temp_1 = temp_c / max(temp_c)) # scale temperature from 0-1 by dividing by max
+```
+
+### Raw Data Plots
+
+```{r raw_plots}
+temp_aug |> 
+  ggplot(
+    aes(
+      x = month, 
+      y = temp_1,
+      fill = source)) +
+  geom_boxplot()
+
+
+temp_aug |>
+  ggplot(aes(x = temp_1, 
+             fill = source)) +
+  geom_histogram(alpha = 0.5,
+                 position = "identity") 
+```
+
+The data shows the following qualities:\
+1. Increasing variance with increasing mean\
+2. Right tail skew\
+3. Data does have 0's and is bounded there.
+
+-   Points 1 and 2 support the use of a gamma ($\Gamma$) distribution.\
+-   Gamma distributions are for continuous variables which are greater than 0.\
+-   Point 3 above supports the use of a hurdle model
+    -   The data does contain 0's but the gamma has to be positive\
+    -   The "hurdle" is a separate modeling step which calculates the probability of an observation being 0\
+    -   If the data is not a 0, it then follows a gamma distribution.
+-   Log transform - you're modeling the log temperature, not temp
+-   Back transform errors
+-   Jensen's inequality -
+
+# Model Designation
+
+-   The following code shows the model and the priors.\
+-   The model is not run here to save time\
+-   I load the results of the model run below to view the results
+
+#### Load model run
+
+```{r}
+hurdle_aug <- readRDS(
+  here::here("Temperature/brms_models/all_sites/august/fit_rand_slopes_hurdle_aug.rds"))
+```
+
+#### Model formula
+
+```{r}
+hurdle_aug$formula
+```
+
+-   Response: Temperature, scaled 0-1\
+-   Fixed factors:
+    -   Year (centered and scaled)\
+    -   Source (categorical)\
+    -   Year:Source interaction effect
+-   Random factors
+    -   Account for variation that we know exists but are not trying to model or explain \* Random intercepts for:
+        -   year - some years are hot and some are cold\
+        -   site - watershed upstream of site may be mostly north- or south-facing
+-   Random slopes - covariation in slope and intercept
+    -   In addition to the intercepts above, we also allow for random slopes\
+    -   Specifically, the effect of year is allowed to vary for each site: `1 + year_s | site`\
+    -   This accounts for the fact that some sites might respond differently across years\
+    -   i.e., a north-facing watershed may not warm as fast in a hot year compared with a south-facing watershed\
+    -   Or a snowfield stream might completely melt out faster in a "hot" year and have more cumulative heat load in August
+
+#### Bayesian Model
+
+i = observation
+
+j = years
+
+k = sites
+
+add hurdle bernoulli, probability of getting a 1
+
+for all the data that are 1,s gamma model
+
+$y_{ijk} \sim \Gamma(\mu_{jk}, \theta)$  
+
+
+$log(\mu_{jk}) = \alpha_0 + \alpha_j + \alpha_k + \beta_{year}*year + \beta_{source}*source + \beta_{y*s} * year:source + \beta_{year_{[k]}} * year$
+
+Priors
+$\alpha_0 \sim N(0, 0.5)$
+
+
+$\beta_{year} \sim N(0, 0.5)$
+
+
+$\beta_{source} \sim N(0, 0.5)$
+
+
+$\beta_{year_{[k]}} \sim N(0, 0.5)$
+
+
+$\alpha_{j} \sim N(0, \sigma_j)$
+
+
+$\alpha_{k} \sim N(0, \sigma_k)$
+
+
+$\sigma_j \sim exp(2)$ 
+
+
+$\sigma_k \sim exp(2)$
+
+
+$hurdle \sim Beta(1, 1)$
+
+
+correlation prior - covar matrix
+hurdle prior
+
+## Model Evaluation
+
+#### Posterior Predictive checks
+
+-   for comparison, I will also show the checks for the Gaussian model
+
+```{r, message=FALSE}
+gaus_aug <- readRDS(
+  here::here("Temperature/brms_models/all_sites/august/fit_rand_slopes_aug.rds"))
+pp_check(hurdle_aug) +
+  labs(title = "Hurdle")
+pp_check(gaus_aug) +
+  labs(title = "Gaussian")
+```
+
+-   Dark blue lines are the empirical observations\
+-   Light blue are the model predictions\
+-   The hurdle gamma model is a much better fit
+
+```{r, message=FALSE}
+pp_check(hurdle_aug, type = "dens_overlay_grouped",
+         group = "source")+
+  labs(title = "Hurdle")
+pp_check(gaus_aug, type = "dens_overlay_grouped",
+         group = "source")+
+  labs(title = "Gaussian")
+```
+
+-   The same pattern can also be seen when looking at the `source` groups
+
+-   Finally, I show a box plot of the two models
+
+```{r, message=FALSE}
+pp_check(hurdle_aug, 
+         type = "boxplot") +
+  labs(title = "Hurdle")
+pp_check(gaus_aug, 
+         type = "boxplot") +
+  labs(title = "Gaussian")
+
+```
+
+-   The Gaussian model predicts negative values which do not exist in the data\
+-   Gaussian also predicts "wider" boxes
+-   The Hurdle model correctly captures the bound at 0 in the predictions\
+-   Box width predictions are similar to empirical observations
+
+#### R^2^ of Hurdle model
+
+```{r}
+bayes_R2(object = hurdle_aug)
+```
+
+-   The Hurdle gamma model has a Credible Interval (CrI) for R^2^ of 64.1 to 65.1%
+
+### Model results
+
+#### Overall Effects of Source
+
+```{r, echo = FALSE}
+mean_year <- mean((temp_clean$year))
+sd_year <- sd((temp_clean$year))
+max_temp <- max(temp_clean$temp_c)
+
+fit_data_obs_years <- hurdle_aug$data |>
+  select(source, year_s, site) |>
+  distinct() |>
+  mutate(year = (year_s*sd_year)+mean_year,
+         month = 8,
+         day = 15,
+         date = make_date(year, month, day))
+
+source_data <- hurdle_aug$data |>
+  select(source, year_s) |>
+  distinct() |>
+  mutate(year = (year_s*sd_year)+mean_year,
+         month = 8,
+         day = 15,
+         date = make_date(year, month, day))
+
+```
+
+```{r, echo=FALSE}
+source_slope_epred <- add_epred_draws(
+  newdata = source_data,
+  hurdle_aug,
+  #allow_new_levels = TRUE,
+  re_formula = NA) |> # ignores random effects
+  #median_qi(.epred) |>
+  mutate(.epred = (.epred)*max_temp) |>
+  ggplot(aes(x = date, 
+             y = .epred,
+             fill = source,
+             color = source)) +
+  stat_lineribbon(aes(y = .epred),
+                  .width = c(0.95, 0.68),
+                  alpha = 1/4) +
+  theme_bw() +
+  labs(title = "Change in August Temperatures by Source",
+       subtitle = "Ribbons = 68 and 95% CrI",
+       x = "Year",
+       y = "Temperature") +
+  facet_wrap(~source) +
+  scale_fill_manual(values = c("deepskyblue", 
+                                "slategrey",
+                               "springgreen4")) +
+  scale_color_manual(values = c("deepskyblue", 
+                                "slategrey",
+                                "springgreen4"))
+
+source_slope_epred
+```
+
+#### Magnitude of increase
+
+```{r, echo=FALSE}
+# set up raw temp as avergae
+
+data.frame(year_real = c(2019, 2020)) |>
+  mutate(year_s = (year_real - mean_year)/sd_year) |>
+  expand_grid(source = unique(temp_aug$source)) |>
+  add_epred_draws(hurdle_aug,
+                  re_formula = NA) |>
+  ungroup()|>
+  mutate(.epred = .epred * max_temp) |>
+  select(-.row, -.chain, -.iteration, -year_s) |>
+  pivot_wider(names_from = "year_real",
+              values_from = ".epred") |>
+  mutate(slope_new = `2020` - `2019`) |>
+  # slope_new = chnage in actual temperature right scale
+  mutate(percent_change = slope_new / `2019` *100) |>
+  group_by(source) |>
+  median_qi(percent_change)
+
+# add sites to df
+# re_formula = NULL
+```
+
+-   Snowfield streams have a median increase of 2.5% (CrI: -2.5, 7.1%)\
+-   Rock Glacier streams have a median increase of 1.5% (CrI: -2.7, 5.9%)\
+-   Glacier streams have a median increase of 0.5% (CrI: -3.9, 5.3%)
+
+* Add an analysis with actual temp changes?  
+* i.e., 1.5% increase of 1 degree vs. 2.5% of 6 degrees  
+
+
+#### Probability of having positive slopes
+
+```{r, echo=FALSE}
+glac_pos <- hurdle_aug %>%
+  spread_draws(b_year_s) %>%
+  mutate(year_pos = (b_year_s) > 0) %>%
+  summarize(prob_pos = mean(year_pos)) |>
+  mutate(source = "glacier")
+
+# sub ice
+sub_pos <- hurdle_aug %>%
+  spread_draws(#b_Intercept, 
+    #b_sourcerock_glacier,
+    b_year_s,
+    `b_year_s:sourcerock_glacier`) %>%
+  rename(year_sub = `b_year_s:sourcerock_glacier`) %>%
+  mutate(sub = b_year_s + year_sub, 
+         sub_pos = sub > 0) %>%
+  summarize(prob_pos = mean(sub_pos))|>
+  mutate(source = "rock_glacier")
+
+
+# snow
+snow_pos <- hurdle_aug %>%
+  spread_draws(#b_Intercept, 
+    #b_sourcesnowfield,
+    b_year_s,
+    `b_year_s:sourcesnowfield`) %>%
+  rename(year_sub = `b_year_s:sourcesnowfield`) %>%
+  mutate(sub = b_year_s + year_sub, 
+         sub_pos = sub > 0) %>%
+  summarize(prob_pos = mean(sub_pos))|>
+  mutate(source = "snow_melt")
+
+
+(prob_pos_df <- bind_rows(glac_pos, sub_pos, snow_pos))
+
+```
+
+-   Snowfields have a 87% chance on increasing temperature\
+-   Rock Glaciers have a 77% chance on increasing temperature\
+-   Glaciers have a 59% chance on increasing temperature
+
+```{r, echo=FALSE}
+data.frame(year_real = c(2019, 2020)) |>
+  mutate(year_s = (year_real - mean_year)/sd_year) |>
+  expand_grid(source = unique(temp_clean$source)) |>
+  add_epred_draws(hurdle_aug,
+                  re_formula = NA,
+                  allow_new_levels = TRUE) |>
+  ungroup()|>
+  mutate(.epred = .epred * max_temp) |>
+  select(-.row, -.chain, -.iteration, -year_s) |>
+  pivot_wider(names_from = "year_real",
+              values_from = ".epred") |>
+  mutate(slope_new = `2020` - `2019`) |>
+  # slope_new = chnage in actual temperature right scale
+  mutate(prop = slope_new / `2019` *100) |>
+  ggplot(
+         aes(y = source,
+             x = slope_new,
+             fill = after_stat(x >0))) +
+  stat_halfeye() +
+  geom_vline(xintercept = 0, 
+             linetype = "dashed") +
+  scale_fill_manual(values = c("gray80", "orangered1")) +
+  theme_bw() +
+  labs(x = "percentage change each year") +
+  annotate("text", # rock_glacier
+           x = 0.5,
+           y = 2.2,
+           label = paste("P(Positive)",
+                         round(sub_pos[1,1],2),
+                         sep = " ")) +
+  annotate("text", # Glacier
+           x = 0.5,
+           y = 1.2,
+           label = paste("P(Positive)",
+                         round(glac_pos[1,1],2),
+                         sep = " ")) +
+  annotate("text", # snow
+           x = 0.65,
+           y = 3.3,
+           label = paste("P(Positive)",
+                         round(snow_pos[1,1],3),
+                         sep = " "))
+```
+
+## Site-level Predictions and empricial data
+
+```{r, echo=FALSE}
+pred_plot <- add_predicted_draws(
+  newdata = fit_data_obs_years,
+  hurdle_aug,
+  allow_new_levels = TRUE) |>
+  median_qi(.prediction) |>
+  mutate(.prediction = (.prediction*max_temp),
+         .lower = (.lower*max_temp),
+         .upper = (.upper*max_temp),
+         source = factor(
+           source,
+           levels = c(
+             "snowfield",
+             "glacier",
+             "rock_glacier"))) |>
+  ggplot(aes(x = date, 
+             y = .prediction,
+             ymin = .lower, 
+             ymax = .upper,
+             fill = source,
+             color = source)) +
+  geom_ribbon(alpha = 0.5) +
+  geom_line() +
+  geom_point(data = hurdle_aug$data |>
+               mutate(year = (year_s*sd_year)+mean_year,
+                      month = 8,
+                      day = 15,
+                      date = make_date(year, month, day),
+                      temp = (temp_1*max_temp),
+                      source = factor(
+                        source,
+                        levels = c(
+                          "snowfield",
+                          "glacier",
+                          "rock_glacier"))),
+             aes(x = date,
+                 y = temp,
+                 color = source),
+             inherit.aes = FALSE,
+             alpha = 0.2, 
+             position = position_jitter(
+               width = 35,
+               height = NULL)) +
+  facet_wrap(source~site,
+             ncol = 3,
+             scales = "free_y") +
+  theme_bw() +
+  labs(title = "Predicting New Observations",
+       subtitle = "Ribbon shows predictions for new data",
+       x = "Year",
+       y = "Predicted Temperature") +
+  scale_fill_manual(values = c("springgreen4",
+                               "deepskyblue", 
+                                "slategrey")) +
+  scale_color_manual(values = c("springgreen4",
+                                "deepskyblue", 
+                                "slategrey")) 
+pred_plot
+```
+
+```{r, echo=FALSE}
+fit_plot <- add_epred_draws(
+  newdata = fit_data_obs_years,
+  hurdle_aug,
+  allow_new_levels = TRUE) |>
+  median_qi(.epred) |>
+  mutate(.epred = (.epred*max_temp),
+         .lower = (.lower*max_temp),
+         .upper = (.upper*max_temp),
+         source = factor(
+           source,
+           levels = c(
+             "snowfield",
+             "glacier",
+             "rock_glacier"))) |>
+  ggplot(aes(x = date, 
+             y = .epred,
+             ymin = .lower, 
+             ymax = .upper,
+             fill = source,
+             color = source)) +
+  geom_ribbon(alpha = 0.5) +
+  geom_line() +
+  geom_point(data = hurdle_aug$data |>
+               mutate(year = (year_s*sd_year)+mean_year,
+                      month = 8,
+                      day = 15,
+                      date = make_date(year, month, day),
+                      temp = (temp_1*max_temp),
+                      source = factor(
+                        source,
+                        levels = c(
+                          "snowfield",
+                          "glacier",
+                          "rock_glacier"))),
+             aes(x = date,
+                 y = temp,
+                 color = source),
+             inherit.aes = FALSE,
+             alpha = 0.2, 
+             position = position_jitter(
+               width = 35,
+               height = NULL)) +
+  facet_wrap(source~site,
+             ncol = 3,
+             scales = "free_y") +
+  theme_bw() +
+  labs(title = "Site-Specific Model Medians",
+       subtitle = "Line shows median fitted temperature \nRibbon shows 95% CrI for Fit \nPoints are observed Data",
+       x = "Year",
+       y = "Fitted Temperature") +
+  scale_fill_manual(values = c("springgreen4",
+                               "deepskyblue", 
+                                "slategrey")) +
+  scale_color_manual(values = c("springgreen4",
+                                "deepskyblue", 
+                                "slategrey")) 
+fit_plot
+```

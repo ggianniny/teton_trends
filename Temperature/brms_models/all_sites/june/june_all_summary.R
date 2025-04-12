@@ -83,7 +83,8 @@ fit_data_orig |>
              y = temp_c,
              color = source)) +
   geom_point() +
-  facet_wrap(site~source, scales = "free_y")
+  facet_wrap(site~source, scales = "free_y") +
+  labs(title = "June Temperatures")
 
 # epred draws ####
 # simulate types of data you might collect

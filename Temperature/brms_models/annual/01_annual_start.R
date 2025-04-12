@@ -104,3 +104,34 @@ temp_clean |>
   msts(seasonal.periods = c(7, 365)) |>
   mstl() |>
   autoplot()
+
+
+# day of year plots
+temp_clean |>
+  filter(site == "s_teton" |
+           site == "n_teton" |
+           site == "grizzly",
+         !is.na(temp_c)) |>
+  group_by(site, date1) |>
+  summarize(m_daily = mean(temp_c, na.rm = TRUE)) |> 
+  mutate(day = yday(date1),
+         year = year(date1)) |>
+  ggplot(aes(x = day, 
+             y = m_daily,
+             color = year)) +
+  geom_point(size = 2,
+             alpha = 0.5) +
+  facet_wrap(.~site) +
+  theme_bw()
+
+
+temp_clean |>
+  filter(!is.na(temp_c)) |>
+  group_by(site, year) |>
+  summarize(m_annual = mean(temp_c, na.rm = TRUE)) |> 
+  ggplot(aes(x = site, 
+             y = m_annual,
+             color = year)) +
+  geom_point(size = 2) +
+  #facet_wrap(.~site, scales = "free_x") +
+  theme_bw()

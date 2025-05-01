@@ -81,10 +81,10 @@ temp_clean <- left_join(temp_clean,
 temp_aug <- temp_clean %>% 
   select(temp_c, temp_raw, year, month, source, site) %>%
   filter(!is.na(temp_c),
-         !is.na(source),
-         month == 8) %>%
-  mutate(year_s = (year - mean(year)) / sd(year), # centered and scaled year
-         temp_1 = temp_c / max(temp_c)) # scale temperature from 0-1 by dividing by max
+         !is.na(source)) %>%
+  mutate(year_s = (year - mean(year)) / sd(year)) |> # centered and scaled year
+  filter(month = 8) |>
+  mutate(temp_1 = temp_c / max(temp_c)) # scale temperature from 0-1 by dividing by max
 ```
 
 ### Raw Data Plots
@@ -168,27 +168,40 @@ add hurdle bernoulli, probability of getting a 1
 
 for all the data that are 1,s gamma model
 
-$y_{ijk} \sim \Gamma(\mu_{jk}, \theta)$  
+$$y_{ijk} \sim \Gamma(\mu_{jk}, \theta)$$  
 
 
-$log(\mu_{jk}) = \alpha_0 + \alpha_j + \alpha_k + \beta_{year}*year + \beta_{source}*source + \beta_{y*s} * year:source + \beta_{year_{[k]}} * year$
+
+$$log(\mu_{jk}) = \alpha_0 + \alpha_j + \alpha_k + \beta_{year}*year + \beta_{source}*source + \beta_{y*s} * year:source + \beta_{year_{[k]}} * year$$
+
+$$logit(\theta) = \alpha_0 + \alpha_j + \alpha_k + \beta_{year}*year + \beta_{source}*source + \beta_{y*s} * year:source + \beta_{year_{[k]}} * year$$
+
+$$\binom{\alpha_k}{\beta_{year_{[k]}}} \sim MVN(\binom{\alpha}{\beta_{year_{}}},  \Sigma)$$  
+
+
+$$\mathbf \Sigma = \begin{bmatrix} \sigma_{\alpha} & 0 \\ 0 & \sigma_{\beta} \end{bmatrix} R \begin{bmatrix} 1 & \rho \\ \rho & 1 \end{bmatrix}$$
 
 Priors
+Global intercept
 $\alpha_0 \sim N(0, 0.5)$
 
-
+Global year coefficient
 $\beta_{year} \sim N(0, 0.5)$
 
-
+Global effect of source  
 $\beta_{source} \sim N(0, 0.5)$
 
-
+Correlation of year effect per site  
 $\beta_{year_{[k]}} \sim N(0, 0.5)$
 
+$\rho \sim LKJ(1)$
 
+$shape \sim \Gamma(0.01, 0.01)$
+
+Random intercept offset for year
 $\alpha_{j} \sim N(0, \sigma_j)$
 
-
+Random intercept offset for site
 $\alpha_{k} \sim N(0, \sigma_k)$
 
 
@@ -197,8 +210,10 @@ $\sigma_j \sim exp(2)$
 
 $\sigma_k \sim exp(2)$
 
-
+Hurdle should be theta?
 $hurdle \sim Beta(1, 1)$
+
+
 
 
 correlation prior - covar matrix

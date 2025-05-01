@@ -18,7 +18,17 @@ my_ggsave <- function(
 
 write_dir <- "Temperature/brms_models/all_sites/june"
 
-brm1 <- readRDS("Temperature/brms_models/all_sites/june/fit_rand_slopes_hurdle.rds")
+# brm1 <- readRDS("Temperature/brms_models/all_sites/june/fit_rand_slopes_hurdle.rds")
+# brm1 <- readRDS("Temperature/brms_models/all_sites/june/fit_rand_slopes_hurdle_iter_500_2025-04-17.rds")
+
+# # day of month model version 1
+# brm1 <- readRDS("Temperature/brms_models/all_sites/june/fit_rand_slopes_hurdle_iter_100_2025-04-19.rds")
+
+# # site model version 1
+# brm1 <- readRDS("Temperature/brms_models/all_sites/june/fit_rand_slopes_hurdle_iter_500_2025-04-19.rds")
+
+
+
 # plot(brm1)
 # pairs(brm1)
 
@@ -36,12 +46,19 @@ brm1$data |>
 # pp_check(brm1,
 #          type = "stat_grouped",
 #          group = "year_s")
+pp_check(brm1,
+         type = "dens_overlay_grouped",
+         group = "source")
+
 pp_check(brm1)
 pp_check(brm1,
          type = "boxplot")
 pp_check(brm1,
          type = "dens_overlay_grouped",
-         group = "source")
+         group = "year_s")
+pp_check(brm1,
+         type = "dens_overlay_grouped",
+         group = "site")
 # pp_check(brm1,
 #          ndraws = 100,
 #          type = "scatter_avg_grouped",
@@ -51,6 +68,9 @@ pp_check(brm1,
 summary(brm1)
 # coef(brm1)$site[,,"year_s"]
 # coef(brm1)
+
+# hu is the 
+conditional_effects(brm1, dpar = "hu")
 
 mod_r2 <- bayes_R2(object = brm1)
 mod_r2
@@ -65,7 +85,7 @@ get_variables(brm1)
 
 # calculate mean and sd of original data 
 fit_data_orig <- readRDS(paste(write_dir, 
-                               "/fit_data.rds",
+                               "/hurdle_fit_data.rds",
                                sep = ""))
 fit_data_orig |>
   select(site, source) |>
@@ -76,23 +96,203 @@ fit_data_orig |>
   group_by(site, year) |>
   count()
 
+fit_data_orig |>
+  filter(temp_c == 0) |>
+  group_by(source) |>
+  count()
+
 fit_data_orig |> 
   mutate(day = 15, 
          date = make_date(year, month, day)) |>
   ggplot(aes(x = date, 
-             y = temp_c,
+             y = temp_1,
              color = source)) +
   geom_point() +
-  facet_wrap(site~source, scales = "free_y")
+  facet_wrap(source~site, scales = "free_y")
+
+fit_data_orig |>
+  mutate(day = 15,
+         date = make_date(year, month, day)) |>
+  ggplot(aes(x = temp_1,
+             fill = source)) +
+  geom_histogram(binwidth = .1) +
+  facet_wrap(source~site, scales = "free_y")
+
+fit_data_orig |>
+  filter(site == "grizzly") |>
+  ggplot(aes(x = temp_c)) +
+  geom_density()
+
+# source ~ year
+fit_data_orig |>
+  ggplot(aes(y = temp_c,
+             fill = as.factor(year))) +
+  geom_boxplot() +
+  facet_wrap(~site)
+fit_data_orig |>
+  ggplot(aes(x = temp_c,
+             fill = as.factor(year))) +
+  geom_density() +
+  facet_wrap(~site, scales = "free_y")
+
+fit_data_orig |>
+  ggplot(aes(x = temp_c,
+             fill = source)) +
+  geom_boxplot() +
+  facet_wrap(~year, scales = "free_y")
+
+fit_data_orig |>
+  filter(site == "s_teton") |>
+  ggplot(aes(x = temp_c)) +
+  geom_density()
+
+fit_data_orig |>
+  filter(site == "s_teton") |>
+  ggplot(aes(x = temp_c)) +
+  geom_density()
+
+fit_data_orig |>
+  filter(source == "glacier", 
+         month == 6) |>
+  ggplot(aes(x = temp_c)) + #,
+             #fill = site)) +
+  geom_density() +
+  #facet_wrap(~year) +
+  NULL
+fit_data_orig |>
+  filter(source == "glacier", 
+         month == 6) |>
+  ggplot(aes(x = temp_c,
+  fill = site)) +
+  geom_density() +
+  #facet_wrap(~year) +
+  NULL
+fit_data_orig |>
+  filter(source == "glacier", 
+         month == 6) |>
+  ggplot(aes(x = temp_c,
+             fill = as.factor(year))) +
+  geom_density() +
+  #facet_wrap(~year) +
+  NULL
+fit_data_orig |>
+  filter(source == "glacier", 
+         month == 6) |>
+  ggplot(aes(x = temp_c,
+             fill = site)) +
+  geom_density() +
+  facet_wrap(~year) +
+  NULL
+fit_data_orig |>
+  filter(source == "glacier", 
+         month == 6) |>
+  ggplot(aes(x = temp_c,
+             fill = as.factor(year))) +
+  geom_density() +
+  facet_wrap(~site) +
+  NULL
+fit_data_orig |>
+  filter(source == "glacier", 
+         month == 6) |>
+  ggplot(aes(x = temp_c)) + #,
+  #fill = site)) +
+  geom_density() +
+  #facet_wrap(~year) +
+  NULL
+fit_data_orig |>
+  filter(source == "glacier", 
+         month == 6) |>
+  ggplot(aes(x = temp_c,
+             fill = site)) +
+  geom_density() +
+  #facet_wrap(~year) +
+  NULL
+fit_data_orig |>
+  filter(source == "snowfield", 
+         month == 6) |>
+  ggplot(aes(x = temp_c,
+             fill = as.factor(year))) +
+  geom_density() +
+  labs(title = "snow") +
+  #facet_wrap(~year) +
+  NULL
+fit_data_orig |>
+  filter(source == "snowfield", 
+         month == 6) |>
+  ggplot(aes(x = temp_c,
+             fill = site)) +
+  geom_density() +
+  facet_wrap(~year, scales = "free_y") +
+  labs(title = "snow") +
+  NULL
+fit_data_orig |>
+  filter(source == "snowfield", 
+         month == 6) |>
+  ggplot(aes(x = temp_c,
+             fill = as.factor(year))) +
+  geom_density() +
+  labs(title = "snow") +
+  facet_wrap(~site, scales = "free_y") +
+  NULL
+fit_data_orig |>
+  filter(source == "rock_glacier", 
+         month == 6) |>
+  ggplot(aes(x = temp_c)) + #,
+  #fill = site)) +
+  geom_density() +
+  labs(title = "rock") +
+  #facet_wrap(~year) +
+  NULL
+fit_data_orig |>
+  filter(source == "rock_glacier", 
+         month == 6) |>
+  ggplot(aes(x = temp_c,
+             fill = site)) +
+  geom_density() +
+  labs(title = "rock") +
+  #facet_wrap(~year) +
+  NULL
+fit_data_orig |>
+  filter(source == "rock_glacier", 
+         month == 6) |>
+  ggplot(aes(x = temp_c,
+             fill = as.factor(year))) +
+  geom_density() +
+  labs(title = "rock") +
+  #facet_wrap(~year) +
+  NULL
+fit_data_orig |>
+  filter(source == "rock_glacier", 
+         month == 6) |>
+  ggplot(aes(x = temp_c,
+             fill = site)) +
+  geom_density() +
+  labs(title = "rock") +
+  facet_wrap(~year, scales = "free_y") +
+  NULL
+fit_data_orig |>
+  filter(source == "rock_glacier", 
+         month == 6) |>
+  ggplot(aes(x = temp_c,
+             fill = as.factor(year))) +
+  geom_density() +
+  labs(title = "rock") +
+  facet_wrap(~site, scales = "free_y") +
+  NULL
+
+# fit_data_orig |>
+#   filter(site == "grizzly") |>
+#   select(temp_c) |>
+#   View()
 
 # epred draws ####
 # simulate types of data you might collect
 mean_year <- mean((fit_data_orig$year))
 sd_year <- sd((fit_data_orig$year))
-#max_temp <- max((fit_data_orig$temp_c))
+max_temp <- max((fit_data_orig$temp_c))
 # max needs to be max of whole data
 # above is just max of fit data
-max_temp <- 20.198
+#max_temp <- 20.198
 
 
 # simulate types of data you might collect
@@ -207,7 +407,7 @@ my_ggsave(plot = fit_plot,
 # source slopes ####
 # source with epred draws
 source_data <- brm1$data |>
-  select(source, year_s) |>
+  select(source, year_s, site) |>
   distinct() |>
   mutate(year = (year_s*sd_year)+mean_year,
          month = 6,
@@ -249,7 +449,8 @@ my_ggsave(plot = source_slope_epred,
 
 data.frame(year_real = c(2019, 2020)) |>
   mutate(year_s = (year_real - mean_year)/sd_year) |>
-  expand_grid(source = unique(brm1$data$source)) |>
+  expand_grid(source = unique(brm1$data$source),
+              site = unique(brm1$data$site)) |>
   add_epred_draws(brm1,
                   re_formula = NA) |>
   ungroup()|>

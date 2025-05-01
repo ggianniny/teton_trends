@@ -20,6 +20,7 @@ write_dir <- "Temperature/brms_models/all_sites/august"
 
 write_dir <- "Temperature/brms_models/all_sites/august"
 model_month <- 8
+full_iter <- 2000
 
 
 # modify data #### 
@@ -39,13 +40,13 @@ source_info <- source_info %>%
     source == "sub_ice" ~ "rock_glacier",
     source == "snowmelt" ~ "snowfield",
     .default = source))
-unique(source_info$source)
+#unique(source_info$source)
 
 #Temperature data:
 
 temp_clean <- read_csv("Temperature/cleaned_full_datasets/temps_hourly.csv")
 
-unique(temp_clean$site)
+#unique(temp_clean$site)
 # All sites
 # which one is intermittent now?
 # Skillet, Teton, Middle Teton, 
@@ -63,7 +64,7 @@ temp_clean <- temp_clean |>
          !site %in% rm_sites)
 unique(temp_clean$site)
 
-hist(temp_clean$temp_c)
+#hist(temp_clean$temp_c)
 
 temp_clean <- left_join(temp_clean,
                         source_info)
@@ -72,27 +73,29 @@ temp <- temp_clean %>%
   select(temp_c, temp_raw, year, month, source, site) %>%
   filter(!is.na(temp_c),
          !is.na(source)) %>%
-  mutate(year_s = (year - mean(year)) / sd(year),
-         temp_1 = temp_c / max(temp_c))
-
-hist(temp$temp_1)
-
-temp |>
-  ggplot(aes(x = temp_1, 
-             fill = source)) +
-  geom_histogram(alpha = 0.5,
-                 position = "identity") +
-  facet_wrap(~month,
-             scales = "free")
+  mutate(year_s = (year - mean(year)) / sd(year))
 
 aug_dat <- temp |>
-  filter(month == 8)
+  filter(month == model_month) |>
+  mutate(temp_1 = temp_c / max(temp_c))
+
+# aug_dat |>
+#   ggplot(aes(x = temp_1,
+#              fill = source)) +
+#   geom_histogram(alpha = 0.5,
+#                  position = "identity") +
+#   facet_wrap(~month,
+#              scales = "free")
+
+# proportion of 0's
+# nrow(aug_dat[aug_dat$temp_1 == 0,]) / nrow(aug_dat) *100
+# 0.247% 0's
 
 
-get_prior(temp_1 ~ year_s * source +
-            (1 + year_s |site) + (1|year_s),
-          family = hurdle_gamma(),
-          data = aug_dat)
+# get_prior(temp_1 ~ year_s * source +
+#             (1 + year_s |site) + (1|year_s),
+#           family = hurdle_gamma(),
+#           data = aug_dat)
 
 my_prior <- c(prior(normal(0,0.5), class = b),
               prior(normal(0,0.5), class = Intercept),
@@ -103,23 +106,25 @@ my_prior <- c(prior(normal(0,0.5), class = b),
 
 
 
-mod_dat <- temp |>
-  filter(month == model_month)
+mod_dat <- aug_dat
 saveRDS(mod_dat, paste(write_dir, 
                         "/hurdle_fit_data.rds",
                         sep = ""))
 
-hurdle_aug <- brm(temp_1 ~ year_s + source +
-                    year_s:source +
-                    (1 + year_s |site) + (1|year_s),
-                  family = hurdle_gamma(),
-                  data = mod_dat,
-                  prior = my_prior,
-                  iter = 10,
-                  chains = 1)
+hurdle_aug <- brm(
+  bf(temp_1 ~ year_s + source + year_s:source + (1 + year_s |site) + (1|year_s),
+     # muting hurdle formula for now
+     # few 0's in august, so generic hu ~1 seems ok
+    # hu ~ temp_1 ~ year_s + source + year_s:source + (1 + year_s |site) + (1|year_s)
+    ),
+  family = hurdle_gamma(),
+  data = mod_dat,
+  prior = my_prior,
+  iter = 10,
+  chains = 1)
 
 hurdle_aug <- update(hurdle_aug,
-                     iter = 10, #2000, 
+                     iter = full_iter, 
                      chains = 4, 
                      cores = 4,
                      save_all_pars = TRUE)

@@ -47,6 +47,9 @@ pp_check(brm1,
          group = "source")
 pp_check(brm1,
          type = "dens_overlay_grouped",
+         group = "w_1")
+pp_check(brm1,
+         type = "dens_overlay_grouped",
          group = "year_s")
 pp_check(brm1,
          type = "dens_overlay_grouped",
@@ -107,7 +110,7 @@ max_temp <- max((fit_data_orig$temp_c))
 
 # simulate types of data you might collect
 fit_data_obs_years <- brm1$data |>
-  select(source, year_s, site) |>
+  select(source, year_s, site, w_1) |>
   distinct() |>
   mutate(year = (year_s*sd_year)+mean_year,
          month = 7,
@@ -197,7 +200,7 @@ fit_plot <- add_epred_draws(
              scales = "free_y",
              ncol = 3) +
   theme_bw() +
-  labs(title = "Fitted June Temperatures",
+  labs(title = "Fitted July Temperatures",
        subtitle = "Ribbon is 95% CrI for mean temperature",
        x = "Year",
        y = "Fitted Temperature")  +
@@ -217,7 +220,7 @@ my_ggsave(plot = fit_plot,
 # source slopes ####
 # source with epred draws
 source_data <- brm1$data |>
-  select(source, year_s) |>
+  select(source, year_s, w_1) |>
   distinct() |>
   mutate(year = (year_s*sd_year)+mean_year,
          month = 7,

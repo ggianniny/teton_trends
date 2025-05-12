@@ -1163,7 +1163,7 @@ ggplot(s_ak.1sd, aes(x = Date, y =temp_range
 
 ```
 
-Extract date ranges with >1SD:
+Extract date ranges with >5SD:
 
 ```{r}
 s.ak_toDrop <- s_ak %>%
@@ -1264,6 +1264,238 @@ ggplot(filter(fully_cleaned8, site == "s_ak_basin", year ==2019|year==2020), aes
 ```
 
 **Other cleaning idea: calculate daily temp range, plot over time, run thru cpop to pull slope breaks around areas in question and trim based on those**
+
+
+
+### C'. Full dataset data cleaning: 
+
+**Updated 5/12/2025:** Goal is to have the same data cleaning process for removing "problem" areas across all sites. Previous section used different methods for different sites (manual for Cloudveil and Wind Cave, comparison with air temp data for Paintbrush, Diel temp change for S AK Basin). Most likely candidate for applying across sites = remove observations with deil temp change >5xSD. 
+
+**General Process/Workflow:**
+
+* Calculate daily temperatures + temperature ranges for each site
+* Calculate SD of temperature range for each site *excluding* years with suspected data errors
+  + NOTE - currently just using subjective visual assessment to ID data errors. 
+* Extract date ranges with temp ranges >5x SD for each site
+* Drop these date ranges from the overall dataset. 
+
+#### i. Calculate daily temp ranges for each site & calcualte mean + SD for each site: 
+
+```{r}
+full_temp_ranges <- filled_clean %>%
+  group_by(site, date1)%>% #group by site and day
+  mutate(t_xbar = mean(temp_raw), #calculate mean temperature
+            t_min = min(temp_raw), 
+            t_max = max(temp_raw))%>% # add year column
+  filter(!is.na(site))%>%
+  mutate(t_range = t_max-t_min)%>% #calculate temperature range
+  group_by(site)%>% #group by site
+  mutate(tr_mean = mean(t_range, na.rm = T), #calculate mean temp range by site
+         tr_sd = sd(t_range, na.rm = T)) #calculate temp range SD by site
+
+#Check output:
+head(full_temp_ranges)
+```
+
+Basic plot of temp ranges to identify suspected errors: 
+
+```{r}
+ggplot(full_temp_ranges, aes(x = date1, y = t_range, color = site, fill = site))+
+  geom_line()+
+  facet_wrap(~site, scales = "free")+
+  theme_classic()+
+  geom_ribbon(aes(ymin = (tr_mean-(5*tr_sd)), 
+                  ymax = (tr_mean+(5*tr_sd)),
+                  alpha =0.5))+ #Add ribbons for 5* Temp Range SD
+  geom_hline(aes(yintercept = tr_mean), linetype = "dashed")+ #add dashed line for mean temp range by site
+  theme(legend.position = "none")+
+  labs(x = "Date", y = "Daily temp. range, C")
+```
+
+Flag values/days with temp range >5SD: 
+
+```{r}
+temp_ranges_flagged <- full_temp_ranges%>%
+  mutate(error = ifelse(t_range>(5*tr_sd), "Y", "N")) #Add column with temp range flag ("Y" if >5* SD)
+
+#Check years/sites with errors: 
+
+tr_errors <- temp_ranges_flagged %>%
+  filter(error == "Y")%>%
+  select(site, year)%>%
+  unique()%>%
+  mutate(site_yr = paste(site, year, sep = "_"))
+tr_errors
+```
+
+Plot of all data with SD bars, error points in red: 
+
+```{r}
+ggplot(temp_ranges_flagged, aes(x = date1, y = t_range, color = error))+
+  geom_point()+
+  facet_wrap(~site, scales = "free")+
+  theme_classic()+
+  geom_ribbon(aes(ymin = (tr_mean-(5*tr_sd)), 
+                  ymax = (tr_mean+(5*tr_sd)),
+                  alpha =0.5))+ #Add ribbons for 5* Temp Range SD
+  geom_hline(aes(yintercept = tr_mean), linetype = "dashed")+ #add dashed line for mean temp range by site
+  scale_color_manual(values = c("black", "red"))+
+  theme(legend.position = "none")+
+  labs(x = "Date", y = "Daily temp. range, C")
+```
+
+Drop error points, re-plot data for error sites: 
+
+```{r}
+temp_ranges_cleaned <- temp_ranges_flagged %>%
+  filter(!error == "Y") #drop points with temp range >5* SD for that site
+```
+
+
+Plotting: 
+
+```{r}
+#cleaned
+tr.clean <- ggplot(
+  filter(temp_ranges_cleaned, site%in%tr_errors$site), 
+  aes(x = date1, y = temp_c, color = site)
+)+
+  geom_line()+
+  facet_wrap(~site, scales = "free_x")+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(x = "Date", y = "Daily temp. range, C")+
+  scale_y_continuous(limits=c(0,45))
+
+#raw
+tr.raw <- ggplot(
+  filter(full_temp_ranges, site%in%tr_errors$site), 
+  aes(x = date1, y = temp_c, color = site)
+)+
+  geom_line()+
+  facet_wrap(~site, scales = "free_x")+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(x = "Date", y = "Daily temp. range, C")+
+  scale_y_continuous(limits=c(0,45))
+
+tr.raw
+tr.clean
+```
+
+Works for removing some of outliers, but not getting rid of all of them. Need to re-calculate SD without including error years. 
+
+#### ii. Re-calculate SD excluding error years
+
+**NOTE** - for now, treating any year that had measurements >5* original SD as an "error year" - this will ONLY work for sites with multiple years of data (i.e. not death canyon or schoolroom.)
+
+Drop years with errors from dataset and re-calculate SD: 
+
+```{r}
+sd_recalc <- temp_ranges_flagged %>%
+  mutate(site_yr = paste(site, year, sep = "_"))%>% #add site year column
+  filter(!site_yr%in%tr_errors$site_yr)%>% #drop all site/year combos in "tr_errors" df to get rid of years with obs > 5* original sd calculations
+  group_by(site)%>% 
+  mutate(sd_updated = sd(t_range, na.rm = T), 
+         tr_xbar_updated = mean(t_range, na.rm = T))%>% #recalculate temperature range SD and mean for each site excluding error years.
+  select(site, sd_updated, tr_xbar_updated)%>% #drop extra columns for merge
+  unique()#drop extra rows for merge
+```
+
+Merge with full dataset:
+
+```{r}
+tr_updated_sd <- merge(full_temp_ranges, sd_recalc) #add re-calculated sd's to original dataset
+```
+
+Re-make ribbon plot with updated temp ranges: 
+
+```{r}
+ggplot(tr_updated_sd, aes(x = date1, y = t_range, color = site, fill = site))+
+  geom_line()+
+  facet_wrap(~site, scales = "free")+
+  theme_classic()+
+  geom_ribbon(aes(ymin = (tr_xbar_updated-(5*sd_updated)), 
+                  ymax = (tr_xbar_updated+(5*sd_updated)),
+                  alpha =0.5))+ #Add ribbons for 5* Temp Range SD
+  geom_hline(aes(yintercept = tr_mean), linetype = "dashed")+ #add dashed line for mean temp range by site
+  theme(legend.position = "none")+
+  labs(x = "Date", y = "Daily temp. range, C")
+```
+
+#### iii. Extract date ranges with temp ranges >5x SD for each site
+
+Flag temp values with SD > 5* mean, drop from dataset: 
+
+```{r}
+tr_flagged_final <- tr_updated_sd %>%
+  mutate(error = ifelse(t_range>=(7*sd_updated), "Y", "N"), 
+         month = month(date1))
+
+#check error sites/years: 
+
+tr_error_updated <- tr_flagged_final %>%
+  filter(error == "Y")%>%
+  group_by(site, year, month)%>%
+  summarise(n_errors = length(error))
+tr_error_updated
+```
+
+Might have made it too sensitive - picking up way more years from multiple sites. Test dropping error years + re-plotting: 
+
+```{r}
+tr_cleaned_final <- tr_flagged_final %>%
+  filter(!error == "Y")
+
+unique(tr_cleaned_final$site)
+```
+
+Check plots: 
+
+```{r}
+#cleaned
+tr.raw2 <- ggplot(
+  filter(tr_flagged_final, site%in%tr_error_updated$site), 
+  aes(x = date1, y = temp_c, color = site)
+)+
+  geom_line()+
+  facet_wrap(~site, scales = "free_x")+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(x = "Date", y = "Daily temp. range, C", title = "Raw Data")+
+  scale_y_continuous(limits=c(0,45))
+
+#raw
+tr.clean2 <- ggplot(
+  filter(tr_cleaned_final, site%in%tr_error_updated$site), 
+  aes(x = date1, y = temp_c, color = site)
+)+
+  geom_line()+
+  facet_wrap(~site, scales = "free_x")+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(x = "Date", y = "Daily temp. range, C", title = "Cleaned Data")+
+  scale_y_continuous(limits=c(0,45))
+
+tr.comparison<- tr.raw2/tr.clean2
+tr.comparison
+```
+
+Save: 
+
+```{r}
+ggsave("Temperature/plots/sd_data_cleaning.pdf", tr.comparison, width = 6.5, height = 9, units = "in", device = "pdf", dpi = "retina")
+```
+
+
+**NOTES 5/12:** Tested a few different SD multiplier cutoffs: 
+
+* 5*SD was cutting off too much + picking up too many sites/years. 
+* 10* SD does a pretty good job, but maybe leaves some error measurements - but isolates 3 sites we had ID'd as having issues.
+* 7* SD seems like a good compromise - still cuts a few measurements from Mid Teton, but only 24 obs from October 2023. Does a good job of removing problem areas from Cloudveil, Wind Cave, and S AK Basin. 
+* NOTE that this approach does NOT address issues with Paintbrush - will likely need to keep SNOTEL comparison cleaning for that site. 
+* NOTE that this approach ONLY works for sites with multiple years of data and results in dropping 2 sites with only 1 year of data (Schoolroom, Death Canyon). 
+
 
 
 ### D. Some Final Cleaning/organizing for optimal plotting: 
@@ -2262,15 +2494,26 @@ tasr_doy <- tasr_dat %>%
   mutate(doy = yday(date1), 
          year = year(date1), 
          site_yr = paste(site, year, sep = "_"))%>% #add columns for day of year, year, and site/year combo
-  filter(doy>=92&doy<=245)%>% #extract DOY's 92-245 (April 1-Sep 1)
+  filter(doy>=122&doy<=245)%>% #extract DOY's 120-245 (May 1-Sep 1)
   filter(!is.na(t_xbar))%>% #remove days with missing temp readings
   group_by(site_yr)%>% #group by site year
   mutate(doyMin = min(doy), 
          doyMax = max(doy))%>% #add min and max DOY for each site/year combob
   ungroup()%>% #ungroup
-  filter(!doyMin>92, 
-         !doyMax<245)%>% #remove site/year combos with incomplete data or missing temp data
-  arrange(source, site, doy)
+  #filter(!doyMin>122, 
+         #!doyMax<245)%>% #remove site/year combos with incomplete data or missing temp data
+  arrange(source, site_yr, doy)
+
+
+#Checking site/year combos:
+
+tasr_doy%>%
+  select(site_yr, source)%>%
+  unique()%>%
+  mutate(plot.no = c(1:92))%>%
+  arrange(source, plot.no)
+
+
 ```
 
 ### B. Iterate changepoint extraction over year/site with a for-loop:
@@ -2315,9 +2558,14 @@ cps<-cps%>%
 
 Checking results:
 
+Snowmelt Plot #'s: 
+Grizzly = 26-32
+N teton = 33-42
+S Teton = 51-57
+
 ```{r}
 head(cps) #check output table
-snowmelt.cps<-(cp.plots[[14]]|cp.plots[[15]]|cp.plots[[16]]|cp.plots[[17]])/(cp.plots[[18]]|cp.plots[[19]]|cp.plots[[20]]|cp.plots[[21]])/(cp.plots[[22]]|cp.plots[[23]]|cp.plots[[24]]|cp.plots[[25]])/(cp.plots[[26]]|cp.plots[[27]]|cp.plots[[28]])
+snowmelt.cps<-(cp.plots[[26]]|cp.plots[[27]]|cp.plots[[28]]|cp.plots[[29]])/(cp.plots[[30]]|cp.plots[[31]]|cp.plots[[32]]|cp.plots[[33]])/(cp.plots[[34]]|cp.plots[[35]]|cp.plots[[36]]|cp.plots[[37]])/(cp.plots[[38]]|cp.plots[[39]]|cp.plots[[40]]|cp.plots[[41]])/(cp.plots[[42]]|cp.plots[[51]]|cp.plots[[52]]|cp.plots[[53]])/(cp.plots[[54]]|cp.plots[[55]]|cp.plots[[56]]|cp.plots[[57]])
 snowmelt.cps #check CPS for all snowmelt sites
 ```
 
@@ -2326,13 +2574,27 @@ Generally pulling correct CP, with exception of N teton in 2019, 2020, and 2022
 Save output plot:
 
 ```{r}
-ggsave("Temperature/plots/snowmelt_changepoints.jpg", snowmelt.cps, device = "jpeg", units = "in", dpi = "retina", width = 11, height = 8.5)
+ggsave("Temperature/plots/snowmelt_changepoints.jpg", snowmelt.cps, device = "jpeg", units = "in", dpi = "retina", width = 11, height = 14)
 ```
 
-Plot of change over time: 
+
+Checking some glacier/sub_ice sites:
 
 ```{r}
-snowmelt.cp.trends <- ggplot(filter(cps, source == "snowmelt"), aes(x = year, y = cp_doy, color = site))+
+other.cps<-(cp.plots[[9]]|cp.plots[[10]]|cp.plots[[11]]|cp.plots[[12]])/(cp.plots[[13]]|cp.plots[[14]]|cp.plots[[15]]|cp.plots[[16]])/(cp.plots[[17]]|cp.plots[[18]]|cp.plots[[19]]|cp.plots[[58]])/(cp.plots[[59]]|cp.plots[[60]]|cp.plots[[61]]|cp.plots[[62]])/(cp.plots[[63]]|cp.plots[[64]]|cp.plots[[65]]|cp.plots[[66]])/(cp.plots[[67]])
+other.cps #check CPS for all one glacier/2 rock glacier sites
+```
+
+Save output plot:
+
+```{r}
+ggsave("Temperature/plots/other_changepoints.jpg", other.cps, device = "jpeg", units = "in", dpi = "retina", width = 11, height = 14)
+```
+
+Plot of change over time (Snowmelt): 
+
+```{r}
+snowmelt.cp.trends <- ggplot(filter(cps, source == "snowmelt", !site == "paintbrush", !is.na(cp_doy)), aes(x = year, y = cp_doy, color = site))+
   geom_point()+
   geom_line()+
   geom_smooth(method = "lm", se = F, linetype = "dashed")+
@@ -2362,6 +2624,51 @@ Messy, but general downward trends in all three sites.
 General idea = cumulative degrees above zero (throughout year, just summer) for air and stream temps - sum up for each year, plot vs. eachother over time. 
 
 Plot: x = stream temp, y = air temp, facet by site. 
+
+First, calculate average air temp across both sites and then cumulative air temps by year, add to tasr_cumulative_hourly data file:  
+
+```{r}
+airtemp_cum <- airtemp%>%
+  mutate(year = year(Date), #add date column
+         temp_mean = ((targhee_c+phillips_c)/2))%>% #calculate mean daily air temp
+  filter(temp_mean>=0)%>% #drop all temps <0
+  group_by(year)%>% 
+  summarise(airtemp_cum = sum(temp_mean))
+
+head(airtemp_cum) #check results
+
+air_stream_cum <- merge(tasr_cumulative_hourly, airtemp_cum)%>% #merge with cumulative temperature data
+  mutate(airtemp_cum_hourly = airtemp_cum*24) #add column with cumulative air temp hours (multiply days *24)
+head(air_stream_cum) #check results
+```
+
+Draw plot: x = stream temp, y = air temp, color = source, facet by site:
+
+```{r}
+stream.air.scatter <- ggplot(air_stream_cum, aes(x = temp_cum, y = airtemp_cum_hourly, color = source_name))+
+  geom_point()+
+  geom_line()+
+  theme_classic()+
+  labs(x = "Cumulative annual degree hours >0 C - Stream", y = "Cumulative annual degree hours >0 C - Air", color = "Source Type")+
+  theme(
+    axis.title = element_text(size = 11, face = "bold"),
+    legend.title = element_text(size = 11, face = "bold"), 
+    legend.position = "bottom", 
+    strip.text = element_text(size = 11, face = "bold")
+  )+
+  scale_color_manual(values = boxplot.pal
+                       #c("#756BB1", "#74C476", "#D94701")
+                     )+
+  facet_wrap(~source_print, scales = "fixed", nrow = 4, ncol =4)
+stream.air.scatter
+```
+
+Save:
+
+```{r}
+ggsave("Temperature/plots/airtemp_streamtemp_scatter.jpg", stream.air.scatter, device = "jpeg", units = "in", dpi = "retina", width = 11, height = 8.5)
+```
+
 
 
 

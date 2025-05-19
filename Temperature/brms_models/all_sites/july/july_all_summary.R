@@ -118,7 +118,7 @@ max_w <- max((fit_data_orig$w))
 
 # simulate types of data you might collect
 fit_data_obs_years <- brm1$data |>
-  select(source, year_s, site) |>
+  select(source, year_s, site, w_1) |>
   distinct() |>
   mutate(year = (year_s*sd_year)+mean_year,
          month = 7,
@@ -208,7 +208,7 @@ fit_plot <- add_epred_draws(
              scales = "free_y",
              ncol = 3) +
   theme_bw() +
-  labs(title = "Fitted June Temperatures",
+  labs(title = "Fitted July Temperatures",
        subtitle = "Ribbon is 95% CrI for mean temperature",
        x = "Year",
        y = "Fitted Temperature")  +

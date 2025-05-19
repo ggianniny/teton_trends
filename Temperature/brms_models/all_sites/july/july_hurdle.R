@@ -69,15 +69,17 @@ temp_clean <- left_join(temp_clean,
 temp_clean <- temp_clean |>
   filter(month == model_month)
 
-# temp_clean |> 
+# temp_clean |>
 #   mutate(w = w / max(w)) |>
 #   distinct(w)
 # # plots of data
 # temp_clean |>
-#   ggplot(aes(x = date1, 
-#              y = temp_c)) +
+#   ggplot(aes(x = date1,
+#              y = temp_c,
+#              color = after_stat(y !=0))) +
 #   geom_point() +
 #   facet_wrap(source~site)
+#   stat_smooth(method = "lm")
 # 
 # temp_clean |>
 #   ggplot(aes(x = w / max(w), 
@@ -88,12 +90,36 @@ temp_clean <- temp_clean |>
 # # plots of data
 # temp_clean |>
 #   filter(site == "s_teton") |>
-#   ggplot(aes(x = date_tm, 
+#   ggplot(aes(x = date_tm,
 #              y = temp_c)) +
 #   geom_point() +
 #   geom_line() +
-#   facet_wrap(year~., 
+#   facet_wrap(year~.,
 #              scales = "free_x")
+# 
+# temp_clean |>
+#   filter(site == "s_teton") |>
+#   group_by(year, w) |>
+#   summarize(w_temp = mean(temp_c)) |>
+#   ggplot(aes(x = w,
+#              y = w_temp)) +
+#   geom_point() +
+#   geom_line() +
+#   facet_wrap(year~.,
+#              scales = "free_x")
+# 
+# 
+# temp_clean |>
+#   group_by(date1, year, source, site) |>
+#   summarize(a_temp = mean(temp_c)) |>
+#   ggplot(aes(x = year,
+#              y = a_temp,
+#              color = source)) +
+#   geom_point() +
+#   geom_line() +
+#   facet_wrap(source~site,
+#              scales = "free_x") +
+#   stat_smooth(method = "lm")
 
 
 mod_dat <- temp_clean %>% 
@@ -123,9 +149,10 @@ saveRDS(mod_dat, paste(write_dir,
                         "/hurdle_fit_data.rds",
                         sep = ""))
 
-hurdle_mod <- brm(temp_1 ~ year_s + source +
-                    year_s:source + w_1 + w_1:year_s +
+hurdle_mod <- brm(bf(temp_1 ~ year_s + source +
+                    year_s:source + 
                     (1 + year_s |site) + (1|year_s),
+                    hu~ source + (1|site) +(1|year_s)),
                   family = hurdle_gamma(),
                   data = mod_dat,
                   prior = my_prior,
@@ -139,6 +166,6 @@ hurdle_mod <- update(hurdle_mod,
                      save_all_pars = TRUE)
 # save the output
 saveRDS(hurdle_mod, paste(write_dir,
-                    "/fit_rand_slopes_hurdle.rds", 
+                    "/fit_rand_slopes_hurdle_source.rds", 
                     sep = ""))
 

@@ -18,10 +18,14 @@ my_ggsave <- function(
 
 write_dir <- "Temperature/brms_models/all_sites/july"
 
-brm1 <- readRDS("Temperature/brms_models/all_sites/july/fit_rand_slopes_hurdle.rds")
-# plot(brm1)
-# pairs(brm1)
-brm1
+brm1 <- readRDS("Temperature/brms_models/all_sites/july/fit_rand_slopes_hurdle_source.rds")
+# with hu ~ source*site
+# brm1 <- readRDS("Temperature/brms_models/all_sites/july/fit_rand_slopes_hurdle_sourceXsite.rds")
+
+plot(brm1)
+pairs(brm1)
+
+brm1$formula
 
 brm1$data |>
   distinct(site, source) |>
@@ -30,15 +34,15 @@ brm1$data |>
 brm1$data |> filter(temp_1 == 0) |> count()
 
 # posterior predictions ####
-# pp_check(brm1,
-#          type = "stat_grouped",
-#          group = "source")
+pp_check(brm1,
+         type = "stat_grouped",
+         group = "source")
 # pp_check(brm1,
 #          type = "violin_grouped",
 #          group = "source")
-# pp_check(brm1,
-#          type = "stat_grouped",
-#          group = "year_s")
+pp_check(brm1,
+         type = "stat_grouped",
+         group = "year_s")
 pp_check(brm1)
 pp_check(brm1,
          type = "boxplot")
@@ -47,14 +51,20 @@ pp_check(brm1,
          group = "source")
 pp_check(brm1,
          type = "dens_overlay_grouped",
+         group = "w_1")
+pp_check(brm1,
+         type = "dens_overlay_grouped",
          group = "year_s")
 pp_check(brm1,
          type = "dens_overlay_grouped",
          group = "site")
-# pp_check(brm1,
-#          ndraws = 100,
-#          type = "scatter_avg_grouped",
-#          group = "source")
+pp_check(brm1, type = "hist")
+pp_check(brm1, type = "stat_2d")
+#pp_check(brm1, type = "ribbon")
+pp_check(brm1,
+         ndraws = 100,
+         type = "scatter_avg_grouped",
+         group = "source")
 
 # model summaries ####
 summary(brm1)
@@ -103,6 +113,7 @@ fit_data_orig |>
 mean_year <- mean((fit_data_orig$year))
 sd_year <- sd((fit_data_orig$year))
 max_temp <- max((fit_data_orig$temp_c))
+max_w <- max((fit_data_orig$w))
 
 
 # simulate types of data you might collect
@@ -130,20 +141,20 @@ pred_plot <- add_predicted_draws(
              color = source)) +
   geom_ribbon(alpha = 0.5) +
   geom_line() +
-  geom_point(data = brm1$data |>
-               mutate(year = (year_s*sd_year)+mean_year,
-                      month = 6,
-                      day = 15,
-                      date = make_date(year, month, day),
-                      temp = (temp_1*max_temp)),
-             aes(x = date,
-                 y = temp,
-                 color = source),
-             inherit.aes = FALSE,
-             alpha = 0.2, 
-             position = position_jitter(
-               width = 35,
-               height = NULL)) +
+  # geom_point(data = brm1$data |>
+  #              mutate(year = (year_s*sd_year)+mean_year,
+  #                     month = 6,
+  #                     day = ((w_1 *max_w)-25)*5,
+  #                     date = make_date(year, month, day),
+  #                     temp = (temp_1*max_temp)),
+  #            aes(x = date,
+  #                y = temp,
+  #                color = source),
+  #            inherit.aes = FALSE,
+  #            alpha = 0.2, 
+  #            position = position_jitter(
+  #              width = 35,
+  #              height = NULL)) +
   facet_wrap(source~site,
              ncol = 3,
              scales = "free_y") +
@@ -217,7 +228,7 @@ my_ggsave(plot = fit_plot,
 # source slopes ####
 # source with epred draws
 source_data <- brm1$data |>
-  select(source, year_s) |>
+  select(source, year_s, site) |>
   distinct() |>
   mutate(year = (year_s*sd_year)+mean_year,
          month = 7,
@@ -243,7 +254,7 @@ source_slope_epred <- add_epred_draws(
        subtitle = "Ribbons = 68 and 95% CrI",
        x = "Year",
        y = "Temperature") +
-  facet_wrap(~source) +
+  facet_wrap(site~source, scales = "free_x") +
   scale_fill_manual(values = c("deepskyblue",
                                "slategrey",
                                "springgreen4")) +
@@ -259,7 +270,8 @@ my_ggsave(plot = source_slope_epred,
 
 data.frame(year_real = c(2019, 2020)) |>
   mutate(year_s = (year_real - mean_year)/sd_year) |>
-  expand_grid(source = unique(brm1$data$source)) |>
+  expand_grid(source = unique(brm1$data$source),
+              site = unique(brm1$data$site)) |>
   add_epred_draws(brm1,
                   re_formula = NA) |>
   ungroup()|>

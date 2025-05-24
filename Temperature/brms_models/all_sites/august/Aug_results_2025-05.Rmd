@@ -1,0 +1,494 @@
+---
+title: "August model results"
+author: "Justin Pomeranz"
+date: "2025-05-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(brms)
+library(tidybayes)
+
+fit_data_orig <- readRDS(
+  here::here("Temperature/brms_models/all_sites/august/hurdle_fit_data.rds"))
+brm1 <- readRDS(here::here("Temperature/brms_models/all_sites/august/fit_rand_slopes_hurdle_aug_rand_site.rds"))
+
+fit_data_year_summary <- readRDS(
+  here::here("Temperature/brms_models/all_sites/August/fit_data_year_summary.rds"))
+
+# rmarkdown::render("Temperature/brms_models/all_sites/august/Aug_results_2025-05.Rmd")
+```
+
+## Overview  
+
+This document summarizes the model fitting and posterior for mean stream temperatures in August for the Teton Alpine Stream Research (TASR) project. 
+
+
+## Setup  
+
+* Load libraries  
+
+```{r, eval=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(brms)
+library(tidybayes)
+
+```
+
+* Load data  
+* Data has already been modified in the following ways:  
+  * Only data for the month of August is included  
+  * `year_s` has been centered at 0 and scaled by the `sd(year)`  
+  * `temp_1` has been scaled to be from 0-1 as: $ \text{temp}_1 = \text{temp}_i / max(\text{temp})$  
+  
+  
+```{r, eval=FALSE}
+fit_data_orig <- readRDS(
+  here::here("Temperature/brms_models/all_sites/august/fit_data.rds"))
+fit_data_year_summary <- readRDS(
+  here::here("Temperature/brms_models/all_sites/August/fit_data_year_summary.rds"))
+```
+
+* Load model  
+
+```{r, eval=FALSE}
+brm1 <- readRDS(here::here("Temperature/brms_models/all_sites/august/fit_rand_slopes_hurdle_aug_rand_site.rds"))
+```
+
+## Model details  
+
+* 4 chains with 2000 iterations  
+  * half discarded as warmup  
+  * 4000 posterior iterations  
+  
+* The model has the following formula  
+
+```{r}
+brm1$formula
+```
+
+Where `source` is a categorical factor with the following levels: `rock_glacier`, `glacier`, and `snowfield`.  
+
+
+
+## Posterior Prediction  
+
+* Density overlay for sources  
+
+```{r, warning=FALSE, message=FALSE}
+pp_check(brm1, 
+         type = "dens_overlay_grouped",
+         group = "source") +
+  scale_x_log10() +
+  theme_bw()
+```
+
+* boxplot of posterior  
+* Note that this model correctly captures the lower bound of 0, and does not predict negative numbers.  
+
+```{r}
+pp_check(brm1, 
+         type = "boxplot") +
+  theme_bw()
+```
+
+## Bayesian R^2  
+
+```{r}
+bayes_R2(brm1)
+```
+
+* This model explains 63.6% (CrI: 63.1, 64.1) of the variation in August temperatures.  
+
+## Model Posteriors  
+
+* Now we will explore the model posteriors to understand the effects of stream source on August temperatures  
+
+### Source effect  
+
+#### Data for prediction  
+
+* First, calculate the average and SD of year from the original data, and the maximum temperature  
+* These are used to back calculate model posteriors to original scales as appropriate.  
+```{r}
+mean_year <- fit_data_year_summary$mean_year
+sd_year <- fit_data_year_summary$sd_year
+max_temp <-  max(fit_data_orig$temp_c)
+```
+
+
+* Make a data frame with the original:  
+  * `source`  
+  * `year_s` (Z_score of year)  
+
+* We will then make a date of August 15th for each year for plotting purposes  
+
+* This data will be used to add posterior draws based on the model in the next step  
+
+```{r}
+source_data <- brm1$data |>
+  select(source, year_s) |> 
+  distinct() |> # all combinations of source and year_s from empirical data
+  mutate(year = (year_s*sd_year)+mean_year, # back calculate year Z-score to original year  
+         month = 8, # manually set month number
+         day = 15, # and day number
+         date = make_date(year, month, day)) |> # set this as a `date` variable type for plotting
+  select(source, year_s, date) # only keep variables we need later
+
+head(source_data) # see first few rows as an example
+```
+* Visualize the effect of year and source on August stream temperatures  
+
+```{r}
+# add posterior draws 
+add_epred_draws(
+  newdata = source_data, # new data made above to add expected (mean) temperature values based on the posterior
+  brm1, # the model fit
+  re_formula = NA) |> # ignores random effects of site and just shows the overall fixed main and interactive effects of site*year
+  mutate(.epred = (.epred*max_temp)) |> # converts back to original temperature scale  
+  ggplot(aes(x = date, 
+             y = .epred,
+             fill = source,
+             color = source)) +
+  stat_lineribbon(aes(y = .epred),
+                  .width = c(0.95, 0.68),
+                  alpha = 1/4) +
+  theme_bw() +
+  labs(title = "Mean August Temperatures by Source",
+       subtitle = "Ribbons = 68 and 95% CrI",
+       x = "Year",
+       y = "Temperature") +
+  facet_wrap(~source) +
+  scale_fill_manual(values = c("deepskyblue",
+                               "slategrey", 
+                               "springgreen4")) +
+  scale_color_manual(values = c("deepskyblue",
+                                "slategrey", 
+                                "springgreen4"))
+```
+
+## Magnitude of change per year  
+
+* Calculate the change from year to year  
+* This is a Gamma model, so the interpretation of the "slope" ($\beta_{year}$) coefficient is different from a standard generalized linear model  
+  * Instead of saying "Temperatures increase by "x" each year", we say "Temperatures chnage each year by "x percentage".  
+  * This is why there is a "curve" in the plots above.  
+  
+* In order to estimate the percent change, I will create a dataframe with only 2 years from the middle of the data.  
+  * The expected values will be added with `add_epred_draws()`  
+  * The absolute difference will be calculated by subtracting the value in the last year from the first year  
+  * The percent change will then be calculated by dividing the difference by the value in the first year times 100  
+  * The distribution of the percent changes will be reported.  
+
+* Using other year-pairs from the data does not change the results (SI).    
+
+```{r}
+# 2019 and 2020
+y_19_20 <- data.frame(
+  year_real = c(2019, 2020)) |>
+  mutate(year_s = (year_real - mean_year)/sd_year) |>
+  expand_grid(source = unique(brm1$data$source)) |>
+  add_epred_draws(brm1,
+                  re_formula = NA,
+                  allow_new_levels = TRUE) |>
+  ungroup()|>
+  mutate(.epred = .epred * max_temp) |>
+  select(-.row, -.chain, -.iteration, -year_s) |>
+  pivot_wider(names_from = "year_real",
+              values_from = ".epred") |>
+  mutate(slope_new = `2020` - `2019`) |>
+  # slope_new = chnage in actual temperature right scale
+  mutate(prop = slope_new / `2019` * 100)
+
+y_19_20 |>
+  group_by(source) |>
+  mean_qi(prop)
+```
+
+* `snowfield` streams increase by an average of 5.28% (CrI 0.64, 10)  
+  * 95% CrI is entirely positive (see halfeye plots below)  
+
+* `glacier` streams increase by an average of 3.51% (CrI -1.6, 9)  
+  * 95% CrI is mostly positive, but there are also negative estimates  
+
+* `rock_glacier` streams increase by an average of 2.47% (CrI -1.52, 6.89)    
+  * 95% CrI is entirely positive (see halfeye plots below)  
+  
+
+## Probability of positive slopes?  
+
+* The mean magnitude of the percent change form year to year is reported above  
+* But what is the probability that these slopes are positive?  
+
+* Calculate the proportion of slopes which are positive  
+* make a halfeye plot with the positive iterations highlighted  
+
+### Pr(positive)  
+
+```{r}
+pr_pos <- y_19_20 |>
+  group_by(source) |>
+  mutate(pos = slope_new >0) |>
+  summarize(pr_pos = mean(pos))
+
+pr_pos
+```
+
+* `snowfield` streams have a 98.4% chance of having increasing mean August temperatures  
+* `glacier` streams have a 93.6% chance of having increasing mean August temperatures  
+* `rock_glacier` streams have an 89.8% chance of having increasing mean August temperatures  
+
+### Halfeye plot  
+```{r}
+y_19_20 |>
+  ggplot(
+    aes(y = source,
+        x = slope_new,
+        fill = after_stat(x >0))) +
+  stat_halfeye() +
+  geom_vline(xintercept = 0, 
+             linetype = "dashed") +
+  scale_fill_manual(values = c("gray80", "orangered1")) +
+  theme_bw() +
+  labs(x = "Posterior distribution of percent change per year") +
+  annotate("text", # rock_glacier
+           x = 0.5,
+           y = 2.5,
+           label = paste("P(Positive)",
+                         round(pr_pos[2,2],2),
+                         sep = " ")) +
+  annotate("text", # Glacier
+           x = 0.5,
+           y = 1.5,
+           label = paste("P(Positive)",
+                         round(pr_pos[1,2],2),
+                         sep = " ")) +
+  annotate("text", # snow
+           x = 0.5,
+           y = 3.5,
+           label = paste("P(Positive)",
+                         round(pr_pos[3,2],2),
+                         sep = " ")) +
+  NULL
+
+```
+
+## Site-specific predictions  
+
+* Here, we have the results for each site  
+
+* First, make site-level data  
+* add expected posterior draws  
+* summarize and plot results  
+
+```{r}
+site_data <- brm1$data |>
+  select(source, year_s, site) |>
+  distinct() |>
+  group_by(site) |>
+  # filter(year_s == min(year_s) | 
+  #          year_s == max(year_s)) |>
+  mutate(year = (year_s*sd_year)+mean_year,
+         month = 8,
+         day = 15,
+         date = make_date(year, month, day))
+
+site_temps <- add_epred_draws(
+  newdata = site_data,
+  brm1,
+  #allow_new_levels = TRUE,
+  re_formula = NULL) |> # includes random effects
+  mutate(.temp = (.epred*max_temp)) 
+
+site_temps
+```
+
+### Plot through time  
+
+```{r}
+ggplot(site_temps, 
+       aes(x = date, 
+           y = .epred,
+           fill = site,
+           color = site)) +
+  stat_lineribbon(aes(y = .epred),
+                  .width = c(0.95, 0.68),
+                  alpha = 1/4) +
+  theme_bw() +
+  labs(title = "Mean August Temperatures by Source",
+       subtitle = "Ribbons = 68 and 95% CrI",
+       x = "Year",
+       y = "Temperature") +
+  facet_wrap(~source) 
+```
+
+### Site-specific percent change  
+
+```{r}
+s_19_20 <- brm1$data |> 
+  select(source, site) |>
+  distinct() |>
+  expand_grid(year_real = c(2019, 2020)) |>
+  mutate(year_s = (year_real - mean_year)/sd_year) |>
+  add_epred_draws(brm1,
+                  re_formula = NULL) |>
+  ungroup()|>
+  mutate(.epred = .epred * max_temp) |>
+  select(-.row, -.chain, -.iteration, -year_s) |>
+  pivot_wider(names_from = "year_real",
+              values_from = ".epred") |>
+  mutate(slope_new = `2020` - `2019`) |>
+  # slope_new = change in actual temperature right scale
+  mutate(prop = slope_new / `2019` * 100)
+
+s_19_20 |>
+  group_by(site, source) |>
+  mean_qi(prop) |>
+  arrange(source, site, prop)
+```
+
+
+### Site-specific Pr(+)  
+
+```{r}
+s_19_20 |>
+  group_by(site) |>
+  mutate(pos = slope_new >0) |>
+  summarize(pr_pos = mean(pos))
+```
+
+### site-specific change in temperatures  
+
+* mean temperature change  
+* first year with empirical data  
+* last year with empirical data (mostly 2024)  
+
+```{r}
+brm1$data |>
+  select(source, year_s, site) |>
+  distinct() |>
+  group_by(site) |>
+  filter(year_s == min(year_s) |
+           year_s == max(year_s)) |>
+  mutate(year = (year_s*sd_year)+mean_year) |>
+  add_epred_draws(
+  brm1,
+  re_formula = NULL) |> # includes random effects
+  mutate(.temp = (.epred*max_temp)) |>
+  ungroup() |>
+  select(site, year, .temp, .draw, source) |>
+  group_by(source, site, .draw) |>
+  mutate(year_cat = case_when(
+    year == min(year) ~ "start", 
+         .default = "end")) |>
+  select(-year) |>
+  pivot_wider(id_cols = c(site, .draw, source),
+              names_from = year_cat,
+              values_from = .temp) |>
+  mutate(delta = end - start,
+         group = cur_group_id()) |>
+  ggplot(aes(y = fct_reorder(site, group), 
+             x = delta, 
+             fill = source)) +
+  stat_halfeye()+
+  scale_fill_manual(values = c("deepskyblue",
+                               "slategrey", 
+                               "springgreen4")) +
+  theme_bw() +
+  geom_vline(xintercept = 0, 
+             linetype = "dashed") +
+  labs(y = "site",
+       x = "Absolute change in average August temperatures")
+```
+
+* range of years for each site  
+
+```{r}
+site_temps |>
+  ungroup() |>
+  select(site, year) |>
+  group_by(site) |>
+  filter(year == min(year) |
+           year == max(year)) |>
+  distinct(site, year) |>
+  mutate(year_cat = case_when(
+    year == min(year) ~ "start", 
+         .default = "end")) |>
+  pivot_wider(id_cols = c(site),
+              names_from = year_cat,
+              values_from = year) |>
+  mutate(year_range = end - start) |>
+  arrange(start, end)
+```
+
+
+# SI  
+
+## Model Fit  
+
+### Model MCMC Chains and posterior of parameters  
+
+```{r}
+plot(brm1, ask = FALSE)
+```
+
+### All Rhats < 1.1  
+
+```{r}
+summary(brm1)
+```
+
+## Percent change  
+
+### Comparison between other year pairs  
+
+#### 2015 to 2016  
+```{r}
+data.frame(
+  year_real = c(2015, 2016)) |>
+  mutate(year_s = (year_real - mean_year)/sd_year) |>
+  expand_grid(source = unique(brm1$data$source)) |>
+  add_epred_draws(brm1,
+                  re_formula = NA,
+                  allow_new_levels = TRUE) |>
+  ungroup()|>
+  mutate(.epred = .epred * max_temp) |>
+  select(-.row, -.chain, -.iteration, -year_s) |>
+  pivot_wider(names_from = "year_real",
+              values_from = ".epred") |>
+  mutate(slope_new = `2016` - `2015`) |>
+  # slope_new = chnage in actual temperature right scale
+  mutate(prop = slope_new / `2015` * 100) |>
+  group_by(source) |>
+  mean_qi(prop)
+
+```
+
+
+
+#### 2023 to 2024  
+
+```{r}
+data.frame(
+  year_real = c(2023, 2024)) |>
+  mutate(year_s = (year_real - mean_year)/sd_year) |>
+  expand_grid(source = unique(brm1$data$source)) |>
+  add_epred_draws(brm1,
+                  re_formula = NA,
+                  allow_new_levels = TRUE) |>
+  ungroup()|>
+  mutate(.epred = .epred * max_temp) |>
+  select(-.row, -.chain, -.iteration, -year_s) |>
+  pivot_wider(names_from = "year_real",
+              values_from = ".epred") |>
+  mutate(slope_new = `2024` - `2023`) |>
+  # slope_new = chnage in actual temperature right scale
+  mutate(prop = slope_new / `2023` * 100) |>
+  group_by(source) |>
+  mean_qi(prop)
+
+```
+
+* Exact same results as 2019-2020 reported above  

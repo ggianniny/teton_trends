@@ -112,7 +112,7 @@ saveRDS(mod_dat, paste(write_dir,
                         sep = ""))
 
 hurdle_aug <- brm(
-  bf(temp_1 ~ year_s + source + year_s:source + (1 + year_s |site) + (1|year_s),
+  bf(temp_1 ~ year_s + source + year_s:source + (1 + year_s |site) + (1|year_s)
      # muting hurdle formula for now
      # few 0's in august, so generic hu ~1 seems ok
     # hu ~ temp_1 ~ year_s + source + year_s:source + (1 + year_s |site) + (1|year_s)
@@ -127,7 +127,7 @@ hurdle_aug <- update(hurdle_aug,
                      iter = full_iter, 
                      chains = 4, 
                      cores = 4,
-                     save_all_pars = TRUE)
+                     save_pars = save_pars(all = TRUE))
 # save the output
 saveRDS(hurdle_aug, paste(write_dir,
                     "/fit_rand_slopes_hurdle_aug.rds", 

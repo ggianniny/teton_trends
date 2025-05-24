@@ -76,7 +76,7 @@ get_variables(brm1)
 
 # calculate mean and sd of original data 
 fit_data_orig <- readRDS(paste(write_dir, 
-                               "/fit_data.rds",
+                               "/hurdle_fit_data.rds",
                                sep = ""))
 fit_data_orig |>
   select(site, source) |>
@@ -460,7 +460,7 @@ source_spag <- add_epred_draws(newdata = source_data,
                                re_formula = NA,
                                allow_new_levels = TRUE,
                                ndraws = 200) |>
-  mutate(.epred = (.epred*sd_temp)+mean_temp) |>
+  mutate(.epred = (.epred*max_temp)) |>
   ggplot(aes(x = date, y = .epred, color = source)) +
   geom_line(aes(y = .epred, group = .draw), alpha = .25) +
   facet_wrap(~source) +
@@ -518,6 +518,10 @@ site_temps |>
   group_by(source, site) |>
   mutate(pos = delta >0) |>
   summarize(mean(pos))
+
+site_temps |>
+  ungroup() |>
+  distinct(site, year)
 
 site_temps |>
   ungroup() |>

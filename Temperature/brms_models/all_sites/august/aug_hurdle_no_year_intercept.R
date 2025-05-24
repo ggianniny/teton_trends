@@ -74,6 +74,16 @@ temp <- temp_clean %>%
          !is.na(source)) %>%
   mutate(year_s = (year - mean(year)) / sd(year))
 
+fit_data_year_summary <- temp |>
+  ungroup() |>
+  summarize(mean_year = mean(year), 
+            sd_year = sd(year))
+
+saveRDS(fit_data_year_summary, 
+        paste(write_dir, 
+              "/fit_data_year_summary.rds",
+              sep = ""))
+
 aug_dat <- temp |>
   filter(month == model_month) |>
   mutate(temp_1 = temp_c / max(temp_c))

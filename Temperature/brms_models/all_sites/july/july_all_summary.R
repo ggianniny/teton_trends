@@ -31,10 +31,10 @@ brm1$data |>
   distinct(site, source) |>
   arrange(source)
 
-brm1$data |> filter(temp_1 == 0) |> count()
+brm1$data |> group_by(source)|> filter(temp_1 == 0) |> count()
 
 # posterior predictions ####
-pp_check(brm1,
+pp_check(brm1, stat = "median",
          type = "stat_grouped",
          group = "source")
 # pp_check(brm1,
@@ -48,7 +48,7 @@ pp_check(brm1,
          type = "boxplot")
 pp_check(brm1,
          type = "dens_overlay_grouped",
-         group = "source")
+         group = "source") 
 pp_check(brm1,
          type = "dens_overlay_grouped",
          group = "w_1")

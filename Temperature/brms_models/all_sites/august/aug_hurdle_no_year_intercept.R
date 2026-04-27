@@ -142,4 +142,3 @@ hurdle_aug <- update(hurdle_aug,
 saveRDS(hurdle_aug, paste(write_dir,
                     "/fit_rand_slopes_hurdle_aug_rand_site.rds", 
                     sep = ""))
-

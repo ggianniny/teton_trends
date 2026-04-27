@@ -13,6 +13,7 @@ library(tidybayes)
 
 fit_data_orig <- readRDS(
   here::here("Temperature/brms_models/all_sites/august/hurdle_fit_data.rds"))
+
 brm1 <- readRDS(here::here("Temperature/brms_models/all_sites/august/fit_rand_slopes_hurdle_aug_rand_site.rds"))
 
 fit_data_year_summary <- readRDS(
@@ -245,7 +246,7 @@ pr_pos
 y_19_20 |>
   ggplot(
     aes(y = source,
-        x = slope_new,
+        x = prop,
         fill = after_stat(x >0))) +
   stat_halfeye() +
   geom_vline(xintercept = 0, 
@@ -273,7 +274,69 @@ y_19_20 |>
                          sep = " ")) +
   NULL
 
+```  
+
+# Make sure this is right before knitting  
+
+### Source-specific changes across period of record  
+
+Here, we use the model posteriors to calculate the the average change in degrees C from 2015 to 2024 for each source category. 
+
+* First, make source-level data  
+* add expected posterior draws  
+* summarize and plot results  
+
+```{r}
+source_data <- brm1$data |>
+  select(source) |>
+  distinct() |>
+  expand_grid(year_real = c(2015, 2024)) |>
+  mutate(year_s = (year_real - mean_year)/sd_year) 
+
+source_temps <- source_data |>
+  add_epred_draws(
+  brm1,
+  re_formula = NULL) |> # includes random effects
+  mutate(.temp = (.epred*max_temp)) |>
+  ungroup()
+
+source_temps
 ```
+
+* for each draw:  
+* Subtract the beginning temperature from the ending temperature  
+* Plot distributions of absolute change in temperatures per source  
+
+```{r}
+source_temp_change <- source_temps |>
+  select(year, .temp, .draw, source) |>
+  group_by(source, .draw) |>
+  mutate(year_cat = case_when(
+    year == min(year) ~ "start", 
+         .default = "end")) |>
+  select(-year) |>
+  pivot_wider(id_cols = c(.draw, source),
+              names_from = year_cat,
+              values_from = .temp) |>
+  mutate(delta = end - start) 
+
+source_temp_change
+
+source_temp_change |>
+  ggplot(aes(y = source, 
+             x = delta, 
+             fill = source)) +
+  stat_halfeye()+
+  scale_fill_manual(values = c("deepskyblue",
+                               "slategrey", 
+                               "springgreen4")) +
+  theme_bw() +
+  geom_vline(xintercept = 0, 
+             linetype = "dashed") +
+  labs(y = "site",
+       x = "Absolute change in average August temperatures")
+```
+
 
 ## Site-specific predictions  
 

@@ -121,22 +121,22 @@ temp_clean |>
 #   geom_point(alpha = 0.5) +
 #   facet_wrap(source~year, scales = "free_x") +
 #   theme_bw()
-# temp_clean |>
-#   filter(month == 6) |>
-#   ggplot(aes(#x = date_tm,
-#              x = temp_c,
-#              fill = site)) +
-#   #geom_point(alpha = 0.5) +
-#   geom_density(alpha = 0.5)+
-#   facet_wrap(~year, scales = "free")
-# temp_clean |>
-#   filter(month == 6) |>
-#   ggplot(aes(#x = date_tm,
-#     x = temp_c,
-#     fill = as.factor(year))) +
-#   #geom_point(alpha = 0.5) +
-#   geom_density(alpha = 0.5)+
-#   facet_wrap(~site, scales = "free")
+temp_clean |>
+  filter(month == 6) |>
+  ggplot(aes(#x = date_tm,
+             x = temp_c,
+             fill = site)) +
+  #geom_point(alpha = 0.5) +
+  geom_density(alpha = 0.5)+
+  facet_wrap(~year, scales = "free")
+temp_clean |>
+  filter(month == 6) |>
+  ggplot(aes(#x = date_tm,
+    x = temp_c,
+    fill = as.factor(year))) +
+  #geom_point(alpha = 0.5) +
+  geom_density(alpha = 0.5)+
+  facet_wrap(~site, scales = "free")
 # 
 # temp_clean |>
 #   filter(month == 6) |>

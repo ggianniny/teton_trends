@@ -501,6 +501,8 @@ site_temps <- add_epred_draws(
   re_formula = NULL) |> # includes random effects
   mutate(.temp = (.epred*max_temp)) 
 
+
+
 # probability positive slopes
 # site 
 site_temps |>
@@ -572,3 +574,43 @@ site_temps |>
   group_by(source, site) |>
   summarize(m_start = mean(start), mean(end)) |>
   mutate(mid = m_start * (1. + 5*.02))
+
+# site-year temperatures --------------------------------------------------
+
+site_year_data <- brm1$data |>
+  select(source, year_s, site) |>
+  distinct() |>
+  group_by(site) |>
+  mutate(year = (year_s*sd_year)+mean_year,
+         month = 8,
+         day = 15,
+         date = make_date(year, month, day))
+
+site_year_temps <- add_epred_draws(
+  newdata = site_year_data,
+  brm1,
+  #allow_new_levels = TRUE,
+  re_formula = NULL) |> # includes random effects
+  mutate(.temp = (.epred*max_temp)) 
+
+write_csv(site_year_temps,
+          file = paste(write_dir, "/site_year_temps_aug.csv", 
+                       sep = ""))
+
+site_year_temps |>
+  ungroup() |>
+  filter(site %in% c("grizzly", "s_cascade", "delta")) |>
+  distinct(site, year) |>
+  arrange(site, year) |> View()
+
+site_year_temps |>
+  group_by(site, year) |>
+  median_qi(.temp) |>
+  filter(site %in% c("grizzly", "s_cascade", "delta")) |>
+  View()
+
+tibble(site = rep(c("delta", "grizzly", "s_cascade"), each = 2),
+       year = rep(c(2018, 2024), 3),
+       mat = c(1.75, 1.91,
+               7.10, 10.71,
+               2.15, 1.90))

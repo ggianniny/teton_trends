@@ -1,5 +1,11 @@
+library(tidyverse)
+library(brms)
+library(tidybayes)
+
+# where did site_temps come from???
+
 site_temps |>
-  ungroup() |>
+  #ungroup() |>
   select(site, year, .temp, .draw, source) |>
   filter(year %in% c(2018, 2024)) |>
   filter(site %in% c("grizzly", "s_cascade", "mid_teton", "delta")) |>

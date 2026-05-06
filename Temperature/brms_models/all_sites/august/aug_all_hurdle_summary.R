@@ -576,7 +576,7 @@ site_temps |>
               values_from = .temp) |>
   mutate(delta = end - start,
          group = cur_group_id()) |>
-  ggplot(aes(#y = fct_reorder(site, group), 
+  ggplot(aes(y = fct_reorder(site, group), 
              x = delta, 
              fill = source)) +
   stat_halfeye(normalize = "groups") +

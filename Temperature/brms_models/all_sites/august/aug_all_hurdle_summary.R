@@ -560,6 +560,35 @@ site_temps |>
              fill = source)) +
   stat_halfeye()
 
+
+# just teton isd plot
+site_temps |>
+  filter(site %in% c("grizzly", "delta", "s_cascade")) |>
+  ungroup() |>
+  select(site, year, .temp, .draw, source) |>
+  group_by(source, site) |>
+  mutate(year_cat = case_when(
+    year == min(year) ~ "start", 
+    .default = "end")) |>
+  select(-year) |>
+  pivot_wider(id_cols = c(site, .draw, source),
+              names_from = year_cat,
+              values_from = .temp) |>
+  mutate(delta = end - start,
+         group = cur_group_id()) |>
+  ggplot(aes(#y = fct_reorder(site, group), 
+             x = delta, 
+             fill = source)) +
+  stat_halfeye(normalize = "groups") +
+  geom_vline(xintercept = 0,
+             linetype = "dashed") +
+  theme_bw() +
+  scale_fill_manual(values = c("deepskyblue",
+                               "slategrey", 
+                               "springgreen4")) +
+  labs(y = "Site Name",
+       x = "Change in temperature (2024-2018)")
+
 site_temps |>
   ungroup() |>
   select(site, year, .temp, .draw, source) |>

@@ -968,6 +968,8 @@ ggplot(filter(fully_cleaned6, site == "paintbrush"), aes(x = date1, y = temp_c))
 
 ```
 
+
+
 Appears to have successfully removed the desired sections from each year - use this file (fully_cleaned5) for future calculations and analysis.
 
 ######a.  Create quick plot with dry days: 
@@ -1316,7 +1318,7 @@ Flag values/days with temp range >5SD:
 
 ```{r}
 temp_ranges_flagged <- full_temp_ranges%>%
-  mutate(error = ifelse(t_range>(5*tr_sd), "Y", "N")) #Add column with temp range flag ("Y" if >5* SD)
+  mutate(error = ifelse(t_range>(tr_mean+(5*tr_sd)), "Y", "N")) #Add column with temp range flag ("Y" if >5* SD)
 
 #Check years/sites with errors: 
 
@@ -1415,21 +1417,24 @@ ggplot(tr_updated_sd, aes(x = date1, y = t_range, color = site, fill = site))+
   geom_line()+
   facet_wrap(~site, scales = "free")+
   theme_classic()+
-  geom_ribbon(aes(ymin = (tr_xbar_updated-(5*sd_updated)), 
-                  ymax = (tr_xbar_updated+(5*sd_updated)),
+  geom_ribbon(aes(ymin = (tr_xbar_updated-(7*sd_updated)), 
+                  ymax = (tr_xbar_updated+(7*sd_updated)),
                   alpha =0.5))+ #Add ribbons for 5* Temp Range SD
   geom_hline(aes(yintercept = tr_mean), linetype = "dashed")+ #add dashed line for mean temp range by site
   theme(legend.position = "none")+
   labs(x = "Date", y = "Daily temp. range, C")
 ```
 
-#### iii. Extract date ranges with temp ranges >5x SD for each site
 
-Flag temp values with SD > 5* mean, drop from dataset: 
+
+
+#### iii. Drop data with >7 SD's over the mean
+
+Flag temp values >7*SD, drop from dataset: 
 
 ```{r}
 tr_flagged_final <- tr_updated_sd %>%
-  mutate(error = ifelse(t_range>=(7*sd_updated), "Y", "N"), 
+  mutate(error = ifelse(t_range>=(tr_xbar_updated+(7*sd_updated)), "Y", "N"), 
          month = month(date1))
 
 #check error sites/years: 
@@ -1474,7 +1479,7 @@ tr.clean2 <- ggplot(
   facet_wrap(~site, scales = "free_x")+
   theme_classic()+
   theme(legend.position = "none")+
-  labs(x = "Date", y = "Daily temp. range, C", title = "Cleaned Data")+
+  labs(x = "Date", y = "Daily temp. range, C", title = "Cleaned (all obs with temp range >7SD from mean dropped)")+
   scale_y_continuous(limits=c(0,45))
 
 tr.comparison<- tr.raw2/tr.clean2
@@ -1484,17 +1489,108 @@ tr.comparison
 Save: 
 
 ```{r}
-ggsave("Temperature/plots/sd_data_cleaning.pdf", tr.comparison, width = 6.5, height = 9, units = "in", device = "pdf", dpi = "retina")
+ggsave("Temperature/plots/sd_data_cleaning.pdf", tr.comparison, width = 6.5, height = 6.5, units = "in", device = "pdf", dpi = "retina")
+```
+
+**NOTES - 5/12:** Tested a few different SD cutoffs. 7 SD's seems to work best:
+
+* 5 SD's was picking up Mid Teton + multiple other years from sites with actual errors. 
+* 10 SD's probably leaves some error measurements in. 
+* 7 SD's seemed like a good mid-point between these two that only picks up sites with suspected errors and doesn't leave too much erroneus data. 
+* NOTE that this approach does NOT address issues with Paintbrush - will likely need to keep SNOTEL comparison cleaning for that site. 
+* NOTE that this approach ONLY works for sites with multiple years of data and results in dropping 2 sites with only 1 year of data (Schoolroom, Death Canyon). 
+
+
+##### a. Plotting for paper: 
+
+Panel A: Temperature ranges with error values in red, band + dotted line for SD. 
+
+```{r}
+tr.panelB <- tr_flagged_final%>%
+  filter(site == "s_ak_basin"|site== "cloudveil")%>%
+  mutate(sitePrint = ifelse(site == "s_ak_basin", "South Alaska basin", "Cloudveil Dome"))%>%
+  ggplot(
+  aes(x = date1, y = t_range, color = error))+
+  geom_point()+
+  facet_wrap(~sitePrint, scales = "free")+
+  theme_classic()+
+  geom_ribbon(aes(ymin = (tr_xbar_updated-(7*sd_updated)), 
+                  ymax = (tr_xbar_updated+(7*sd_updated)), color = NULL,
+                  alpha =0.5))+ #Add ribbons for 5* Temp Range SD
+  geom_hline(aes(yintercept = tr_mean), linetype = "dashed")+ #add dashed line for mean temp range by site
+  scale_color_manual(values = c("black", "red"))+
+  theme(legend.position = "none")+
+  labs(x = "Date", y = "Deil temp. range, C", title = "B. Deil temperature ranges with errors flagged")
+tr.panelB
+```
+
+Panel B & C: raw and cleaned data: 
+
+```{r}
+#raw
+tr.panelA <- tr_flagged_final%>%
+  filter(site == "s_ak_basin"|site== "cloudveil")%>%
+  mutate(sitePrint = ifelse(site == "s_ak_basin", "South Alaska basin", "Cloudveil Dome"))%>%
+  ggplot(
+  aes(x = date1, y = temp_c)
+)+
+  geom_point()+
+  facet_wrap(~sitePrint, scales = "free_x")+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(x = "Date", y = "Stream temperature, C", title = "A. Raw stream temperature data")+
+  scale_y_continuous(limits=c(0,45))
+
+#clean
+tr.panelC <- tr_cleaned_final%>%
+  filter(site == "s_ak_basin"|site== "cloudveil")%>%
+  mutate(sitePrint = ifelse(site == "s_ak_basin", "South Alaska basin", "Cloudveil Dome"))%>%
+  ggplot(
+  aes(x = date1, y = temp_c)
+)+
+  geom_point()+
+  facet_wrap(~sitePrint, scales = "free_x")+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(x = "Date", y = "Stream temperature, C", title = "C. Cleaned data (all obs with temp range >7SD from mean dropped)")+
+  scale_y_continuous(limits=c(0,45))
+```
+
+Stack all three and save: 
+
+```{r}
+tr.fig.stacked <- tr.panelA/tr.panelB/tr.panelC
+tr.fig.stacked
+
+
+ggsave("Temperature/plots/tr_cleaning_fig.jpg", tr.fig.stacked, device = "jpg", width = 6.5, height = 6.5, units = "in", dpi = "retina")
 ```
 
 
-**NOTES 5/12:** Tested a few different SD multiplier cutoffs: 
+#### iv. Cleaning paintbrush using pre-established overlap periods: 
 
-* 5*SD was cutting off too much + picking up too many sites/years. 
-* 10* SD does a pretty good job, but maybe leaves some error measurements - but isolates 3 sites we had ID'd as having issues.
-* 7* SD seems like a good compromise - still cuts a few measurements from Mid Teton, but only 24 obs from October 2023. Does a good job of removing problem areas from Cloudveil, Wind Cave, and S AK Basin. 
-* NOTE that this approach does NOT address issues with Paintbrush - will likely need to keep SNOTEL comparison cleaning for that site. 
-* NOTE that this approach ONLY works for sites with multiple years of data and results in dropping 2 sites with only 1 year of data (Schoolroom, Death Canyon). 
+```{r}
+fully_cleanedAlt <- tr_cleaned_final %>%
+  filter(!(site == "paintbrush"&date1>=min(exposure.18)&date1<=max(exposure.18)), 
+         !(site == "paintbrush"&date1>=min(exposure.19)&date1<=max(exposure.19)),
+         !(site == "paintbrush"&date1>=min(exposure.20)&date1<=max(exposure.20)),
+         !(site == "paintbrush"&date1>=min(exposure.21)&date1<=max(exposure.21)), 
+         !(site == "paintbrush"&date1>=min(exposure.22)&date1<=max(exposure.22)), 
+         !(site == "paintbrush"&date1>=min(exposure.23)&date1<=max(exposure.23))
+         )%>% #dropping PB exposure dates
+  select(date_tm, date1, site, year, temp_c, temp_raw) #dropping extra columns generated in data cleaning
+```
+
+Check with quick plot: 
+
+```{r}
+ggplot(fully_cleanedAlt, aes(x = date1, y = temp_c, color = site, fill = site))+
+  geom_line()+
+  facet_wrap(~site, scales = "free")+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(x = "Date", y = "Daily temp. range, C")
+```
 
 
 
@@ -1509,11 +1605,11 @@ full_clean_split <- split(fully_cleaned8, fully_cleaned8$site) # split into 17 d
 Fill in missing date values (grouped by site), check if successful:
 
 ```{r}
-temps_final <- fully_cleaned8%>%
+temps_final <- fully_cleanedAlt%>%
   group_by(site)%>% #group by site
   complete(date1=seq.Date(from = min(date1), to = max(date1), by = "day")) #fill dates by day from min to max within each site.
   
-ggplot(filter(temps_final, site =="windcave"), aes(x = date1, y = temp_c))+
+ggplot(filter(temps_final, site =="s_ak_basin"), aes(x = date1, y = temp_c))+
   geom_line()
 ```
 
@@ -2670,6 +2766,101 @@ ggsave("Temperature/plots/airtemp_streamtemp_scatter.jpg", stream.air.scatter, d
 ```
 
 
+## 9. Plot showing snowmelt vs. glacier vs. rg summer temp regiems: 
+ 
+Prep data and draw plot:
 
+```{r}
+summer.comparison <- tasr_dat%>%
+  filter(!site == "paintbrush", !site=="windcave")%>%
+  mutate(month = month(date1), year = year(date1))%>%
+  filter(month == 6|month==7|month==8|month==9)%>%
+  filter(year == 2023)%>%
+  mutate(source_print = case_when(
+    source=="sub_ice"~"Rock glacier", 
+    source=="glacier"~"Glacier",
+    source=="snowmelt"~"Snow field"
+  ), 
+  full_name = case_when(
+    site=="cloudveil"~"Cloudveil", 
+    site=="delta" ~ "Delta", 
+    site == "grizzly"~"Grizzly", 
+    site == "gusher"~"Gusher", 
+    site == "mid_teton"~"Middle Teton", 
+    site == "n_teton"~"North Teton", 
+    site == "s_ak_basin"~"South AK Basin", 
+    site == "s_cascade"~ "South Cascade", 
+    site == "s_teton"~"South Teton", 
+    site == "skillet"~"Skillet"
+  ))%>%
+  mutate(src_name = paste(source_print, full_name, sep = " - "))%>%
+  ggplot(aes(x = date_tm, y = temp_raw, color = src_name))+
+  geom_line()+
+  theme_classic()+
+  labs(x = "Date", y = "Stream temperature, C", color = "Stream name & source type")+
+  theme(
+    axis.title = element_text(size = 11, face = "bold"),
+    legend.title = element_text(size = 11, face = "bold"), 
+    legend.position = "right", 
+    strip.text = element_text(size = 11, face = "bold")
+  )+
+  scale_color_manual(values = boxplot.pal)
+summer.comparison
+```
 
+Save:
+
+```{r}
+ggsave("Temperature/plots/summer_comparison.jpg", summer.comparison, device = "jpeg", units = "in", dpi = "retina", width = 6.5, height = 4.5)
+```
+
+Second plot - Boxplot by source type for all years of data: 
+
+```{r}
+summer.comparison.box <- tasr_dat%>%
+  filter(!site == "paintbrush", !site=="windcave")%>%
+  mutate(month = month(date1), year = year(date1))%>%
+  filter(
+    #month == 6|month==7|
+           month==8
+         #|month==9
+         )%>%
+  mutate(source_print = case_when(
+    source=="sub_ice"~"Rock glacier", 
+    source=="glacier"~"Glacier",
+    source=="snowmelt"~"Snow field"
+  ), 
+  full_name = case_when(
+    site=="cloudveil"~"Cloudveil", 
+    site=="delta" ~ "Delta", 
+    site == "grizzly"~"Grizzly", 
+    site == "gusher"~"Gusher", 
+    site == "mid_teton"~"Middle Teton", 
+    site == "n_teton"~"North Teton", 
+    site == "s_ak_basin"~"South AK Basin", 
+    site == "s_cascade"~ "South Cascade", 
+    site == "s_teton"~"South Teton", 
+    site == "skillet"~"Skillet"
+  ))%>%
+  mutate(src_name = paste(source_print, full_name, sep = " - "))%>%
+  ggplot(aes(x = source_print, y = temp_raw, fill = source_print))+
+  geom_boxplot()+
+  #geom_jitter()+
+  theme_classic()+
+  labs(x = "Source Type", y = "August Stream temperature, C", fill = "Source Type")+
+  theme(
+    axis.title = element_text(size = 11, face = "bold"),
+    legend.title = element_text(size = 11, face = "bold"), 
+    legend.position = "none", 
+    strip.text = element_text(size = 11, face = "bold")
+  )+
+  scale_fill_manual(values = c("purple", "lightgreen", "orange"))
+summer.comparison.box
+```
+
+Save:
+
+```{r}
+ggsave("Temperature/plots/summer_comparison_box.jpg", summer.comparison.box, device = "jpeg", units = "in", dpi = "retina", width = 6.5, height = 3.5)
+```
 

@@ -174,6 +174,7 @@ Now, calculate average density and total abundance for each taxa for each year i
 
 ```{r}
 invert_avgs <- invert_rename2 %>%
+  mutate(Year = as.numeric(Year))%>%
   group_by(Stream, Year, taxa_lwr) %>% # group by taxa w/in year w/in stream
   summarise(density_xbar = mean(Density), #calculate mean density for each taxa/year/site
             abundance_total = sum(Abundance))#calculate total abundance for each taxa/yr/site
@@ -373,7 +374,7 @@ nmds.site <- ggplot(mds_scores)+
   scale_color_manual(values = c(brewer.pal(12, "Set3"), "#000000"), name = "Stream"
                      #, labels = c("Middle Teton", "North Teton","AK Basin S", "South Cascade", "South Teton", "Wind Cave")
                      )+ #adjusting color palatte and labels
-  scale_shape_manual(values = c(15, 16, 17, 3, 4, 18, 6, 7))+ #setting shape palatte
+  scale_shape_manual(values = c(15, 16, 17, 3, 4, 18, 6, 7, 5, 11))+ #setting shape palatte
   scale_fill_manual(values = c(brewer.pal(12, "Set3"), "#000000"), name = "Stream")+ #setting fill pallate
   labs(fill = "Stream", color = "Stream", shape = "Year")
 nmds.site
@@ -403,7 +404,7 @@ nmds.source <- ggplot(mds_scores)+
   scale_color_manual(values = source.pal, name = "Source"
                      , labels = c("Glacier", "Snowmelt", "Subterranean Ice", "Unknown")
                      )+ #adjusting color palatte and labels
-  scale_shape_manual(values = c(15, 16, 17, 3, 4, 18, 6, 7))+ #setting shape palatte
+  scale_shape_manual(values = c(15, 16, 17, 3, 4, 18, 6, 7, 5, 11))+ #setting shape palatte
   scale_fill_manual(values = source.pal, name = "Source", labels = c("Glacier", "Snowmelt", "Subterranean Ice", "Unknown")) #setting fill pallate
 nmds.source
 ```
@@ -431,7 +432,7 @@ source.facet <- ggplot(mds_scores)+
         plot.tag = element_text(size = 10, face = "italic"))+
   labs(fill = "Source", color = "Source", shape = "Year", tag = paste("Stress: ", round(full.mds$stress, digits = 3)))+
   scale_color_manual(values = source.pal, name = "Source",labels = c("Glacier", "Snowmelt", "Subterranian Ice", "Unknown"))+ #adjusting color palatte and labels
-  scale_shape_manual(values = c(15, 16, 17, 3, 4, 18, 6, 7))+ #setting shape palatte
+  scale_shape_manual(values = c(15, 16, 17, 3, 4, 18, 6, 7, 5, 11))+ #setting shape palatte
   scale_fill_manual(values = source.pal, labels = c("Glacier", "Snowmelt", "Subterranian Ice", "Unknown"),name = "Source")+ #setting fill pallate
   facet_wrap(~source)
 source.facet
@@ -480,7 +481,7 @@ tasr.facet <- ggplot(tasr_nmds)+
         strip.text = element_text(size = 10, face = "bold"))+
   labs(fill = "Source", color = "Source", shape = "Year", tag = paste("Stress: ", round(full.mds$stress, digits = 3)))+
   scale_color_manual(values = pres.pal, name = "Source",labels = c("Glacier", "Snowmelt", "Subterranian Ice", "Unknown"))+ #adjusting color palatte and labels
-  scale_shape_manual(values = c(15, 16, 17, 3, 4, 18, 6, 7))+ #setting shape palatte
+  scale_shape_manual(values = c(15, 16, 17, 3, 4, 18, 6, 7, 5, 11))+ #setting shape palatte
   scale_fill_manual(values = pres.pal, labels = c("Glacier", "Snowmelt", "Subterranian Ice", "Unknown"),name = "Source")+ #setting fill pallate
   facet_wrap(~source)
 tasr.facet
@@ -879,7 +880,7 @@ to.binary <- function(col){
 }
 
 yr_binary <- yr_taxa %>%
-  mutate(across(.cols = c(2:9), to.binary)) #apply this function across all year columns in yr_taxa 
+  mutate(across(.cols = c(2:ncol(yr_taxa)), to.binary)) #apply this function across all year columns in yr_taxa 
 ```
 
 Check the resulting output: 
@@ -922,7 +923,7 @@ new_taxa <- rowSums(binary_lag[,2:ncol(binary_lag)])
 Add this to a new dataframe with year; calculate cumulative taxa observed each year: 
 
 ```{r}
-cumulative_richness <- data.frame(c(2015:2022), new_taxa)%>% #bind new_taxa object with vector of years
+cumulative_richness <- data.frame(c(2015:2024), new_taxa)%>% #bind new_taxa object with vector of years
   rename(yr = 1)%>% #rename first column "yr"
   mutate(cumulative_taxa =cumsum(new_taxa)) #calculate cumulative taxa observed for each year
 ```

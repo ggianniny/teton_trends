@@ -2,79 +2,101 @@
 "1","cloudveil",2019,"sub_ice","Cloudveil",5
 "2","cloudveil",2020,"sub_ice","Cloudveil",5
 "3","cloudveil",2021,"sub_ice","Cloudveil",8
-"4","cloudveil",2024,"sub_ice","Cloudveil",16
-"5","delta",2017,"glacier","Delta",14
-"6","delta",2018,"glacier","Delta",14
-"7","delta",2019,"glacier","Delta",14
-"8","delta",2020,"glacier","Delta",7
-"9","delta",2021,"glacier","Delta",12
-"10","delta",2024,"glacier","Delta",15
-"11","grizzly",2017,"snowmelt","Grizzly",10
-"12","grizzly",2018,"snowmelt","Grizzly",6
-"13","grizzly",2019,"snowmelt","Grizzly",11
-"14","grizzly",2020,"snowmelt","Grizzly",11
-"15","grizzly",2021,"snowmelt","Grizzly",8
-"16","grizzly",2024,"snowmelt","Grizzly",14
-"17","gusher",2020,"sub_ice","Gusher",15
-"18","gusher",2021,"sub_ice","Gusher",13
-"19","gusher",2024,"sub_ice","Gusher",25
-"20","mid_teton",2015,"glacier","Middle Teton",11
-"21","mid_teton",2016,"glacier","Middle Teton",10
-"22","mid_teton",2017,"glacier","Middle Teton",7
-"23","mid_teton",2018,"glacier","Middle Teton",11
-"24","mid_teton",2019,"glacier","Middle Teton",6
-"25","mid_teton",2020,"glacier","Middle Teton",4
-"26","mid_teton",2021,"glacier","Middle Teton",7
-"27","mid_teton",2024,"glacier","Middle Teton",10
-"28","n_teton",2015,"snowmelt","North Teton",23
-"29","n_teton",2016,"snowmelt","North Teton",13
-"30","n_teton",2017,"snowmelt","North Teton",10
-"31","n_teton",2018,"snowmelt","North Teton",7
-"32","n_teton",2019,"snowmelt","North Teton",12
-"33","n_teton",2020,"snowmelt","North Teton",7
-"34","n_teton",2021,"snowmelt","North Teton",12
-"35","n_teton",2024,"snowmelt","North Teton",22
-"36","paintbrush",2016,"snowmelt","Paintbrush",9
-"37","paintbrush",2017,"snowmelt","Paintbrush",8
-"38","paintbrush",2018,"snowmelt","Paintbrush",4
-"39","paintbrush",2019,"snowmelt","Paintbrush",6
-"40","paintbrush",2020,"snowmelt","Paintbrush",6
-"41","paintbrush",2024,"snowmelt","Paintbrush",7
-"42","s_ak_basin",2016,"sub_ice","S. AK Basin",22
-"43","s_ak_basin",2017,"sub_ice","S. AK Basin",24
-"44","s_ak_basin",2018,"sub_ice","S. AK Basin",14
-"45","s_ak_basin",2019,"sub_ice","S. AK Basin",20
-"46","s_ak_basin",2020,"sub_ice","S. AK Basin",13
-"47","s_ak_basin",2021,"sub_ice","S. AK Basin",18
-"48","s_ak_basin",2024,"sub_ice","S. AK Basin",25
-"49","s_cascade",2015,"sub_ice","South Cascade",19
-"50","s_cascade",2016,"sub_ice","South Cascade",16
-"51","s_cascade",2018,"sub_ice","South Cascade",2
-"52","s_cascade",2019,"sub_ice","South Cascade",2
-"53","s_cascade",2020,"sub_ice","South Cascade",2
-"54","s_cascade",2021,"sub_ice","South Cascade",4
-"55","s_cascade",2024,"sub_ice","South Cascade",10
-"56","s_teton",2015,"snowmelt","South Teton",29
-"57","s_teton",2016,"snowmelt","South Teton",21
-"58","s_teton",2017,"snowmelt","South Teton",18
-"59","s_teton",2018,"snowmelt","South Teton",22
-"60","s_teton",2019,"snowmelt","South Teton",24
-"61","s_teton",2020,"snowmelt","South Teton",13
-"62","s_teton",2021,"snowmelt","South Teton",19
-"63","s_teton",2024,"snowmelt","South Teton",35
-"64","silver_run",2017,"snowmelt","Silver Run",17
-"65","silver_run",2021,"snowmelt","Silver Run",21
-"66","skillet",2017,"glacier","Skillet",17
-"67","skillet",2018,"glacier","Skillet",10
-"68","skillet",2019,"glacier","Skillet",18
-"69","skillet",2020,"glacier","Skillet",12
-"70","skillet",2021,"glacier","Skillet",16
-"71","skillet",2024,"glacier","Skillet",21
-"72","windcave",2015,"sub_ice","Wind Cave",13
-"73","windcave",2016,"sub_ice","Wind Cave",9
-"74","windcave",2017,"sub_ice","Wind Cave",11
-"75","windcave",2018,"sub_ice","Wind Cave",10
-"76","windcave",2019,"sub_ice","Wind Cave",7
-"77","windcave",2020,"sub_ice","Wind Cave",6
-"78","windcave",2021,"sub_ice","Wind Cave",9
-"79","windcave",2024,"sub_ice","Wind Cave",13
+"4","cloudveil",2022,"sub_ice","Cloudveil",13
+"5","cloudveil",2023,"sub_ice","Cloudveil",9
+"6","cloudveil",2024,"sub_ice","Cloudveil",12
+"7","delta",2017,"glacier","Delta",14
+"8","delta",2018,"glacier","Delta",14
+"9","delta",2019,"glacier","Delta",14
+"10","delta",2020,"glacier","Delta",7
+"11","delta",2021,"glacier","Delta",12
+"12","delta",2022,"glacier","Delta",11
+"13","delta",2023,"glacier","Delta",11
+"14","delta",2024,"glacier","Delta",12
+"15","grizzly",2017,"snowmelt","Grizzly",10
+"16","grizzly",2018,"snowmelt","Grizzly",6
+"17","grizzly",2019,"snowmelt","Grizzly",11
+"18","grizzly",2020,"snowmelt","Grizzly",11
+"19","grizzly",2021,"snowmelt","Grizzly",8
+"20","grizzly",2022,"snowmelt","Grizzly",12
+"21","grizzly",2023,"snowmelt","Grizzly",12
+"22","grizzly",2024,"snowmelt","Grizzly",7
+"23","gusher",2020,"sub_ice","Gusher",15
+"24","gusher",2021,"sub_ice","Gusher",13
+"25","gusher",2022,"sub_ice","Gusher",20
+"26","gusher",2023,"sub_ice","Gusher",20
+"27","gusher",2024,"sub_ice","Gusher",15
+"28","mid_teton",2015,"glacier","Middle Teton",11
+"29","mid_teton",2016,"glacier","Middle Teton",10
+"30","mid_teton",2017,"glacier","Middle Teton",7
+"31","mid_teton",2018,"glacier","Middle Teton",11
+"32","mid_teton",2019,"glacier","Middle Teton",6
+"33","mid_teton",2020,"glacier","Middle Teton",4
+"34","mid_teton",2021,"glacier","Middle Teton",7
+"35","mid_teton",2022,"glacier","Middle Teton",10
+"36","mid_teton",2023,"glacier","Middle Teton",6
+"37","mid_teton",2024,"glacier","Middle Teton",3
+"38","n_teton",2015,"snowmelt","North Teton",23
+"39","n_teton",2016,"snowmelt","North Teton",13
+"40","n_teton",2017,"snowmelt","North Teton",10
+"41","n_teton",2018,"snowmelt","North Teton",7
+"42","n_teton",2019,"snowmelt","North Teton",12
+"43","n_teton",2020,"snowmelt","North Teton",7
+"44","n_teton",2021,"snowmelt","North Teton",12
+"45","n_teton",2022,"snowmelt","North Teton",15
+"46","n_teton",2023,"snowmelt","North Teton",11
+"47","n_teton",2024,"snowmelt","North Teton",16
+"48","paintbrush",2016,"snowmelt","Paintbrush",9
+"49","paintbrush",2017,"snowmelt","Paintbrush",8
+"50","paintbrush",2018,"snowmelt","Paintbrush",4
+"51","paintbrush",2019,"snowmelt","Paintbrush",6
+"52","paintbrush",2020,"snowmelt","Paintbrush",6
+"53","paintbrush",2022,"snowmelt","Paintbrush",7
+"54","s_ak_basin",2016,"sub_ice","S. AK Basin",22
+"55","s_ak_basin",2017,"sub_ice","S. AK Basin",24
+"56","s_ak_basin",2018,"sub_ice","S. AK Basin",14
+"57","s_ak_basin",2019,"sub_ice","S. AK Basin",20
+"58","s_ak_basin",2020,"sub_ice","S. AK Basin",13
+"59","s_ak_basin",2021,"sub_ice","S. AK Basin",18
+"60","s_ak_basin",2022,"sub_ice","S. AK Basin",18
+"61","s_ak_basin",2023,"sub_ice","S. AK Basin",16
+"62","s_ak_basin",2024,"sub_ice","S. AK Basin",19
+"63","s_cascade",2015,"sub_ice","South Cascade",19
+"64","s_cascade",2016,"sub_ice","South Cascade",16
+"65","s_cascade",2018,"sub_ice","South Cascade",2
+"66","s_cascade",2019,"sub_ice","South Cascade",2
+"67","s_cascade",2020,"sub_ice","South Cascade",2
+"68","s_cascade",2021,"sub_ice","South Cascade",4
+"69","s_cascade",2022,"sub_ice","South Cascade",4
+"70","s_cascade",2023,"sub_ice","South Cascade",4
+"71","s_cascade",2024,"sub_ice","South Cascade",10
+"72","s_teton",2015,"snowmelt","South Teton",29
+"73","s_teton",2016,"snowmelt","South Teton",21
+"74","s_teton",2017,"snowmelt","South Teton",18
+"75","s_teton",2018,"snowmelt","South Teton",22
+"76","s_teton",2019,"snowmelt","South Teton",24
+"77","s_teton",2020,"snowmelt","South Teton",13
+"78","s_teton",2021,"snowmelt","South Teton",19
+"79","s_teton",2022,"snowmelt","South Teton",23
+"80","s_teton",2023,"snowmelt","South Teton",26
+"81","s_teton",2024,"snowmelt","South Teton",24
+"82","silver_run",2017,"snowmelt","Silver Run",17
+"83","silver_run",2021,"snowmelt","Silver Run",21
+"84","skillet",2017,"glacier","Skillet",17
+"85","skillet",2018,"glacier","Skillet",10
+"86","skillet",2019,"glacier","Skillet",18
+"87","skillet",2020,"glacier","Skillet",12
+"88","skillet",2021,"glacier","Skillet",16
+"89","skillet",2022,"glacier","Skillet",17
+"90","skillet",2023,"glacier","Skillet",10
+"91","skillet",2024,"glacier","Skillet",11
+"92","windcave",2015,"sub_ice","Wind Cave",13
+"93","windcave",2016,"sub_ice","Wind Cave",9
+"94","windcave",2017,"sub_ice","Wind Cave",11
+"95","windcave",2018,"sub_ice","Wind Cave",10
+"96","windcave",2019,"sub_ice","Wind Cave",7
+"97","windcave",2020,"sub_ice","Wind Cave",7
+"98","windcave",2021,"sub_ice","Wind Cave",9
+"99","windcave",2022,"sub_ice","Wind Cave",10
+"100","windcave",2023,"sub_ice","Wind Cave",9
+"101","windcave",2024,"sub_ice","Wind Cave",9

@@ -164,7 +164,6 @@ invert_rename2$taxa_lwr[2587] <- "rhyacophila brunnea/vemna" #manually over-writ
 unique(invert_rename2$taxa_lwr) #checking resulting unique values
 ```
 
-
 ---
 ---
 
